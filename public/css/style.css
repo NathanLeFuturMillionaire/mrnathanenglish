@@ -1,0 +1,278 @@
+/* Import des polices Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat&family=Roboto&display=swap');
+
+/* Reset minimaliste pour supprimer marges et paddings par défaut */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Styles de base pour le corps */
+body {
+    font-family: 'Roboto', sans-serif;
+    background-color: #f9f9f9;
+    color: #222;
+    line-height: 1.4;
+    font-size: 16px;
+    padding: 20px;
+    height: 2000px;
+}
+
+/* Styles pour les titres */
+h1,
+h2,
+h3 {
+    font-family: 'Montserrat', sans-serif;
+    margin-bottom: 15px;
+    color: #111;
+}
+
+/* Header fixe */
+.main-header {
+    margin-bottom: -100px;
+    width: 100%;
+    color: #000;
+    font-family: 'Montserrat', sans-serif;
+    transition: box-shadow 0.3s ease, background-color 0.3s ease;
+}
+
+/* Container pour aligner contenu */
+.main-header .container {
+    padding: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 60px;
+}
+
+/* Logo */
+.main-header .logo a {
+    color: #000;
+    text-decoration: none;
+    font-size: 1.3rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    transition: color 0.3s ease;
+}
+
+.main-header .logo a:hover {
+    color: #f39c12;
+    /* Orange vif au survol */
+}
+
+header.scrolled {
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+/* Navigation menu */
+.nav-menu ul {
+    list-style: none;
+    display: flex;
+    gap: 30px;
+}
+
+.nav-menu ul li {
+    position: relative;
+}
+
+.nav-menu ul li a {
+    color: #000;
+    text-decoration: none;
+    font-size: 1rem;
+    padding: 10px 5px;
+    transition: color 0.3s ease;
+    cursor: pointer;
+    user-select: none;
+}
+
+.nav-menu ul li a:hover {
+    color: #f39c12;
+}
+
+/* Dropdown caché par défaut */
+.dropdown-content {
+    visibility: hidden;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background-color: #fff;
+    /* Fond blanc */
+    min-width: 180px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    /* Ombre douce */
+    border-radius: 6px;
+    overflow: hidden;
+
+    /* Animation */
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s ease;
+
+    /* Organisation verticale */
+    display: flex;
+    flex-direction: column;
+}
+
+/* Liens rapprochés dans le dropdown */
+.dropdown-content li {
+    list-style: none;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+.dropdown-content li a {
+    padding: 8px 16px;
+    display: block;
+    width: 100%;
+    font-size: 0.9rem;
+    color: #333;
+    /* Texte foncé sur fond blanc */
+    text-decoration: none;
+    line-height: 1.3;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.dropdown-content li:last-child a {
+    border-bottom: none;
+}
+
+.dropdown-content li a:hover {
+    background-color: #f5f5f5;
+    /* Gris clair au survol */
+    color: #1e2a78;
+    /* Accent bleu au survol */
+}
+
+/* Affiché uniquement quand le dropdown a la classe .open */
+.dropdown.open .dropdown-content {
+    visibility: visible;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* For mobile - dropdown toggle handled by JS */
+
+/* Assure que la bannière est sous le header fixe */
+.banner {
+    padding: 80px 30px 60px;
+    background-color: #f9f9f9;
+    font-family: 'Montserrat', sans-serif;
+    color: #1e2a78;
+
+    margin-top: 80px;
+    /* Pour décaler sous un header fixe d'environ 80px */
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.banner-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 40px;
+    flex-wrap: wrap;
+}
+
+/* Partie gauche */
+.banner-left {
+    flex: 1 1 450px;
+    max-width: 600px;
+    z-index: 1;
+}
+
+.banner-left h1 {
+    font-size: 2.8rem;
+    line-height: 1.2;
+    margin-bottom: 20px;
+    font-weight: 700;
+}
+
+.banner-left p {
+    font-size: 1.1rem;
+    line-height: 1.5;
+    margin-bottom: 30px;
+    color: #333;
+}
+
+.btn-primary {
+    display: inline-block;
+    background: linear-gradient(135deg, #1e2a78, #2747a0);
+    color: white;
+    padding: 14px 32px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    text-decoration: none;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(30, 42, 120, 0.4);
+    transition: background 0.4s ease, box-shadow 0.4s ease, transform 0.3s ease;
+    cursor: pointer;
+    user-select: none;
+    border: none;
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+    background: linear-gradient(135deg, #2747a0, #1e2a78);
+    box-shadow: 0 6px 20px rgba(39, 71, 160, 0.6);
+    transform: translateY(-3px);
+    outline: none;
+}
+
+.btn-primary:active {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(30, 42, 120, 0.5);
+}
+
+
+/* Partie droite */
+.banner-right {
+    flex: 1 1 350px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.flag-america {
+    max-width: 350px;
+    width: 100%;
+    height: auto;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-radius: 8px;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+    .banner-content {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .banner-left,
+    .banner-right {
+        max-width: 100%;
+        flex: none;
+    }
+
+    .banner-left h1 {
+        font-size: 2.2rem;
+    }
+
+    .banner-left p {
+        font-size: 1rem;
+    }
+
+    .btn-primary {
+        padding: 12px 24px;
+        font-size: 0.95rem;
+    }
+
+    .flag-america {
+        max-width: 250px;
+    }
+}
