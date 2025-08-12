@@ -1,0 +1,345 @@
+/* Import des polices Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat&family=Roboto&display=swap');
+
+/* Reset minimaliste pour supprimer marges et paddings par défaut */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Styles de base pour le corps */
+body {
+  font-family: 'Roboto', sans-serif;
+  background-color: #f9f9f9;
+  color: #222;
+  line-height: 1.4;
+  font-size: 16px;
+}
+
+/* Styles pour les titres */
+h1,
+h2,
+h3 {
+  font-family: 'Montserrat', sans-serif;
+  margin-bottom: 15px;
+  color: #111;
+}
+
+/* Structure globale */
+.register-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: #f5f7fa;
+}
+
+.register-container {
+  display: flex;
+  width: 100%;
+  max-width: 1200px;
+  min-height: 700px;
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+  background: #fff;
+}
+
+/* Flèche retour */
+.back-arrow {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  font-size: 1.8rem;
+  color: #3c3b6e;
+  text-decoration: none;
+  background: #fff;
+  border-radius: 50%;
+  width: 45px;
+  height: 45px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  transition: background 0.3s ease, transform 0.2s ease;
+  z-index: 10;
+}
+
+.back-arrow:hover {
+  background: #3c3b6e;
+  color: #fff;
+  transform: scale(1.05);
+}
+
+/* Colonne gauche */
+.register-left {
+  position: relative;
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+  background: #fff;
+}
+
+/* Colonne droite avec image */
+.register-right {
+  flex: 1;
+  background-image: url('https://images.unsplash.com/photo-1560164864-1aaca9d84a3a?w=400&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1yZWxhdGVkfDE3fHx8ZW58MHx8fHx8');
+  position: relative;
+  background-size: cover;
+  background-position: center;
+  animation: slideFadeIn 0.8s ease-out forwards;
+}
+
+/* Overlay sombre sur l'image */
+.register-right::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .register-container {
+    flex-direction: column;
+  }
+
+  .register-right {
+    display: none;
+  }
+}
+
+/* Ton style existant pour le formulaire */
+.form-inscription {
+  max-width: 500px;
+  width: 100%;
+  padding: 40px 35px;
+  background: #ffffff;
+  border-radius: 18px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+  font-family: 'Poppins', sans-serif;
+  color: #222;
+  transition: box-shadow 0.3s ease;
+  animation: slideFadeIn 0.8s ease-out forwards;
+}
+
+/* Animation clé */
+@keyframes slideFadeIn {
+  0% {
+    transform: translateX(-50px);
+    opacity: 0;
+  }
+
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.form-inscription:hover {
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+.form-inscription>h2 {
+  text-align: center;
+  font-size: 1.3rem;
+}
+
+.form-inscription>h2~h2~p {
+  text-align: center;
+  margin-top: -30px;
+  margin-bottom: 30px;
+  font-family: "Montserrat", sans-serif;
+}
+
+.form-inscription>h2~h2 {
+  font-weight: 700;
+  font-size: 2.4rem;
+  text-align: center;
+  margin-bottom: 30px;
+  color: #3c3b6e;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.form-inscription label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #555;
+  letter-spacing: 0.03em;
+}
+
+.form-inscription input[type="text"],
+.form-inscription input[type="email"],
+.form-inscription input[type="password"] {
+  width: 100%;
+  padding: 14px 18px;
+  margin-bottom: 10px;
+  border-radius: 12px;
+  border: 2px solid #e0e0e0;
+  background: #f9f9fb;
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: #333;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+}
+
+.form-inscription input::placeholder {
+  color: #aaa;
+  font-size: 1rem;
+}
+
+.form-inscription input:focus {
+  border-color: #3c3b6e;
+  background: #fff;
+  box-shadow: 0 0 12px rgba(60, 59, 110, 0.3);
+  outline: none;
+}
+
+.btn-submit {
+  width: 100%;
+  padding: 14px 0;
+  font-weight: 600;
+  font-size: 1rem;
+  color: #fff;
+  background: linear-gradient(135deg, #3c3b6e 0%, #5a57a3 100%);
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(60, 59, 110, 0.25);
+  transition: all 0.3s ease;
+  letter-spacing: 0.05em;
+}
+
+.btn-submit:hover {
+  background: linear-gradient(135deg, #5a57a3 0%, #3c3b6e 100%);
+  box-shadow: 0 6px 18px rgba(60, 59, 110, 0.35);
+  transform: translateY(-2px);
+}
+
+.btn-submit:active {
+  transform: translateY(0);
+  box-shadow: 0 3px 10px rgba(60, 59, 110, 0.2);
+}
+
+.btn-submit:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(60, 59, 110, 0.4);
+}
+
+
+/* Conteneur de la ligne */
+.form-bottom-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+  margin-bottom: 20px;
+}
+
+/* Checkbox + texte */
+.checkbox-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #555;
+}
+
+.checkbox-container input[type="checkbox"] {
+  accent-color: #3c3b6e;
+  /* Couleur personnalisée */
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.checkbox-container a {
+  color: #3c3b6e;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.checkbox-container a:hover {
+  text-decoration: underline;
+}
+
+/* Lien "J'ai déjà un compte" */
+.login-link {
+  color: #b22234;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.login-link:hover {
+  color: #3c3b6e;
+}
+
+/* Animation Shake */
+@keyframes shake {
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  20%,
+  60% {
+    transform: translateX(-6px);
+  }
+
+  40%,
+  80% {
+    transform: translateX(6px);
+  }
+}
+
+.shake {
+  animation: shake 0.4s ease;
+}
+
+/* Messages d'erreur */
+.error {
+  color: red;
+  font-size: 0.85rem;
+  margin-top: -18px;
+  margin-bottom: 15px;
+  transition: opacity 0.3s ease;
+  opacity: 0;
+  font-family: "Montserrat", sans-serif;
+}
+
+/* Spinner */
+.spinner {
+  display: none;
+  border: 3px solid #fff;
+  border-top: 3px solid transparent;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  margin-left: 8px;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+#btn-submit.loading .btn-text {
+  display: none;
+}
+
+#btn-submit.loading .spinner {
+  display: inline-block;
+}

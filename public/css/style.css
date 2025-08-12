@@ -15,8 +15,6 @@ body {
     color: #222;
     line-height: 1.4;
     font-size: 16px;
-    padding: 20px;
-    height: 2000px;
 }
 
 /* Styles pour les titres */
@@ -31,9 +29,13 @@ h3 {
 /* Header fixe */
 .main-header {
     margin-bottom: -100px;
-    width: 100%;
+    width: 92%;
     color: #000;
     font-family: 'Montserrat', sans-serif;
+    /* position: fixed;
+    top: 0;
+    left: 0; */
+    margin-bottom: -100px;
     transition: box-shadow 0.3s ease, background-color 0.3s ease;
 }
 
@@ -70,6 +72,7 @@ header.scrolled {
     list-style: none;
     display: flex;
     gap: 30px;
+    margin-right: -100px;
 }
 
 .nav-menu ul li {
@@ -158,11 +161,11 @@ header.scrolled {
 /* Assure que la bannière est sous le header fixe */
 .banner {
     padding: 80px 30px 60px;
-    background-color: #f9f9f9;
+    background-color: rgba(169, 138, 204, 0.836);
     font-family: 'Montserrat', sans-serif;
     color: #1e2a78;
-
-    margin-top: 80px;
+    /* z-index: 1; */
+    margin-top: 100px;
     /* Pour décaler sous un header fixe d'environ 80px */
 }
 
@@ -275,4 +278,305 @@ header.scrolled {
     .flag-america {
         max-width: 250px;
     }
+}
+
+/* Cacher hamburger sur desktop */
+.hamburger {
+  display: none;
+  flex-direction: column;
+  justify-content: space-around;
+  width: 28px;
+  height: 24px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  z-index: 2001;
+}
+
+.hamburger .bar {
+  width: 100%;
+  height: 3px;
+  background-color: #1e2a78;
+  border-radius: 2px;
+  transition: all 0.3s ease;
+}
+
+/* Menu mobile */
+.nav-mobile {
+  position: fixed;
+  top: 0;
+  right: -100%;
+  width: 280px;
+  height: 100vh;
+  background-color: #fff;
+  box-shadow: -4px 0 15px rgba(0,0,0,0.15);
+  transition: right 0.3s ease;
+  z-index: 2000;
+  padding-top: 80px;
+  overflow-y: auto;
+}
+
+.nav-mobile.open {
+  right: 0;
+}
+
+/* Overlay sombre */
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.5);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  z-index: 1999;
+}
+
+.overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Menu mobile - liens */
+.mobile-nav-links {
+  list-style: none;
+  padding: 0 20px;
+  margin: 0;
+}
+
+.mobile-nav-links li {
+  margin-bottom: 20px;
+}
+
+.mobile-nav-links a {
+  color: #1e2a78;
+  font-size: 1.2rem;
+  text-decoration: none;
+  display: block;
+  padding: 10px 0;
+}
+
+/* Dropdown mobile */
+.dropdown-content-mobile {
+  display: none;
+  list-style: none;
+  padding-left: 15px;
+  margin-top: 10px;
+}
+
+.dropdown-mobile.open > .dropdown-content-mobile {
+  display: block;   
+}
+
+/* Cacher le menu desktop sous 1024px */
+@media (max-width: 1024px) {
+  .nav-menu {
+    display: none;
+  }
+
+  /* Afficher le hamburger sous 1024px */
+  .hamburger {
+    display: flex;
+  }
+}
+
+/* Le hamburger reste visible sur tous les petits écrans */
+@media (max-width: 768px) {
+  .hamburger {
+    display: flex;
+  }
+}
+
+
+.pedagogie {
+  background: #fff;
+  padding-top: 20px;
+  margin: 10px;
+  text-align: center;
+}
+
+.pedagogie h2 {
+  font-size: 1.6rem;
+  margin-bottom: 15px;
+  color: #1e2a78;
+}
+
+.pedagogie .intro {
+  max-width: 700px;
+  margin: 0 auto 50px;
+  font-size: 1rem;
+  color: #555;
+}
+
+.pedagogie-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 40px;
+}
+
+.pedagogie-card {
+  background: #ffffff;
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), 
+              box-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  text-align: left;
+  cursor: pointer;
+  will-change: transform, box-shadow;
+}
+
+.pedagogie-card img {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.4s ease;
+}
+
+.pedagogie-card:hover {
+  transform: translateY(-12px);
+  box-shadow: 0 20px 35px rgba(0, 0, 0, 0.25);
+}
+
+.pedagogie-card:hover img {
+  transform: scale(1.05);
+}
+
+.pedagogie-card h3 {
+  font-size: 1.5rem;
+  color: #1e2a78;
+  margin: 20px;
+  margin-bottom: 12px;
+  font-weight: 700;
+}
+
+.pedagogie-card p {
+  color: #444;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  margin: 0 20px 20px;
+}
+
+.pedagogie-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 25px rgba(0,0,0,0.08);
+}
+
+.plans-section {
+  padding: 60px 30px;
+  background-color: #f0f4ff;
+  font-family: 'Montserrat', sans-serif;
+  color: #1e2a78;
+}
+
+.plans-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  gap: 30px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* Cards */
+.plan-card {
+  background: #fff;
+  border-radius: 15px;
+  box-shadow: 0 10px 25px rgba(30, 42, 120, 0.1);
+  padding: 25px 20px;
+  flex: 1 1 300px;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  cursor: default;
+}
+
+.plan-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 15px 35px rgba(30, 42, 120, 0.25);
+}
+
+/* Plan en évidence */
+.plan-featured {
+  border: 3px solid #f39c12;
+  box-shadow: 0 15px 40px rgba(243, 156, 18, 0.4);
+  cursor: pointer;
+}
+
+/* Titres */
+.plan-card h3 {
+  font-size: 1.4rem;
+  margin-bottom: 15px;
+  font-weight: 700;
+  color: #1e2a78;
+}
+
+/* Paragraphes descriptifs */
+.plan-card p {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin-bottom: 15px;
+  color: #444;
+}
+
+/* Liste des avantages */
+.plan-card ul {
+  list-style: disc inside;
+  color: #555;
+  margin-bottom: 20px;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+/* Tarifs */
+.pricing p {
+  font-size: 1rem;
+  margin: 6px 0;
+  font-weight: 600;
+}
+
+/* Boutons style Américain élégant */
+.btn-plan.btn-america {
+  display: inline-block;
+  text-align: center;
+
+  color: #fff;
+  padding: 12px 28px;
+  border-radius: 30px;
+  font-weight: 600;
+  font-size: 1rem;
+  text-decoration: none;
+  background: rgba(121, 85, 250, 0.829);
+  transition: background 0.4s ease, box-shadow 0.4s ease, transform 0.3s ease;
+  border: 1.5px solid transparent;
+  user-select: none;
+  margin-top: auto;
+}
+
+.btn-plan.btn-america:hover {
+  box-shadow: 0 10px 25px rgba(60, 59, 110, 0.5);
+  transform: translateY(-3px);
+}
+
+.btn-plan.btn-america:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(178, 34, 52, 0.5);
+}
+
+/* Responsive */
+@media (max-width: 960px) {
+  .plans-container {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .plan-card {
+    max-width: 90%;
+  }
 }

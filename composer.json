@@ -11,5 +11,7 @@
             "email": "misterntkofficiel2.0@gmail.com"
         }
     ],
-    "require": {}
+    "require": {
+        "phpmailer/phpmailer": "^6.10"
+    }
 }

@@ -10,6 +10,7 @@ $conn = $db->connect();
 
 
 $url = $_GET['url'] ?? '';
+$method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
 $router = new Router();
-$router->direct($url);
+$router->direct($url, $method);
