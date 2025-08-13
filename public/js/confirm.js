@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (result.success) {
                 messageDiv.style.color = 'green';
                 messageDiv.textContent = result.message || 'Compte confirmé avec succès !';
-                setTimeout(() => window.location.href = './login', 2000);
+                setTimeout(() => window.location.href = './welcome', 2000);
             } else {
                 messageDiv.style.color = 'red';
                 messageDiv.textContent = result.message || 'Code invalide, veuillez réessayer.';

@@ -23,7 +23,7 @@
                     <form action="" method="POST" class="form-inscription" id="registerForm">
                         <h2>Mr Nathan English</h2>
                         <h2>Créer un compte</h2>
-                        <p>Ouvrir un compte pour avoir la progression de vos efforts en vue.</p>
+                        <p>Ouvrez votre compte gratuitement et apprenez l'anglais à votre rythme.</p>
 
                         <!-- Exemple pour fullname -->
                         <label for="fullname">Nom complet</label>

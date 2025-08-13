@@ -126,8 +126,7 @@ class AuthController
 
         // 2) Code : accepte "code" ou "confirmation_code"
         $rawCode = $_POST['code'] ?? ($_POST['confirmation_code'] ?? '');
-        // Ne garder que les chiffres (supprime espaces, etc.)
-        $code = preg_replace('/\D/', '', trim($rawCode));
+        $code = preg_replace('/\D/', '', trim($rawCode)); // Ne garder que les chiffres
 
         // 3) Validations rapides
         if (empty($email) || empty($code) || strlen($code) !== 6) {
@@ -136,7 +135,11 @@ class AuthController
         }
 
         // 4) Vérif en BDD
-        $stmt = $this->db->prepare("SELECT id, is_confirmed FROM users WHERE email = ? AND confirmation_code = ?");
+        $stmt = $this->db->prepare("
+        SELECT id, is_confirmed 
+        FROM users 
+        WHERE email = ? AND confirmation_code = ?
+    ");
         $stmt->execute([$email, $code]);
         $user = $stmt->fetch(\PDO::FETCH_ASSOC);
 
@@ -150,71 +153,102 @@ class AuthController
             return;
         }
 
-        // 5) Confirme le compte (et, si tu veux, invalide le code)
-        $update = $this->db->prepare("UPDATE users SET is_confirmed = 1, confirmation_code = NULL WHERE id = ?");
-        $update->execute([$user['id']]);
+        try {
+            // Commencer une transaction
+            $this->db->beginTransaction();
 
-        echo json_encode(['success' => true, 'message' => 'Compte confirmé avec succès.']);
+            // 5) Confirme le compte et supprime le code
+            $update = $this->db->prepare("
+            UPDATE users 
+            SET is_confirmed = 1, confirmation_code = NULL 
+            WHERE id = ?
+        ");
+            $update->execute([$user['id']]);
+
+            // 6) Crée un profil vide si inexistant
+            $checkProfile = $this->db->prepare("
+            SELECT id FROM user_profiles WHERE user_id = ?
+        ");
+            $checkProfile->execute([$user['id']]);
+            if (!$checkProfile->fetch()) {
+                $insertProfile = $this->db->prepare("
+                INSERT INTO user_profiles (user_id, profile_picture, birth_date, country, phone_number, bio) 
+                VALUES (?, 'default.png', NULL, NULL, NULL, NULL)
+            ");
+                $insertProfile->execute([$user['id']]);
+            }
+
+            // Valider la transaction
+            $this->db->commit();
+
+            echo json_encode(['success' => true, 'message' => 'Compte confirmé avec succès.']);
+        } catch (\Exception $e) {
+            $this->db->rollBack();
+            echo json_encode([
+                'success' => false,
+                'message' => 'Une erreur est survenue lors de la confirmation.',
+                'error'   => $e->getMessage()
+            ]);
+        }
     }
+
 
     public function resendCode()
-{
-    header('Content-Type: application/json');
+    {
+        header('Content-Type: application/json');
 
-    // 1) Récupérer email depuis GET
-    $email = trim($_GET['email'] ?? '');
+        // 1) Récupérer email depuis GET
+        $email = trim($_GET['email'] ?? '');
 
-    if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        echo json_encode(['success' => false, 'error' => 'Email invalide.']);
-        return;
-    }
+        if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            echo json_encode(['success' => false, 'error' => 'Email invalide.']);
+            return;
+        }
 
-    // 2) Vérifier si l’utilisateur existe
-    $stmt = $this->db->prepare("SELECT id, fullname FROM users WHERE email = ?");
-    $stmt->execute([$email]);
-    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        // 2) Vérifier si l’utilisateur existe
+        $stmt = $this->db->prepare("SELECT id, fullname FROM users WHERE email = ?");
+        $stmt->execute([$email]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    if (!$user) {
-        echo json_encode(['success' => false, 'error' => 'Utilisateur introuvable.']);
-        return;
-    }
+        if (!$user) {
+            echo json_encode(['success' => false, 'error' => 'Utilisateur introuvable.']);
+            return;
+        }
 
-    // 3) Générer un nouveau code à 6 chiffres
-    $newCode = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        // 3) Générer un nouveau code à 6 chiffres
+        $newCode = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
 
-    // 4) Mettre à jour le code en BDD
-    $update = $this->db->prepare("UPDATE users SET confirmation_code = ? WHERE id = ?");
-    $update->execute([$newCode, $user['id']]);
+        // 4) Mettre à jour le code en BDD
+        $update = $this->db->prepare("UPDATE users SET confirmation_code = ? WHERE id = ?");
+        $update->execute([$newCode, $user['id']]);
 
-    // 5) Envoyer le mail via PHPMailer
-    try {
-        $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
+        // 5) Envoyer le mail via PHPMailer
+        try {
+            $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
 
-        $mail->isSMTP();
-        $mail->Host = 'smtp.gmail.com';
-        $mail->SMTPAuth = true;
-        $mail->Username = 'misterntkofficiel2.0@gmail.com'; // ton email
-        $mail->Password = 'tqlrzdeuawbjuhkm'; // mot de passe app
-        $mail->SMTPSecure = 'tls';
-        $mail->Port = 587;
+            $mail->isSMTP();
+            $mail->Host = 'smtp.gmail.com';
+            $mail->SMTPAuth = true;
+            $mail->Username = 'misterntkofficiel2.0@gmail.com'; // ton email
+            $mail->Password = 'tqlrzdeuawbjuhkm'; // mot de passe app
+            $mail->SMTPSecure = 'tls';
+            $mail->Port = 587;
 
-        $mail->setFrom('misterntkofficiel2.0@gmail.com', 'Mr Nathan English');
-        $mail->addAddress($email, $user['fullname']);
-        $mail->isHTML(true);
-        $mail->Subject = 'Votre nouveau code de confirmation';
-        $mail->Body = "<p>Bonjour {$user['fullname']},</p>
+            $mail->setFrom('misterntkofficiel2.0@gmail.com', 'Mr Nathan English');
+            $mail->addAddress($email, $user['fullname']);
+            $mail->isHTML(true);
+            $mail->Subject = 'Votre nouveau code de confirmation';
+            $mail->Body = "<p>Bonjour {$user['fullname']},</p>
                        <p>Voici votre nouveau code de confirmation : <b>{$newCode}</b></p>
                        <p>Merci de ne pas partager ce code.</p>";
 
-        $mail->send();
+            $mail->send();
 
-        echo json_encode(['success' => true]);
-        return;
-
-    } catch (\PHPMailer\PHPMailer\Exception $e) {
-        echo json_encode(['success' => false, 'error' => 'Erreur lors de l’envoi du mail : ' . $mail->ErrorInfo]);
-        return;
+            echo json_encode(['success' => true]);
+            return;
+        } catch (\PHPMailer\PHPMailer\Exception $e) {
+            echo json_encode(['success' => false, 'error' => 'Erreur lors de l’envoi du mail : ' . $mail->ErrorInfo]);
+            return;
+        }
     }
-}
-
 }
