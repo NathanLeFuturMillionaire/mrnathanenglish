@@ -156,4 +156,65 @@ class AuthController
 
         echo json_encode(['success' => true, 'message' => 'Compte confirmé avec succès.']);
     }
+
+    public function resendCode()
+{
+    header('Content-Type: application/json');
+
+    // 1) Récupérer email depuis GET
+    $email = trim($_GET['email'] ?? '');
+
+    if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        echo json_encode(['success' => false, 'error' => 'Email invalide.']);
+        return;
+    }
+
+    // 2) Vérifier si l’utilisateur existe
+    $stmt = $this->db->prepare("SELECT id, fullname FROM users WHERE email = ?");
+    $stmt->execute([$email]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$user) {
+        echo json_encode(['success' => false, 'error' => 'Utilisateur introuvable.']);
+        return;
+    }
+
+    // 3) Générer un nouveau code à 6 chiffres
+    $newCode = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+
+    // 4) Mettre à jour le code en BDD
+    $update = $this->db->prepare("UPDATE users SET confirmation_code = ? WHERE id = ?");
+    $update->execute([$newCode, $user['id']]);
+
+    // 5) Envoyer le mail via PHPMailer
+    try {
+        $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
+
+        $mail->isSMTP();
+        $mail->Host = 'smtp.gmail.com';
+        $mail->SMTPAuth = true;
+        $mail->Username = 'misterntkofficiel2.0@gmail.com'; // ton email
+        $mail->Password = 'tqlrzdeuawbjuhkm'; // mot de passe app
+        $mail->SMTPSecure = 'tls';
+        $mail->Port = 587;
+
+        $mail->setFrom('misterntkofficiel2.0@gmail.com', 'Mr Nathan English');
+        $mail->addAddress($email, $user['fullname']);
+        $mail->isHTML(true);
+        $mail->Subject = 'Votre nouveau code de confirmation';
+        $mail->Body = "<p>Bonjour {$user['fullname']},</p>
+                       <p>Voici votre nouveau code de confirmation : <b>{$newCode}</b></p>
+                       <p>Merci de ne pas partager ce code.</p>";
+
+        $mail->send();
+
+        echo json_encode(['success' => true]);
+        return;
+
+    } catch (\PHPMailer\PHPMailer\Exception $e) {
+        echo json_encode(['success' => false, 'error' => 'Erreur lors de l’envoi du mail : ' . $mail->ErrorInfo]);
+        return;
+    }
+}
+
 }

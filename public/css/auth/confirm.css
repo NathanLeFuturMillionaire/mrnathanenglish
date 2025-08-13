@@ -1,10 +1,3 @@
-/* Reset et base */
-body {
-    font-family: 'Poppins', sans-serif;
-    background: linear-gradient(135deg, #e0e7ff, #f9fafb);
-    margin: 0;
-    color: #222;
-}
 
 header {
     margin-bottom: -100px;
@@ -28,105 +21,105 @@ header h1 {
     margin: 15px;
 }
 
-/* Container principal */
+/* === Police et fond === */
+body {
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
+    margin: 0;
+    min-height: 100vh;
+    color: #333;
+}
+
+/* === Conteneur principal === */
 .confirmation-container {
     background: #fff;
-    max-width: 800px;
+    max-width: 620px;
     width: 100%;
-    position: relative;
+    padding: 40px 35px;
     margin: 10% auto;
-    padding: 45px 40px;
     border-radius: 20px;
-    box-shadow: rgba(0, 0, 0, 0.1) 0px 4px 6px -1px, rgba(0, 0, 0, 0.06) 0px 2px 4px -1px;
-    transition: box-shadow 0.3s ease;
-}
-
-
-/* .confirmation-container:hover {
-    box-shadow: 0 30px 60px rgba(60, 59, 110, 0.15);
-} */
-
-/* Titre */
-h1 {
-    color: #3c3b6e;
-    font-weight: 800;
-    font-size: 1.6rem;
-    margin-bottom: 15px;
-    letter-spacing: 0.08em;
-}
-
-.confirmation-container h1,
-.confirmation-container h1 ~ p {
+    box-shadow: 0 15px 35px rgba(0,0,0,0.12);
     text-align: center;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-/* Description */
+.confirmation-container:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 20px 45px rgba(0,0,0,0.15);
+}
+
+/* === Titres et paragraphes === */
+h1 {
+    font-size: 1.8rem;
+    color: #3c3b6e;
+    font-weight: 700;
+    margin-bottom: 15px;
+}
+
 p.description {
     font-size: 1rem;
     color: #555;
-    margin-bottom: 35px;
+    margin-bottom: 30px;
     line-height: 1.5;
 }
 
-/* Input style */
+/* === Inputs === */
 input[type="text"] {
     width: 100%;
-    padding: 12px 15px;
-    font-size: 1.15rem;
-    border-radius: 14px;
-    border: 2px solid #d1d5db;
-    background: #f9fafb;
+    padding: 14px 18px;
+    font-size: 1.05rem;
+    border: 2px solid #ddd;
+    border-radius: 12px;
+    margin-bottom: 15px;
     transition: all 0.3s ease;
-    box-sizing: border-box;
-    font-weight: 500;
-    color: #333;
-    position: relative;
-    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.06);
-}
-
-input[type="text"]::placeholder {
-    color: #a1a5b8;
 }
 
 input[type="text"]:focus {
     border-color: #3c3b6e;
-    background: #fff;
+    box-shadow: 0 0 10px rgba(60,59,110,0.2);
     outline: none;
-    box-shadow: 0 0 12px rgba(60, 59, 110, 0.3);
 }
 
-/* Bouton confirmer */
+/* === Bouton Confirmer === */
 .btn-confirm {
-    width: 30%;
-    padding: 14px 0;
-    font-weight: 600;
-    font-size: 1rem;
-    color: #fff;
-    background: linear-gradient(135deg, #3c3b6e 0%, #5a57a3 100%);
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    box-shadow: 0 4px 12px rgba(60, 59, 110, 0.25);
-    transition: all 0.3s ease;
-    letter-spacing: 0.05em;
-    margin-top: 20px;
+  width: 100%;
+  padding: 14px 0;
+  font-weight: 600;
+  font-size: 1rem;
+  color: #fff;
+  background: linear-gradient(135deg, #3c3b6e 0%, #5a57a3 100%);
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(60, 59, 110, 0.25);
+  transition: all 0.3s ease;
+  letter-spacing: 0.05em;
 }
 
 .btn-confirm:hover {
-    background: linear-gradient(135deg, #5a57a3 0%, #3c3b6e 100%);
-    box-shadow: 0 6px 18px rgba(60, 59, 110, 0.35);
-    transform: translateY(-2px);
+  background: linear-gradient(135deg, #5a57a3 0%, #3c3b6e 100%);
+  box-shadow: 0 6px 18px rgba(60, 59, 110, 0.35);
+  transform: translateY(-2px);
 }
 
-/* Lien pour renvoyer le code */
+.btn-confirm:active {
+  transform: translateY(0);
+  box-shadow: 0 3px 10px rgba(60, 59, 110, 0.2);
+}
+
+.btn-confirm:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(60, 59, 110, 0.4);
+}
+
+/* === Lien "Renvoyer un nouveau code" === */
 .resend-link {
     display: inline-block;
-    margin-top: 28px;
-    font-size: 1rem;
+    margin-top: 20px;
+    font-size: 0.95rem;
     color: #3c3b6e;
-    text-decoration: none;
     font-weight: 600;
-    cursor: pointer;
+    text-decoration: none;
     transition: color 0.3s ease;
 }
 
@@ -135,53 +128,42 @@ input[type="text"]:focus {
     text-decoration: underline;
 }
 
-/* Message d'erreur */
-.error-message {
+/* === Message d'erreur et succès === */
+#error-code {
     color: #e74c3c;
-    font-size: 0.95rem;
-    margin-top: -12px;
-    margin-bottom: 20px;
-    opacity: 1;
-    transition: opacity 0.3s ease;
-    font-weight: 600;
-    text-align: left;
+    font-size: 0.9rem;
+    margin-bottom: 10px;
 }
 
-/* Animation shake pour les erreurs */
+#message, #resend-message {
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+/* === Animations === */
 .shake {
-    animation: shake 0.5s ease-in-out;
+    animation: shake 0.5s;
 }
 
 @keyframes shake {
-
-    0%,
-    100% {
-        transform: translateX(0);
-    }
-
-    20%,
-    60% {
-        transform: translateX(-10px);
-    }
-
-    40%,
-    80% {
-        transform: translateX(10px);
-    }
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-10px); }
+    40%, 80% { transform: translateX(10px); }
+}
+/* === Footer fixe en bas === */
+.confirmation-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    font-size: 0.9rem;
+    color: #555;
+    padding: 15px 0;
+    border-top: 1px solid #e0e0e0;
+    z-index: 1000; /* pour qu’il reste au-dessus si besoin */
 }
 
-/* Responsive */
-@media (max-width: 480px) {
-    .confirmation-container {
-        padding: 35px 25px;
-    }
-
-    h1 {
-        font-size: 2rem;
-    }
-
-    .btn-confirm {
-        font-size: 1.1rem;
-        padding: 14px 0;
-    }
+.confirmation-footer p {
+    margin: 0;
 }

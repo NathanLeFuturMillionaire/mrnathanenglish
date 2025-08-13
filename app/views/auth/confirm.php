@@ -16,25 +16,66 @@
     </header>
     <div class="confirmation-container">
         <h1>Confirmez votre compte</h1>
-        <p class="description">Un code de confirmation vous a été envoyé par e-mail. Veuillez saisir ce code ci-dessous pour activer votre compte.</p>
 
-        <form id="confirmForm" action="./confirm" method="POST">
-            <label for="code">Code de confirmation :</label>
+        <p class="description">
+            Un code de confirmation a été envoyé à
+            <strong class="recipient-email"><?= htmlspecialchars($email ?? '') ?></strong>.
+            Saisissez le code à 6 chiffres ci-dessous pour activer votre compte.
+        </p>
+
+        <form id="confirmForm" action="./confirm" method="POST" novalidate>
             <!-- Email transporté en POST -->
-            <input type="hidden" name="email" value="<?= htmlspecialchars($email ?? '') ?>">
+            <input type="hidden" id="email" name="email" value="<?= htmlspecialchars($email ?? '') ?>">
 
-            <input type="text" id="code" name="code" placeholder="Entrez votre code" maxlength="6" />
-            <small id="error-code" class="error"></small>
-            <button type="submit" class="btn-confirm">Confirmer</button>
+            <label for="code">Code de confirmation</label>
+            <input
+                type="text"
+                id="code"
+                name="code"
+                placeholder="6 chiffres"
+                inputmode="numeric"
+                autocomplete="one-time-code"
+                pattern="\d{6}"
+                maxlength="6"
+                required />
+            <small id="error-code" class="error" aria-live="polite"></small>
+
+            <div id="message" class="form-message" aria-live="polite"></div>
+
+            <button type="submit" class="btn-confirm">
+                <span class="btn-text">Confirmer</span>
+            </button>
         </form>
 
-        <div id="message"></div>
+        <p class="resend-wrapper">
+            <!-- Lien fonctionnel même sans JS (GET) + data-email pour JS -->
+            <a
+                id="resend-link"
+                class="resend-link"
+                href="./resend-code?email=<?= urlencode($email ?? '') ?>"
+                data-email="<?= htmlspecialchars($email ?? '') ?>">
+                Renvoyer un nouveau code
+            </a>
+            <span id="resend-message" class="resend-message" hidden>
+                Un nouveau code vient d’être envoyé.
+            </span>
+        </p>
 
-        <a href="/resend-code" class="resend-link">Renvoyer un nouveau code</a>
+        <noscript>
+            <p class="noscript-hint">
+                JavaScript est désactivé : le lien ci-dessus rechargera la page pour renvoyer le code.
+            </p>
+        </noscript>
     </div>
+
 
     <script src="js/main.js"></script>
     <script src="js/confirm.js"></script>
+
+    <!-- Footer -->
+    <footer class="confirmation-footer">
+        <p>&copy; <?= date('Y') ?> Mr Nathan English. Tous droits réservés.</p>
+    </footer>
 </body>
 
 </html>

@@ -3,22 +3,21 @@
 namespace App\Core;
 
 use App\Controllers\HomeController;
-use App\controllers\AuthController;
+use App\Controllers\AuthController;
 
 class Router
 {
-    // Exemple dans Router.php (méthode direct)
     public function direct($url, $method)
     {
         switch ($url) {
             case '':
-                // URL vide = page d'accueil
+                // Page d'accueil
                 $controller = new HomeController();
-                $controller->index();  // méthode qui affiche la home
+                $controller->index();
                 break;
 
             case 'register':
-                $controller = new \App\Controllers\AuthController();
+                $controller = new AuthController();
                 if ($method === 'POST') {
                     $controller->registerPost();
                 } else {
@@ -33,11 +32,23 @@ class Router
                 } else {
                     $controller->confirm();
                 }
+                break;
+
+            case 'resend-code':
+                $controller = new AuthController();
+                // GET pour ton JS actuel
+                if ($method === 'GET') {
+                    $controller->resendCode();
+                } else {
+                    echo json_encode(["success" => false, "error" => "Méthode non autorisée"]);
+                }
+                break;
 
             default:
-                // Page 404 ou page d'accueil
-                // echo "Page non trouvée.";
-                // break;
+                // Page 404
+                http_response_code(404);
+                echo "<h1>404 - Page non trouvée</h1>";
+                break;
         }
     }
 }

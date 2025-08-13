@@ -14,3 +14,6 @@ $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
 $router = new Router();
 $router->direct($url, $method);
+
+
+// Début : 11 Aout 2025.
