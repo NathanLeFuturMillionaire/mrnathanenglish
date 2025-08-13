@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="../public/css/style.css">
     <link rel="stylesheet" href="../public/css/auth/register.css">
-    <title>Inscription - Me Nathan English</title>
+    <title>OpenDoorsClass - Inscription</title>
 </head>
 
 <body>
@@ -21,9 +21,9 @@
                         &#8592;
                     </a>
                     <form action="" method="POST" class="form-inscription" id="registerForm">
-                        <h2>Mr Nathan English</h2>
+                        <h2>OpenDoorsClass</h2>
                         <h2>Créer un compte</h2>
-                        <p>Ouvrir un compte pour avoir la progression de vos efforts en vue.</p>
+                        <p>Ouvrez votre compte gratuitement et apprenez l'anglais à votre rythme.</p>
 
                         <!-- Exemple pour fullname -->
                         <label for="fullname">Nom complet</label>
