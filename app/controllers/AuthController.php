@@ -119,6 +119,7 @@ class AuthController
 
     public function confirmPost()
     {
+        session_start(); // S'assurer que la session est démarrée
         header('Content-Type: application/json');
 
         // 1) Email : POST d'abord, GET en fallback
@@ -178,10 +179,32 @@ class AuthController
                 $insertProfile->execute([$user['id']]);
             }
 
+            // 7) Récupère les infos utilisateur avec profil
+            $userData = $this->db->prepare("
+            SELECT u.id, u.email, u.is_confirmed, p.profile_picture
+            FROM users u
+            LEFT JOIN user_profiles p ON u.id = p.user_id
+            WHERE u.id = ?
+        ");
+            $userData->execute([$user['id']]);
+            $fullUser = $userData->fetch(\PDO::FETCH_ASSOC);
+
+            // Mettre à jour la session
+            $_SESSION['user'] = [
+                'id' => $fullUser['id'],
+                'email' => $fullUser['email'],
+                'confirmed' => (int)$fullUser['is_confirmed'],
+                'profile_picture' => $fullUser['profile_picture'] ?? 'default.png'
+            ];
+
             // Valider la transaction
             $this->db->commit();
 
-            echo json_encode(['success' => true, 'message' => 'Compte confirmé avec succès.']);
+            echo json_encode([
+                'success' => true,
+                'message' => 'Compte confirmé avec succès.',
+                'user'    => $_SESSION['user'] // renvoyer aussi au JS
+            ]);
         } catch (\Exception $e) {
             $this->db->rollBack();
             echo json_encode([
@@ -191,6 +214,7 @@ class AuthController
             ]);
         }
     }
+
 
 
     public function resendCode()
@@ -250,5 +274,47 @@ class AuthController
             echo json_encode(['success' => false, 'error' => 'Erreur lors de l’envoi du mail : ' . $mail->ErrorInfo]);
             return;
         }
+    }
+
+    // Dans App\Controllers\AuthController
+    public function welcome()
+    {
+        session_start(); 
+
+        // Vérifier si l'utilisateur est connecté et confirmé
+        if (!isset($_SESSION['user']) || (int)$_SESSION['user']['confirmed'] !== 1) {
+            header('Location: ./login');
+            exit;
+        }
+
+        // Récupération des informations depuis la session
+        $user = $_SESSION['user'];
+
+        // Si tu veux récupérer plus d'infos depuis la BDD
+        $stmt = $this->db->prepare("
+        SELECT u.id, u.fullname, u.username, u.email, p.profile_picture, p.birth_date, p.country, p.phone_number, p.bio
+        FROM users u
+        LEFT JOIN user_profiles p ON u.id = p.user_id
+        WHERE u.id = ?
+    ");
+        $stmt->execute([$user['id']]);
+        $fullUser = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        // Optionnel : mettre à jour la session avec ces infos complètes
+        $_SESSION['user'] = [
+            'id' => $fullUser['id'],
+            'fullname' => $fullUser['fullname'],
+            'username' => $fullUser['username'],
+            'email' => $fullUser['email'],
+            'confirmed' => (int)$user['confirmed'],
+            'profile_picture' => $fullUser['profile_picture'] ?? 'default.png',
+            'birth_date' => $fullUser['birth_date'],
+            'country' => $fullUser['country'],
+            'phone_number' => $fullUser['phone_number'],
+            'bio' => $fullUser['bio']
+        ];
+
+        // Affiche la vue welcome.php
+        require_once __DIR__ . '/../views/auth/welcome.php';
     }
 }

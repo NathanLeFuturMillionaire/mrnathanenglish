@@ -1,0 +1,208 @@
+body {
+    /* animation: smoothEntrance 1s ease-out; */
+}
+
+.container {
+    max-width: 1100px;
+    animation: smoothEntrance 1s ease-out;
+}
+
+.container-title {
+    margin-top: 150px;
+}
+
+.container-title p {
+    font-family: "Montserrat", sans-serif;
+    font-size: 0.95em;
+    line-height: 1.6;
+}
+
+.container-title>h1 {
+    font-size: 2.2rem;
+}
+
+.container-title>h1~p~p em {
+    color: #2f32f1;
+}
+
+.profil-picture-choice {
+    text-align: center;
+    margin-top: 50px;
+}
+
+.profil-picture-choice>h2 {
+    font-size: 1.8rem;
+    margin-bottom: 10px;
+}
+
+.square-profil {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.circle-upload {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    background: #f0f0f0;
+    border: 2px dashed #bbb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    color: #888;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.circle-upload:hover {
+    background-color: #e6e6e6;
+}
+
+.next {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 20px;
+}
+
+.next a {
+    display: block;
+    color: #000;
+    opacity: 0.4;
+    text-decoration: none;
+    font-size: 1em;
+    transition: .4s;
+}
+
+.next a:hover {
+    opacity: 1;
+}
+
+/* === Bouton Suivant === */
+.next .btn-submit {
+    width: 180px;
+    padding: 14px 0;
+    font-weight: 600;
+    font-size: 1rem;
+    color: #fff;
+    background: linear-gradient(135deg, #3c3b6e 0%, #5a57a3 100%);
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 12px rgba(60, 59, 110, 0.25);
+    transition: all 0.3s ease;
+    letter-spacing: 0.05em;
+}
+
+/* État actif (hover) */
+.next .btn-submit:hover:not(:disabled) {
+    background: linear-gradient(135deg, #5a57a3 0%, #3c3b6e 100%);
+    box-shadow: 0 6px 18px rgba(60, 59, 110, 0.35);
+    transform: translateY(-2px);
+}
+
+/* État actif (click) */
+.next .btn-submit:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 3px 10px rgba(60, 59, 110, 0.2);
+}
+
+.next .btn-submit:focus:not(:disabled) {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(60, 59, 110, 0.4);
+}
+
+/* État désactivé */
+.next .btn-submit:disabled {
+    background: #b0b0b0;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+    opacity: 0.7;
+}
+
+/* === Footer fixe === */
+.confirmation-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    font-size: 0.9rem;
+    color: #555;
+    padding: 15px 0;
+    border-top: 1px solid #e0e0e0;
+    background-color: #fff;
+    z-index: 1000;
+}
+
+.confirmation-footer p {
+    margin: 0;
+}
+
+/* === Responsivité === */
+@media (max-width: 992px) {
+    .container-title>h1 {
+        font-size: 2rem;
+    }
+
+    .profil-picture-choice>h2 {
+        font-size: 1.6rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .container-title {
+        margin-top: 150px;
+        padding: 15px;
+    }
+
+    .container-title>h1 {
+        font-size: 1.8rem;
+    }
+
+    .next .btn-submit {
+        width: 60%;
+    }
+}
+
+@media (max-width: 480px) {
+    .container-title>h1 {
+        font-size: 1.5rem;
+    }
+
+    .container-title p {
+        font-size: 0.9em;
+    }
+
+    .circle-upload {
+        width: 120px;
+        height: 120px;
+        font-size: 0.85rem;
+    }
+
+    .next .btn-submit {
+        width: 80%;
+        font-size: 0.9rem;
+    }
+}
+
+/* Animation à l'arrivée sur la page */
+@keyframes smoothEntrance {
+    0% {
+        opacity: 0;
+        transform: scale(0.9) translateY(20px);
+    }
+
+    60% {
+        opacity: 1;
+        transform: scale(1.02) translateY(0);
+    }
+
+    100% {
+        transform: scale(1) translateY(0);
+    }
+}

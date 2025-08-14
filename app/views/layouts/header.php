@@ -27,13 +27,13 @@
 
                     <!-- Photo de profil -->
                     <li>
-                        <img src="<?= htmlspecialchars($_SESSION['user']['profile_picture'] ?? '/assets/img/default.png') ?>"
+                        <img src="./uploads/profiles/<?= htmlspecialchars($_SESSION['user']['profile_picture'] ?? '/assets/img/default.png') ?>"
                              alt="Photo de profil"
                              style="width:40px; height:40px; border-radius:50%; vertical-align:middle;">
                     </li>
 
                     <!-- Déconnexion -->
-                    <li><a href="/logout">Déconnexion</a></li>
+                    <!-- <li><a href="/logout">Déconnexion</a></li> -->
                 <?php else: ?>
                     <!-- Version visiteur -->
                     <li><a href="/">Accueil</a></li>
@@ -79,7 +79,7 @@
                 </li>
                 <li><a href="./courses">Cours</a></li>
                 <li>
-                    <img src="<?= htmlspecialchars($_SESSION['user']['profile_picture'] ?? '/assets/img/default.png') ?>"
+                    <img src="../<?= htmlspecialchars($_SESSION['user']['profile_picture'] ?? '/assets/img/default.png') ?>"
                          alt="Photo de profil"
                          style="width:40px; height:40px; border-radius:50%;">
                 </li>
