@@ -181,7 +181,7 @@ class AuthController
 
             // 7) Récupère les infos utilisateur avec profil
             $userData = $this->db->prepare("
-            SELECT u.id, u.email, u.is_confirmed, p.profile_picture
+            SELECT u.id, u.email, u.username, u.fullname, u.is_confirmed, p.profile_picture
             FROM users u
             LEFT JOIN user_profiles p ON u.id = p.user_id
             WHERE u.id = ?
@@ -193,6 +193,8 @@ class AuthController
             $_SESSION['user'] = [
                 'id' => $fullUser['id'],
                 'email' => $fullUser['email'],
+                'username' => $fullUser['username'],
+                'fullname' => $fullUser['fullname'],
                 'confirmed' => (int)$fullUser['is_confirmed'],
                 'profile_picture' => $fullUser['profile_picture'] ?? 'default.png'
             ];
