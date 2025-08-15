@@ -37,7 +37,15 @@ document.addEventListener('DOMContentLoaded', () => {
             if (result.success) {
                 messageDiv.style.color = 'green';
                 messageDiv.textContent = result.message || 'Compte confirmé avec succès !';
-                setTimeout(() => window.location.href = './login', 2000);
+
+                // --- Mise à jour dynamique du header ---
+                if (result.user && result.user.confirmed === 1) {
+                    updateHeaderAfterConfirmation(result.user);
+                }
+
+                // Redirection vers la page de bienvenue après un petit délai
+                setTimeout(() => window.location.href = './welcome', 1500);
+
             } else {
                 messageDiv.style.color = 'red';
                 messageDiv.textContent = result.message || 'Code invalide, veuillez réessayer.';
@@ -74,10 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (result.success) {
                 resendMessage.style.color = 'green';
                 resendMessage.textContent = 'Un nouveau code a été envoyé à votre adresse e-mail.';
-                // Disparaît après 5 secondes
-                setTimeout(() => {
-                    resendMessage.style.display = 'none';
-                }, 5000);
+                setTimeout(() => resendMessage.style.display = 'none', 5000);
             } else {
                 resendMessage.style.color = 'red';
                 resendMessage.textContent = result.error || 'Erreur lors de l’envoi du code.';
@@ -88,4 +93,36 @@ document.addEventListener('DOMContentLoaded', () => {
             resendMessage.textContent = 'Erreur serveur, veuillez réessayer plus tard.';
         }
     });
+
+    /**
+     * Met à jour le header pour un utilisateur confirmé
+     */
+    function updateHeaderAfterConfirmation(user) {
+        const navMenu = document.querySelector('.nav-menu ul');
+        if (!navMenu) return;
+
+        // Nettoyer le menu actuel
+        navMenu.innerHTML = `
+            <li><a href="./">Accueil</a></li>
+            <li class="dropdown">
+                <a href="#" class="dropdown-toggle">Examens ▾</a>
+                <ul class="dropdown-content">
+                    <li><a href="./toefl">TOEFL</a></li>
+                    <li><a href="./ielts">IELTS</a></li>
+                    <li><a href="./cambridge">Cambridge English</a></li>
+                    <li><a href="./toeic">TOEIC</a></li>
+                    <li><a href="./pte">PTE Academic</a></li>
+                </ul>
+            </li>
+            <li><a href="/courses">Cours</a></li>
+            <li class="profile-menu">
+                <a href="./profile">
+                    <img src="./uploads/profiles/${user.profile_picture}" 
+                         alt="Photo de profil" 
+                         class="profile-picture"
+                         style="width:35px; height:35px; border-radius:50%; object-fit:cover;">
+                </a>
+            </li>
+        `;
+    }
 });

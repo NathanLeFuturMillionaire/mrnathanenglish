@@ -36,18 +36,24 @@ class Router
 
             case 'resend-code':
                 $controller = new AuthController();
-                // GET pour ton JS actuel
                 if ($method === 'GET') {
                     $controller->resendCode();
                 } else {
-                    echo json_encode(["success" => false, "error" => "Méthode non autorisée"]);
+                    echo json_encode([
+                        "success" => false,
+                        "error"   => "Méthode non autorisée"
+                    ]);
                 }
                 break;
 
+            case 'welcome':
+                $controller = new AuthController();
+                $controller->welcome();
+                break;
+
             default:
-                // Page 404
                 http_response_code(404);
-                echo "<h1>404 - Page non trouvée</h1>";
+                require __DIR__ . '/../views/errors/404.php';
                 break;
         }
     }

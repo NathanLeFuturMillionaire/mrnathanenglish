@@ -119,6 +119,7 @@ class AuthController
 
     public function confirmPost()
     {
+        session_start(); // S'assurer que la session est démarrée
         header('Content-Type: application/json');
 
         // 1) Email : POST d'abord, GET en fallback
@@ -126,8 +127,7 @@ class AuthController
 
         // 2) Code : accepte "code" ou "confirmation_code"
         $rawCode = $_POST['code'] ?? ($_POST['confirmation_code'] ?? '');
-        // Ne garder que les chiffres (supprime espaces, etc.)
-        $code = preg_replace('/\D/', '', trim($rawCode));
+        $code = preg_replace('/\D/', '', trim($rawCode)); // Ne garder que les chiffres
 
         // 3) Validations rapides
         if (empty($email) || empty($code) || strlen($code) !== 6) {
@@ -136,7 +136,11 @@ class AuthController
         }
 
         // 4) Vérif en BDD
-        $stmt = $this->db->prepare("SELECT id, is_confirmed FROM users WHERE email = ? AND confirmation_code = ?");
+        $stmt = $this->db->prepare("
+        SELECT id, is_confirmed 
+        FROM users 
+        WHERE email = ? AND confirmation_code = ?
+    ");
         $stmt->execute([$email, $code]);
         $user = $stmt->fetch(\PDO::FETCH_ASSOC);
 
@@ -150,12 +154,70 @@ class AuthController
             return;
         }
 
-        // 5) Confirme le compte (et, si tu veux, invalide le code)
-        $update = $this->db->prepare("UPDATE users SET is_confirmed = 1, confirmation_code = NULL WHERE id = ?");
-        $update->execute([$user['id']]);
+        try {
+            // Commencer une transaction
+            $this->db->beginTransaction();
 
-        echo json_encode(['success' => true, 'message' => 'Compte confirmé avec succès.']);
+            // 5) Confirme le compte et supprime le code
+            $update = $this->db->prepare("
+            UPDATE users 
+            SET is_confirmed = 1, confirmation_code = NULL 
+            WHERE id = ?
+        ");
+            $update->execute([$user['id']]);
+
+            // 6) Crée un profil vide si inexistant
+            $checkProfile = $this->db->prepare("
+            SELECT id FROM user_profiles WHERE user_id = ?
+        ");
+            $checkProfile->execute([$user['id']]);
+            if (!$checkProfile->fetch()) {
+                $insertProfile = $this->db->prepare("
+                INSERT INTO user_profiles (user_id, profile_picture, birth_date, country, phone_number, bio) 
+                VALUES (?, 'default.png', NULL, NULL, NULL, NULL)
+            ");
+                $insertProfile->execute([$user['id']]);
+            }
+
+            // 7) Récupère les infos utilisateur avec profil
+            $userData = $this->db->prepare("
+            SELECT u.id, u.email, u.username, u.fullname, u.is_confirmed, p.profile_picture
+            FROM users u
+            LEFT JOIN user_profiles p ON u.id = p.user_id
+            WHERE u.id = ?
+        ");
+            $userData->execute([$user['id']]);
+            $fullUser = $userData->fetch(\PDO::FETCH_ASSOC);
+
+            // Mettre à jour la session
+            $_SESSION['user'] = [
+                'id' => $fullUser['id'],
+                'email' => $fullUser['email'],
+                'username' => $fullUser['username'],
+                'fullname' => $fullUser['fullname'],
+                'confirmed' => (int)$fullUser['is_confirmed'],
+                'profile_picture' => $fullUser['profile_picture'] ?? 'default.png'
+            ];
+
+            // Valider la transaction
+            $this->db->commit();
+
+            echo json_encode([
+                'success' => true,
+                'message' => 'Compte confirmé avec succès.',
+                'user'    => $_SESSION['user'] // renvoyer aussi au JS
+            ]);
+        } catch (\Exception $e) {
+            $this->db->rollBack();
+            echo json_encode([
+                'success' => false,
+                'message' => 'Une erreur est survenue lors de la confirmation.',
+                'error'   => $e->getMessage()
+            ]);
+        }
     }
+
+
 
     public function resendCode()
     {
@@ -214,5 +276,47 @@ class AuthController
             echo json_encode(['success' => false, 'error' => 'Erreur lors de l’envoi du mail : ' . $mail->ErrorInfo]);
             return;
         }
+    }
+
+    // Dans App\Controllers\AuthController
+    public function welcome()
+    {
+        session_start(); 
+
+        // Vérifier si l'utilisateur est connecté et confirmé
+        if (!isset($_SESSION['user']) || (int)$_SESSION['user']['confirmed'] !== 1) {
+            header('Location: ./login');
+            exit;
+        }
+
+        // Récupération des informations depuis la session
+        $user = $_SESSION['user'];
+
+        // Si tu veux récupérer plus d'infos depuis la BDD
+        $stmt = $this->db->prepare("
+        SELECT u.id, u.fullname, u.username, u.email, p.profile_picture, p.birth_date, p.country, p.phone_number, p.bio
+        FROM users u
+        LEFT JOIN user_profiles p ON u.id = p.user_id
+        WHERE u.id = ?
+    ");
+        $stmt->execute([$user['id']]);
+        $fullUser = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        // Optionnel : mettre à jour la session avec ces infos complètes
+        $_SESSION['user'] = [
+            'id' => $fullUser['id'],
+            'fullname' => $fullUser['fullname'],
+            'username' => $fullUser['username'],
+            'email' => $fullUser['email'],
+            'confirmed' => (int)$user['confirmed'],
+            'profile_picture' => $fullUser['profile_picture'] ?? 'default.png',
+            'birth_date' => $fullUser['birth_date'],
+            'country' => $fullUser['country'],
+            'phone_number' => $fullUser['phone_number'],
+            'bio' => $fullUser['bio']
+        ];
+
+        // Affiche la vue welcome.php
+        require_once __DIR__ . '/../views/auth/welcome.php';
     }
 }

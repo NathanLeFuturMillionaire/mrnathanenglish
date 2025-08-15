@@ -73,6 +73,7 @@ header.scrolled {
     display: flex;
     gap: 30px;
     margin-right: -100px;
+    align-items: center;
 }
 
 .nav-menu ul li {
