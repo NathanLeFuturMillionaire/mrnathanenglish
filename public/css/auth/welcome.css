@@ -206,3 +206,503 @@ body {
         transform: scale(1) translateY(0);
     }
 }
+
+/* Cache toutes les sections au départ */
+.birthdate-choice,
+.phone-number,
+.english-level,
+.bio-section {
+    display: none;
+}
+
+/* Styles pour les boutons précédent */
+.btn-prev {
+    background: transparent;
+    border: none;
+    width: 30%;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: .4s;
+}
+
+.birthdate-choice {
+    text-align: center;
+    margin-top: 50px;
+    animation: smoothEntrance 0.8s ease-out;
+}
+
+.birthdate-choice > h2 {
+    font-size: 1.8rem;
+    margin-bottom: 10px;
+    font-family: "Montserrat", sans-serif;
+}
+
+.birthdate-choice > p {
+    font-family: "Montserrat", sans-serif;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: #555;
+}
+
+.square-birthdate {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.birthdate-label {
+    display: block;
+    background: #f0f0f0;
+    border: 2px dashed #bbb;
+    border-radius: 10px;
+    padding: 15px 20px;
+    width: 300px;
+    text-align: center;
+    cursor: pointer;
+    color: #888;
+    transition: all 0.3s ease;
+    font-family: "Montserrat", sans-serif;
+}
+
+.birthdate-label:hover {
+    background-color: #e6e6e6;
+}
+
+#birthdate {
+    margin-top: 10px;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 1rem;
+    width: 300px;
+    text-align: center;
+    font-family: "Montserrat", sans-serif;
+}
+
+.next {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 20px;
+}
+
+.next a {
+    display: block;
+    color: #000;
+    opacity: 0.4;
+    text-decoration: none;
+    font-size: 1em;
+    transition: 0.4s;
+}
+
+.next a:hover {
+    opacity: 1;
+}
+
+/* Bouton Suivant */
+.next .btn-submit {
+    width: 180px;
+    padding: 14px 0;
+    font-weight: 600;
+    font-size: 1rem;
+    color: #fff;
+    background: linear-gradient(135deg, #3c3b6e 0%, #5a57a3 100%);
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 12px rgba(60, 59, 110, 0.25);
+    transition: all 0.3s ease;
+    letter-spacing: 0.05em;
+}
+
+.next .btn-submit:hover:not(:disabled) {
+    background: linear-gradient(135deg, #5a57a3 0%, #3c3b6e 100%);
+    box-shadow: 0 6px 18px rgba(60, 59, 110, 0.35);
+    transform: translateY(-2px);
+}
+
+.next .btn-submit:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 3px 10px rgba(60, 59, 110, 0.2);
+}
+
+.next .btn-submit:disabled {
+    background: #b0b0b0;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+    opacity: 0.7;
+}
+
+/* Responsivité */
+@media (max-width: 768px) {
+    .birthdate-label,
+    #birthdate {
+        width: 80%;
+    }
+
+    .next .btn-submit {
+        width: 60%;
+    }
+}
+
+@media (max-width: 480px) {
+    .birthdate-label,
+    #birthdate {
+        width: 90%;
+        padding: 10px;
+    }
+
+    .next .btn-submit {
+        width: 80%;
+        font-size: 0.9rem;
+    }
+}
+
+.phone-number {
+    text-align: center;
+    margin-top: 50px;
+}
+
+.phone-number > h2 {
+    font-size: 1.8rem;
+    margin-bottom: 10px;
+}
+
+.phone-number p {
+    font-size: 0.95rem;
+    color: #555;
+    line-height: 1.5;
+}
+
+.square-phone {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #bbb;
+    border-radius: 10px;
+    padding: 10px 15px;
+    max-width: 350px;
+    margin: 20px auto 0 auto;
+    background-color: #f9f9f9;
+}
+
+.square-phone .flag {
+    width: 35px;
+    height: 25px;
+    margin-right: 10px;
+    border-radius: 3px;
+    object-fit: cover;
+    border: 1px solid #ccc;
+}
+
+.square-phone .dial-code {
+    font-weight: 500;
+    margin-right: 10px;
+    color: #333;
+}
+
+.square-phone input[type="tel"] {
+    flex: 1;
+    padding: 10px 12px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 0.95rem;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.square-phone input[type="tel"]:focus {
+    border-color: #5a57a3;
+    box-shadow: 0 0 5px rgba(90, 87, 163, 0.4);
+}
+
+/* Boutons Suivant et Précédent */
+.next .btn-submit {
+    width: 180px;
+    padding: 14px 0;
+    font-weight: 600;
+    font-size: 1rem;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+    letter-spacing: 0.05em;
+}
+
+.next .btn-submit {
+    background: linear-gradient(135deg, #3c3b6e 0%, #5a57a3 100%);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(60, 59, 110, 0.25);
+}
+
+.next .btn-submit:hover:not(:disabled) {
+    background: linear-gradient(135deg, #5a57a3 0%, #3c3b6e 100%);
+    box-shadow: 0 6px 18px rgba(60, 59, 110, 0.35);
+    transform: translateY(-2px);
+}
+
+.next .btn-prev {
+    order: 2;
+}
+
+.next .btn-prev:hover {
+    color: #2f32f1;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .square-phone {
+        max-width: 90%;
+        flex-direction: column;
+    }
+    .square-phone input[type="tel"] {
+        width: 100%;
+        margin-top: 10px;
+    }
+    .square-phone .flag {
+        margin-bottom: 5px;
+    }
+    .next .btn-submit,
+    .next .btn-prev {
+        width: 60%;
+    }
+}
+
+@media (max-width: 480px) {
+    .square-phone {
+        padding: 8px 10px;
+    }
+    .square-phone input[type="tel"] {
+        padding: 8px;
+        font-size: 0.9rem;
+    }
+    .square-phone .flag {
+        width: 30px;
+        height: 20px;
+    }
+    .next .btn-submit,
+    .next .btn-prev {
+        width: 80%;
+        font-size: 0.9rem;
+    }
+}
+
+/* === Section Niveau d'anglais === */
+.english-level-section {
+    max-width: 600px;
+    margin: 40px auto;
+    padding: 25px;
+    background: #fff;
+    border-radius: 15px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    animation: smoothEntrance 0.8s ease-out;
+}
+
+.english-level-section h2 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+    color: #333;
+    text-align: center;
+}
+
+.english-level-section p {
+    font-size: 0.95rem;
+    color: #555;
+    line-height: 1.5;
+    margin-bottom: 25px;
+}
+
+/* Conteneur des options */
+.level-options {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* Chaque option */
+.level-option {
+    display: flex;
+    align-items: flex-start;
+    background: #f8f9fc;
+    border-radius: 12px;
+    padding: 15px 18px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.25s ease;
+    gap: 15px;
+}
+
+/* Hover */
+.level-option:hover {
+    background: #eef4ff;
+}
+
+/* Input caché */
+.level-option input[type="radio"] {
+    display: none;
+}
+
+/* Cercle radio personnalisé */
+.custom-radio {
+    width: 22px;
+    height: 22px;
+    border: 2px solid #999;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 5px;
+    transition: all 0.25s ease;
+    background: #fff;
+    position: relative;
+}
+
+/* Point central quand sélectionné */
+.level-option input[type="radio"]:checked + .custom-radio {
+    border-color: #3c3b6e;
+    background: #3c3b6e;
+    box-shadow: 0 0 0 4px rgba(60, 59, 110, 0.15);
+}
+
+.level-option input[type="radio"]:checked + .custom-radio::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 10px;
+    height: 10px;
+    background: white;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* Texte de l'option */
+.level-info strong {
+    font-size: 1rem;
+    color: #222;
+}
+
+.level-info p {
+    font-size: 0.9rem;
+    color: #555;
+    margin-top: 3px;
+}
+
+/* === Bloc entier en surbrillance quand sélectionné === */
+.level-option input[type="radio"]:checked ~ .level-info,
+.level-option input[type="radio"]:checked ~ .custom-radio {
+    color: #3c3b6e;
+}
+
+.level-option input[type="radio"]:checked ~ .level-info strong {
+    color: #3c3b6e;
+}
+
+.level-option input[type="radio"]:checked {
+    /* Ne rien afficher, car déjà masqué */
+}
+
+.level-option:has(input[type="radio"]:checked) {
+    border-color: #3c3b6e;
+    background: rgba(60, 59, 110, 0.08);
+    box-shadow: 0 4px 12px rgba(60, 59, 110, 0.15);
+}
+
+/* === Section Bio === */
+.bio-section {
+    max-width: 800px;
+    margin: 40px auto;
+    padding: 25px;
+    background: #fff;
+    border-radius: 15px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    animation: smoothEntrance 0.8s ease-out;
+}
+
+.bio-section h2 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: #333;
+}
+
+.bio-section p {
+    font-size: 0.95rem;
+    color: #555;
+    line-height: 1.5;
+    margin-bottom: 20px;
+}
+
+/* === Conteneur de la zone de saisie === */
+.bio-input {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* Zone de texte */
+.bio-input textarea {
+    width: 100%;
+    padding: 14px;
+    font-size: 1rem;
+    font-family: inherit;
+    border: 1px solid #dcdcdc;
+    border-radius: 10px;
+    resize: vertical;
+    min-height: 130px;
+    outline: none;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    background: #f9fafc;
+}
+
+.bio-input textarea:focus {
+    border-color: #4a90e2;
+    box-shadow: 0 0 6px rgba(74,144,226,0.3);
+    background: #fff;
+}
+
+/* Boutons de navigation */
+.next {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.btn-submit {
+    padding: 12px 28px;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #fff;
+    background: linear-gradient(135deg, #4a90e2, #357ABD);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.3s, transform 0.2s;
+}
+
+.btn-submit:hover {
+    background: linear-gradient(135deg, #357ABD, #2f6da4);
+    transform: translateY(-2px);
+}
+
+.btn-submit:active {
+    transform: translateY(0);
+}
+
+.btn-submit:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+/* Animation d'apparition douce */
+@keyframes smoothEntrance {
+    from {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
