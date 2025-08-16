@@ -35,6 +35,13 @@ body {
     margin-bottom: 10px;
 }
 
+.profil-picture-choice p {
+    font-family: "Montserrat", sans-serif;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: #555;
+}
+
 .square-profil {
     display: flex;
     justify-content: center;
@@ -228,16 +235,15 @@ body {
 .birthdate-choice {
     text-align: center;
     margin-top: 50px;
-    animation: smoothEntrance 0.8s ease-out;
 }
 
-.birthdate-choice > h2 {
+.birthdate-choice>h2 {
     font-size: 1.8rem;
     margin-bottom: 10px;
     font-family: "Montserrat", sans-serif;
 }
 
-.birthdate-choice > p {
+.birthdate-choice>p {
     font-family: "Montserrat", sans-serif;
     font-size: 0.95rem;
     line-height: 1.6;
@@ -337,6 +343,7 @@ body {
 
 /* Responsivité */
 @media (max-width: 768px) {
+
     .birthdate-label,
     #birthdate {
         width: 80%;
@@ -348,6 +355,7 @@ body {
 }
 
 @media (max-width: 480px) {
+
     .birthdate-label,
     #birthdate {
         width: 90%;
@@ -365,7 +373,7 @@ body {
     margin-top: 50px;
 }
 
-.phone-number > h2 {
+.phone-number>h2 {
     font-size: 1.8rem;
     margin-bottom: 10px;
 }
@@ -458,13 +466,16 @@ body {
         max-width: 90%;
         flex-direction: column;
     }
+
     .square-phone input[type="tel"] {
         width: 100%;
         margin-top: 10px;
     }
+
     .square-phone .flag {
         margin-bottom: 5px;
     }
+
     .next .btn-submit,
     .next .btn-prev {
         width: 60%;
@@ -475,14 +486,17 @@ body {
     .square-phone {
         padding: 8px 10px;
     }
+
     .square-phone input[type="tel"] {
         padding: 8px;
         font-size: 0.9rem;
     }
+
     .square-phone .flag {
         width: 30px;
         height: 20px;
     }
+
     .next .btn-submit,
     .next .btn-prev {
         width: 80%;
@@ -498,7 +512,6 @@ body {
     background: #fff;
     border-radius: 15px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    animation: smoothEntrance 0.8s ease-out;
 }
 
 .english-level-section h2 {
@@ -560,13 +573,13 @@ body {
 }
 
 /* Point central quand sélectionné */
-.level-option input[type="radio"]:checked + .custom-radio {
+.level-option input[type="radio"]:checked+.custom-radio {
     border-color: #3c3b6e;
     background: #3c3b6e;
     box-shadow: 0 0 0 4px rgba(60, 59, 110, 0.15);
 }
 
-.level-option input[type="radio"]:checked + .custom-radio::after {
+.level-option input[type="radio"]:checked+.custom-radio::after {
     content: '';
     position: absolute;
     top: 50%;
@@ -591,12 +604,12 @@ body {
 }
 
 /* === Bloc entier en surbrillance quand sélectionné === */
-.level-option input[type="radio"]:checked ~ .level-info,
-.level-option input[type="radio"]:checked ~ .custom-radio {
+.level-option input[type="radio"]:checked~.level-info,
+.level-option input[type="radio"]:checked~.custom-radio {
     color: #3c3b6e;
 }
 
-.level-option input[type="radio"]:checked ~ .level-info strong {
+.level-option input[type="radio"]:checked~.level-info strong {
     color: #3c3b6e;
 }
 
@@ -618,7 +631,6 @@ body {
     background: #fff;
     border-radius: 15px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    animation: smoothEntrance 0.8s ease-out;
 }
 
 .bio-section h2 {
@@ -659,7 +671,7 @@ body {
 
 .bio-input textarea:focus {
     border-color: #4a90e2;
-    box-shadow: 0 0 6px rgba(74,144,226,0.3);
+    box-shadow: 0 0 6px rgba(74, 144, 226, 0.3);
     background: #fff;
 }
 
@@ -701,6 +713,7 @@ body {
         opacity: 0;
         transform: translateY(15px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);

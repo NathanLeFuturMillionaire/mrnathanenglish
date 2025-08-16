@@ -281,18 +281,74 @@ class AuthController
     // Dans App\Controllers\AuthController
     public function welcome()
     {
-        session_start(); 
+        session_start();
 
-        // Vérifier si l'utilisateur est connecté et confirmé
+        // Vérifie si utilisateur connecté et confirmé
         if (!isset($_SESSION['user']) || (int)$_SESSION['user']['confirmed'] !== 1) {
             header('Location: ./login');
             exit;
         }
 
-        // Récupération des informations depuis la session
         $user = $_SESSION['user'];
 
-        // Si tu veux récupérer plus d'infos depuis la BDD
+        // --- Traitement upload photo ---
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['profilePic'])) {
+            $file = $_FILES['profilePic'];
+
+            if ($file['error'] === 0 && strpos($file['type'], 'image/') === 0) {
+                $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+                $newFileName = 'profile_' . $user['id'] . '_' . time() . '.' . $ext;
+                $uploadDir = __DIR__ . '../../../public/uploads/profiles/';
+
+                if (!file_exists($uploadDir)) mkdir($uploadDir, 0755, true);
+
+                $filePath = $uploadDir . $newFileName;
+
+                if (move_uploaded_file($file['tmp_name'], $filePath)) {
+                    // Met à jour la BDD
+                    $stmt = $this->db->prepare("UPDATE user_profiles SET profile_picture = ? WHERE user_id = ?");
+                    $stmt->execute([$newFileName, $user['id']]);
+
+                    // Met à jour la session
+                    $_SESSION['user']['profile_picture'] = $newFileName;
+
+                    // Renvoie JSON succès
+                    echo json_encode(['success' => true]);
+                    exit;
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'Impossible de déplacer le fichier.']);
+                    exit;
+                }
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Fichier invalide.']);
+                exit;
+            }
+        }
+
+        // --- Traitement date de naissance ---
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['birthdate'])) {
+            $birthdate = $_POST['birthdate'];
+
+            // Vérifie le format de la date (YYYY-MM-DD)
+            if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $birthdate)) {
+                // Met à jour la BDD
+                $stmt = $this->db->prepare("UPDATE user_profiles SET birth_date = ? WHERE user_id = ?");
+                $stmt->execute([$birthdate, $user['id']]);
+
+                // Met à jour la session
+                $_SESSION['user']['birth_date'] = $birthdate;
+
+                // Renvoie JSON succès
+                echo json_encode(['success' => true]);
+                exit;
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Date invalide.']);
+                exit;
+            }
+        }
+
+
+        // --- Récupération infos utilisateur pour affichage ---
         $stmt = $this->db->prepare("
         SELECT u.id, u.fullname, u.username, u.email, p.profile_picture, p.birth_date, p.country, p.phone_number, p.bio
         FROM users u
@@ -302,7 +358,6 @@ class AuthController
         $stmt->execute([$user['id']]);
         $fullUser = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        // Optionnel : mettre à jour la session avec ces infos complètes
         $_SESSION['user'] = [
             'id' => $fullUser['id'],
             'fullname' => $fullUser['fullname'],
@@ -316,7 +371,6 @@ class AuthController
             'bio' => $fullUser['bio']
         ];
 
-        // Affiche la vue welcome.php
         require_once __DIR__ . '/../views/auth/welcome.php';
     }
 }
