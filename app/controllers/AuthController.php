@@ -278,6 +278,15 @@ class AuthController
         }
     }
 
+    // Fonction pour obtenir l'IP publique (même en local)
+    public function getPublicIP()
+    {
+        // Utilise l'API ipify pour récupérer l'IP publique
+        $publicIP = file_get_contents('https://api.ipify.org');
+        return $publicIP;
+    }
+
+
     // Dans App\Controllers\AuthController
     public function welcome()
     {
@@ -290,6 +299,21 @@ class AuthController
         }
 
         $user = $_SESSION['user'];
+
+        // --- Détection du pays de l'utilisateur ---
+        $authController = new AuthController;
+        $userIP = $authController->getPublicIP();  // Récupère l'IP publique de l'utilisateur (même en local)
+
+        // Appel à l'API de géolocalisation ipinfo.io
+        $geoUrl = "http://ipinfo.io/{$userIP}/json";
+        $response = file_get_contents($geoUrl);
+        $geoData = json_decode($response, true);
+
+        // Affiche toute la réponse JSON pour débogage
+        //var_dump($geoData);  // À retirer une fois le problème trouvé
+
+        // Récupère le pays (par défaut 'Inconnu' si l'information n'est pas disponible)
+        $userCountry = $geoData['country'] ?? 'Inconnu';
 
         // --- Traitement upload photo ---
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['profilePic'])) {
@@ -306,11 +330,12 @@ class AuthController
 
                 if (move_uploaded_file($file['tmp_name'], $filePath)) {
                     // Met à jour la BDD
-                    $stmt = $this->db->prepare("UPDATE user_profiles SET profile_picture = ? WHERE user_id = ?");
-                    $stmt->execute([$newFileName, $user['id']]);
+                    $stmt = $this->db->prepare("UPDATE user_profiles SET profile_picture = ?, country = ? WHERE user_id = ?");
+                    $stmt->execute([$newFileName, $userCountry, $user['id']]);
 
                     // Met à jour la session
                     $_SESSION['user']['profile_picture'] = $newFileName;
+                    $_SESSION['user']['country'] = $userCountry;
 
                     // Renvoie JSON succès
                     echo json_encode(['success' => true]);
@@ -332,11 +357,12 @@ class AuthController
             // Vérifie le format de la date (YYYY-MM-DD)
             if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $birthdate)) {
                 // Met à jour la BDD
-                $stmt = $this->db->prepare("UPDATE user_profiles SET birth_date = ? WHERE user_id = ?");
-                $stmt->execute([$birthdate, $user['id']]);
+                $stmt = $this->db->prepare("UPDATE user_profiles SET birth_date = ?, country = ? WHERE user_id = ?");
+                $stmt->execute([$birthdate, $userCountry, $user['id']]);
 
                 // Met à jour la session
                 $_SESSION['user']['birth_date'] = $birthdate;
+                $_SESSION['user']['country'] = $userCountry;
 
                 // Renvoie JSON succès
                 echo json_encode(['success' => true]);
@@ -346,7 +372,6 @@ class AuthController
                 exit;
             }
         }
-
 
         // --- Récupération infos utilisateur pour affichage ---
         $stmt = $this->db->prepare("

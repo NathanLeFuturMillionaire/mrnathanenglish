@@ -13,6 +13,8 @@ $user = $_SESSION['user'];
     <title>Bienvenue - Mr Nathan English</title>
     <link rel="stylesheet" href="../public/css/style.css">
     <link rel="stylesheet" href="../public/css/auth/welcome.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.19/css/intlTelInput.css" />
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 
@@ -86,13 +88,16 @@ $user = $_SESSION['user'];
             <h2>Entrez votre numéro de téléphone</h2>
             <p>Cela peut nous aider à vous contacter en privé pour prendre des nouvelles.</p>
             <form class="square-phone" method="POST" action="">
-                <!-- <img id="flag" class="flag" src="" alt="Drapeau">
-                <span id="dial-code" class="dial-code"></span> -->
-                <input type="tel" id="phone" placeholder="Votre numéro">
+                <div class="phone-input-container">
+                    <img id="flag" class="flag" src="" alt="Drapeau">
+                    <span id="dial-code" class="dial-code"></span>
+                    <input type="tel" id="phone" placeholder="Votre numéro" required>
+                    <img id="phone-icon" src="" alt="Statut" style="display:none;"> <!-- Icône de statut -->
+                </div>
             </form>
+
             <div class="next">
-                <!-- <button type="button" class="btn-prev">Précédent</button> -->
-                <button type="submit" class="btn-submit">Suivant</button>
+                <button type="submit" class="btn-submit" disabled>Suivant</button>
             </div>
         </div>
 
@@ -155,6 +160,9 @@ $user = $_SESSION['user'];
         <p>&copy; <?= date('Y') ?> Mr Nathan English. Tous droits réservés.</p>
     </footer>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.19/js/intlTelInput.min.js"></script>
+    <!-- Lien vers la bibliothèque libphonenumber-js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/libphonenumber-js/1.9.12/libphonenumber-js.min.js"></script>
     <script src="js/main.js"></script>
     <script src="js/welcome.js"></script>
 </body>

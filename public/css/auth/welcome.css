@@ -426,6 +426,11 @@ body {
     box-shadow: 0 0 5px rgba(90, 87, 163, 0.4);
 }
 
+.phone-input-container {
+    display: flex;
+    align-items: center;
+}
+
 /* Boutons Suivant et Précédent */
 .next .btn-submit {
     width: 180px;
