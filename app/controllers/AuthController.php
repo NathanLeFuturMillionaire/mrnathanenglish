@@ -26,6 +26,15 @@ class AuthController
         require_once __DIR__ . '/../views/auth/register.php';
     }
 
+    // Affiche le formulaire de connexion
+    public function login()
+    {
+        $errors = [];
+        $old = [];  // Valeurs précédentes
+        require_once __DIR__ . '/../views/auth/login.php';
+    }
+
+
     public function confirm()
     {
         $email = $_GET['email'] ?? '';
@@ -116,6 +125,79 @@ class AuthController
         header("Location: ./confirm");
         exit;
     }
+
+    // Traite la soumission de l'envoi du formulaire
+    public function loginPost()
+    {
+        session_start(); // S'assurer que la session est démarrée
+        header('Content-Type: application/json');
+
+        // 1) Récupérer les données du formulaire
+        $email = trim($_POST['email'] ?? '');
+        $password = $_POST['password'] ?? '';
+
+        // 2) Validation rapide
+        if (empty($email) || empty($password)) {
+            echo json_encode(['success' => false, 'message' => 'Email ou mot de passe manquant.']);
+            return;
+        }
+
+        // 3) Vérifier si l'utilisateur existe dans la base de données
+        $stmt = $this->db->prepare("SELECT id, email, username, fullname, password, is_confirmed FROM users WHERE email = ?");
+        $stmt->execute([$email]);
+        $user = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        if (!$user) {
+            echo json_encode(['success' => false, 'message' => 'Email ou mot de passe invalide.']);
+            return;
+        }
+
+        // 4) Vérifier si le mot de passe est correct
+        if (!password_verify($password, $user['password'])) {
+            echo json_encode(['success' => false, 'message' => 'Email ou mot de passe invalide.']);
+            return;
+        }
+
+        // 5) Vérifier si l'utilisateur est confirmé
+        if ((int)$user['is_confirmed'] !== 1) {
+            echo json_encode(['success' => false, 'message' => 'Votre compte n\'est pas confirmé.']);
+            return;
+        }
+
+        try {
+            // 6) Créer une session utilisateur
+            $_SESSION['user'] = [
+                'id' => $user['id'],
+                'email' => $user['email'],
+                'username' => $user['username'],
+                'fullname' => $user['fullname'],
+                'english_level' => $user["english_level"],
+                'confirmed' => (int)$user['is_confirmed']
+            ];
+
+            // 7) Récupérer le profil de l'utilisateur
+            $profileStmt = $this->db->prepare("SELECT * FROM user_profiles WHERE user_id = ?");
+            $profileStmt->execute([$user['id']]);
+            $profile = $profileStmt->fetch(\PDO::FETCH_ASSOC);
+
+            $_SESSION['user']['profile_picture'] = $profile['profile_picture'] ?? 'default.png';
+            $_SESSION["user"]['english_level'] = $profile["english_level"];
+
+            // 8) Répondre avec une réponse JSON réussie
+            echo json_encode([
+                'success' => true,
+                'message' => 'Connexion réussie.',
+                'user'    => $_SESSION['user'] // Renvoie aussi les informations de l'utilisateur à la réponse
+            ]);
+        } catch (\Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Une erreur est survenue lors de la connexion.',
+                'error'   => $e->getMessage()
+            ]);
+        }
+    }
+
 
     public function confirmPost()
     {
@@ -292,7 +374,7 @@ class AuthController
     {
         session_start();
 
-        // Vérifie si utilisateur connecté et confirmé
+        // Vérifie si l'utilisateur est connecté et confirmé
         if (!isset($_SESSION['user']) || (int)$_SESSION['user']['confirmed'] !== 1) {
             header('Location: ./login');
             exit;
@@ -308,9 +390,6 @@ class AuthController
         $geoUrl = "http://ipinfo.io/{$userIP}/json";
         $response = file_get_contents($geoUrl);
         $geoData = json_decode($response, true);
-
-        // Affiche toute la réponse JSON pour débogage
-        //var_dump($geoData);  // À retirer une fois le problème trouvé
 
         // Récupère le pays (par défaut 'Inconnu' si l'information n'est pas disponible)
         $userCountry = $geoData['country'] ?? 'Inconnu';
@@ -373,9 +452,78 @@ class AuthController
             }
         }
 
+        // Traitement du numéro de téléphone
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['phone_number'])) {
+            $phoneNumber = $_POST['phone_number'];
+
+            // Vérifie que le numéro de téléphone a un format valide (par exemple, +1234567890 ou 1234567890)
+            if (preg_match('/^\+?\d{8,15}$/', $phoneNumber)) {
+                // Met à jour la BDD
+                $stmt = $this->db->prepare("UPDATE user_profiles SET phone_number = ? WHERE user_id = ?");
+                $stmt->execute([$phoneNumber, $user['id']]);
+
+                // Met à jour la session
+                $_SESSION['user']['phone_number'] = $phoneNumber;
+
+                // Renvoie une réponse JSON de succès
+                echo json_encode(['success' => true]);
+                exit;
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Numéro de téléphone invalide.']);
+                exit;
+            }
+        }
+
+        // --- Traitement du niveau d'anglais ---
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['english_level'])) {
+            $englishLevel = $_POST['english_level'];
+
+            // Valider le niveau d'anglais
+            $validLevels = ['beginner', 'intermediate', 'advanced'];
+
+            if (in_array($englishLevel, $validLevels)) {
+                // Met à jour la BDD
+                $stmt = $this->db->prepare("UPDATE user_profiles SET english_level = ? WHERE user_id = ?");
+                $stmt->execute([$englishLevel, $user['id']]);
+
+                // Met à jour la session
+                $_SESSION['user']['english_level'] = $englishLevel;
+
+                // Renvoie JSON succès
+                echo json_encode(['success' => true]);
+                exit;
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Niveau d\'anglais invalide.']);
+                exit;
+            }
+        }
+
+        // --- Traitement de la biographie ---
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bio'])) {
+            $bio = $_POST['bio'];
+
+            // Valider la biographie (ici on vérifie juste si elle est non vide, tu peux adapter cela)
+            if (!empty($bio)) {
+                // Met à jour la BDD
+                $stmt = $this->db->prepare("UPDATE user_profiles SET bio = ? WHERE user_id = ?");
+                $stmt->execute([$bio, $user['id']]);
+
+                // Met à jour la session
+                $_SESSION['user']['bio'] = $bio;
+
+                // Renvoie JSON succès
+                echo json_encode(['success' => true]);
+                exit;
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Biographie invalide.']);
+                exit;
+            }
+        }
+
+
         // --- Récupération infos utilisateur pour affichage ---
         $stmt = $this->db->prepare("
-        SELECT u.id, u.fullname, u.username, u.email, p.profile_picture, p.birth_date, p.country, p.phone_number, p.bio
+        SELECT u.id, u.fullname, u.username, u.email, p.profile_picture, p.birth_date, p.country, p.phone_number, p.english_level, p.bio
         FROM users u
         LEFT JOIN user_profiles p ON u.id = p.user_id
         WHERE u.id = ?
@@ -393,7 +541,8 @@ class AuthController
             'birth_date' => $fullUser['birth_date'],
             'country' => $fullUser['country'],
             'phone_number' => $fullUser['phone_number'],
-            'bio' => $fullUser['bio']
+            'bio' => $fullUser['bio'],
+            'english_level' => $fullUser['english_level'],
         ];
 
         require_once __DIR__ . '/../views/auth/welcome.php';

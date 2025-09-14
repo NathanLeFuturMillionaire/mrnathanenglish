@@ -1,0 +1,5 @@
+Je dois encore vérifier le script de connexion,
+la page fonctionne bien mais il y a un problème,
+quand le mail existe et que le mot de passe entré est inccorect, un message
+doit s'afficher, mais ce n'est pas le cas du script, donc je dois revoir le AuthController
+et le login.js

@@ -51,10 +51,24 @@ class Router
                 $controller->welcome();
                 break;
 
-            default:
-                http_response_code(404);
-                require __DIR__ . '/../views/errors/404.php';
+            case 'logout':
+                $controller = new HomeController();
+                $controller->logout();
                 break;
+
+
+            case 'login':
+                $controller = new AuthController();
+                if ($method === "POST") {
+                    $controller->loginPost();
+                } else {
+                    $controller->login();
+                }
+
+            // default:
+            //     http_response_code(404);
+            //     require __DIR__ . '/../views/errors/404.php';
+            //     break;
         }
     }
 }

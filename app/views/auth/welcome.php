@@ -86,58 +86,60 @@ $user = $_SESSION['user'];
         <div class="phone-number">
             <small class="steps" style="font-family: 'Montserrat', sans-serif; font-size: 1.1rem; color: #000;">3 / 5</small>
             <h2>Entrez votre numéro de téléphone</h2>
-            <p>Cela peut nous aider à vous contacter en privé pour prendre des nouvelles.</p>
-            <form class="square-phone" method="POST" action="">
+            <p>Your phone number could help us to get in touch with you just to check if you're okay.</p>
+            <form class="square-phone" method="POST">
                 <div class="phone-input-container">
                     <img id="flag" class="flag" src="" alt="Drapeau">
                     <span id="dial-code" class="dial-code"></span>
-                    <input type="tel" id="phone" placeholder="Votre numéro" required>
-                    <img id="phone-icon" src="" alt="Statut" style="display:none;"> <!-- Icône de statut -->
+                    <input value="<?php echo isset($_SESSION["user"]["phone_number"]) && $_SESSION["user"]["phone_number"] !== null ? htmlspecialchars($_SESSION["user"]["phone_number"]) : ''; ?>" type="tel" id="phone" name="phone_number" placeholder="Votre numéro" required>
                 </div>
             </form>
+            <div class="error-phone" style="color:red; display: none;"></div>
 
             <div class="next">
-                <button type="submit" class="btn-submit" disabled>Suivant</button>
+                <button type="button" id="submitPhone" class="btn-submit submitPhone" disabled>Suivant</button>
             </div>
         </div>
 
         <div class="english-level-section">
-            <small class="steps" style="font-family: 'Montserrat', sans-serif; font-size: 1.1rem; color: #000;display:block;text-align:center;">4 / 5</small>
-            <h2>Quel est votre niveau en anglais ?</h2>
-            <div class="level-options">
+            <form action="" method="POST" class="form-level">
+                <small class="steps" style="font-family: 'Montserrat', sans-serif; font-size: 1.1rem; color: #000;display:block;text-align:center;">4 / 5</small>
+                <h2>Quel est votre niveau en anglais ?</h2>
+                <div class="level-options">
 
-                <label class="level-option">
-                    <input type="radio" name="english_level" value="beginner">
-                    <span class="custom-radio"></span>
-                    <div class="level-content">
-                        <strong>Débutant</strong>
-                        <p>Vous comprenez quelques mots et phrases simples mais avez besoin d’aide pour communiquer.</p>
-                    </div>
-                </label>
+                    <label class="level-option">
+                        <input type="radio" name="english_level" value="beginner" checked>
+                        <span class="custom-radio"></span>
+                        <div class="level-content">
+                            <strong>Débutant</strong>
+                            <p>Vous partez de zéro et n'avez aucune base en anglais et vous souhaitez combler cet handicap.</p>
+                        </div>
+                    </label>
 
-                <label class="level-option">
-                    <input type="radio" name="english_level" value="intermediate">
-                    <span class="custom-radio"></span>
-                    <div class="level-content">
-                        <strong>Intermédiaire</strong>
-                        <p>Vous pouvez tenir une conversation simple et comprendre l’essentiel d’un texte ou d’un dialogue.</p>
-                    </div>
-                </label>
+                    <label class="level-option">
+                        <input type="radio" name="english_level" value="intermediate">
+                        <span class="custom-radio"></span>
+                        <div class="level-content">
+                            <strong>Intermédiaire</strong>
+                            <p>Vous pouvez tenir une conversation simple et comprendre l’essentiel d’un texte ou d’un dialogue.</p>
+                        </div>
+                    </label>
 
-                <label class="level-option">
-                    <input type="radio" name="english_level" value="advanced">
-                    <span class="custom-radio"></span>
-                    <div class="level-content">
-                        <strong>Avancé</strong>
-                        <p>Vous vous exprimez couramment et comprenez des textes complexes avec aisance.</p>
+                    <label class="level-option">
+                        <input type="radio" name="english_level" value="advanced">
+                        <span class="custom-radio"></span>
+                        <div class="level-content">
+                            <strong>Avancé</strong>
+                            <p>Vous vous exprimez couramment et comprenez des textes complexes avec aisance.</p>
+                        </div>
+                    </label>
+                    <div class="next">
+                        <button type="button" id="submitLevel" class="btn-submit submitLevel">Suivant</button>
                     </div>
-                </label>
-                <div class="next">
-                    <!-- <button type="button" class="btn-prev">Précédent</button> -->
-                    <button type="submit" class="btn-submit">Suivant</button>
                 </div>
-            </div>
+            </form>
         </div>
+
 
         <div class="bio-section">
             <small class="steps" style="font-family: 'Montserrat', sans-serif; font-size: 1.1rem; color: #000;display:block;text-align:center;">5 / 5</small>
@@ -148,7 +150,7 @@ $user = $_SESSION['user'];
                 <textarea id="bio" placeholder="Écrivez votre bio ici..." rows="5"></textarea>
                 <div class="next">
                     <!-- <button type="button" class="btn-prev">Précédent</button> -->
-                    <button type="submit" class="btn-submit">Terminer</button>
+                    <button type="button" id="submitBio" class="btn-submit submitBio" disabled>Suivant</button>
                 </div>
             </div>
         </div>
@@ -165,6 +167,7 @@ $user = $_SESSION['user'];
     <script src="https://cdnjs.cloudflare.com/ajax/libs/libphonenumber-js/1.9.12/libphonenumber-js.min.js"></script>
     <script src="js/main.js"></script>
     <script src="js/welcome.js"></script>
+
 </body>
 
 </html>

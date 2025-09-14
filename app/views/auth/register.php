@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="../public/css/style.css">
     <link rel="stylesheet" href="../public/css/auth/register.css">
-    <title>Inscription - Me Nathan English</title>
+    <title>Inscription - Mr Nathan English</title>
 </head>
 
 <body>
@@ -41,7 +41,7 @@
                             type="text"
                             id="email"
                             name="email"
-                            placeholder="exemple@mail.com"
+                            placeholder="exemple@gmail.com"
                             value="<?= htmlspecialchars($old['email'] ?? '') ?>">
                         <small class="error" id="error-email"><?= $errors['email'] ?? '' ?></small>
 
@@ -80,7 +80,7 @@
                             </label>
                             <small class="error"><?= $errors['terms'] ?? '' ?></small>
 
-                            <a href="/login" class="login-link">J'ai déjà un compte</a>
+                            <a href="./login" class="login-link">J'ai déjà un compte</a>
                         </div>
 
                         <button type="submit" id="btn-submit" class="btn-submit">

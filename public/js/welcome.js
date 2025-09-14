@@ -135,6 +135,141 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 });
 
+document.getElementById('phone').addEventListener('input', function () {
+    var phoneNumber = document.getElementById('phone').value;
+    var submitButton = document.getElementById('submitPhone');
+    var errorPhone = document.querySelector('.error-phone');
+    var phoneRegex = /^\d{9,15}$/; // Regex pour vérifier un numéro de téléphone international valide (ex : +1234567890)
+
+    // Vérification de la validité du numéro de téléphone
+    if (phoneRegex.test(phoneNumber)) {
+        errorPhone.style.display = 'none';  // Masquer l'erreur
+        submitButton.disabled = false;     // Activer le bouton de soumission
+    } else {
+        errorPhone.style.display = 'block'; // Afficher le message d'erreur
+        errorPhone.textContent = 'Numéro de téléphone invalide.';
+        submitButton.disabled = true;       // Désactiver le bouton de soumission
+    }
+});
+
+document.getElementById('submitPhone').addEventListener('click', function () {
+    var phoneNumber = document.getElementById('phone').value;
+
+    if (phoneNumber) {
+        var formData = new FormData();
+        formData.append('phone_number', phoneNumber);
+
+        // Envoi de la requête POST via Fetch API
+        fetch('./welcome', {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // alert('Numéro de téléphone ajouté avec succès!');
+                    // window.location.href = 'mrnathanenglish/public/welcome'; // Rediriger après succès
+                } else {
+                    alert('Erreur: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+    } else {
+        alert('Veuillez entrer un numéro de téléphone valide.');
+    }
+});
+
+// ==== Traite l'envoi du niveau d'anglais ====
+document.getElementById('submitLevel').addEventListener('click', function (event) {
+    event.preventDefault(); // Empêche l'envoi traditionnel du formulaire
+
+    // Déclare une variable pour stocker la valeur sélectionnée
+    let englishLevel = null;
+
+    // Parcourt tous les inputs de type radio avec le nom 'english_level'
+    const radioButtons = document.querySelectorAll('input[name="english_level"]');
+    for (let i = 0; i < radioButtons.length; i++) {
+        if (radioButtons[i].checked) {
+            englishLevel = radioButtons[i].value; // Si l'input est sélectionné, on récupère sa valeur
+            break; // Une fois qu'on a trouvé le niveau sélectionné, on sort de la boucle
+        }
+    }
+
+    // Vérifie si un niveau a été sélectionné
+    if (englishLevel) {
+        var formData = new FormData();
+        formData.append('english_level', englishLevel);
+
+        // Envoi de la requête POST via Fetch API
+        fetch('./welcome', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // alert('Niveau d\'anglais mis à jour avec succès!');
+                // Vous pouvez ajouter du code ici pour rediriger ou mettre à jour la page
+            } else {
+                // alert('Erreur: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    } else {
+        alert('Veuillez sélectionner un niveau d\'anglais.');
+    }
+});
+
+document.getElementById('bio').addEventListener('input', function () {
+    var bio = document.getElementById('bio').value.trim();
+    var submitButton = document.getElementById('submitBio');
+
+    // Activer ou désactiver le bouton en fonction de la longueur de la biographie
+    if (bio.length > 3) {
+        submitButton.disabled = false; // Activer le bouton si plus de 3 caractères
+    } else {
+        submitButton.disabled = true; // Désactiver le bouton si 3 caractères ou moins
+    }
+});
+
+
+// ==== Traite l'envoie de la description =====
+document.getElementById('submitBio').addEventListener('click', function (event) {
+    event.preventDefault(); // Empêche l'envoi traditionnel du formulaire
+
+    var bio = document.getElementById('bio').value.trim();
+
+    // Vérifier si la biographie n'est pas vide (ou trop courte)
+    if (bio.length > 3) {
+        var formData = new FormData();
+        formData.append('bio', bio);
+
+        // Envoi de la requête POST via Fetch API
+        fetch('./welcome', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = '/mrnathanenglish/public/'; // Rediriger vers la page d'accueil
+
+            } else {
+                // alert('Erreur: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    } else {
+        // alert('Votre biographie doit comporter plus de 3 caractères.');
+    }
+});
+
 
 
 // Récupère toutes les sections à afficher
@@ -280,6 +415,9 @@ document.addEventListener("DOMContentLoaded", () => {
     // Événement à la modification de la date
     birthdateInput.addEventListener('change', updateBirthdateState);
 });
+
+
+
 
 // 🌍 Liste complète des pays ISO2 + indicatifs téléphoniques
 const countryDialCodes = {
