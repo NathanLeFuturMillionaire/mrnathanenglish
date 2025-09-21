@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (isValid) {
             const formData = new FormData(form);
-            fetch(window.location.href, {
+            fetch('./login', {
                 method: 'POST',
                 body: formData
             })

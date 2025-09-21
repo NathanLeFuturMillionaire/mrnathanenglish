@@ -128,7 +128,6 @@ class AuthController
 
     public function loginPost()
     {
-        session_start();
         header('Content-Type: application/json');
 
         try {
@@ -166,16 +165,34 @@ class AuthController
             }
 
             // 6) Configurer la session
-            if ($rememberMe) {
-                // Prolonger la durée de vie de la session (par exemple, 30 jours)
-                session_set_cookie_params(30 * 24 * 60 * 60);
-                session_regenerate_id(true); // Régénérer l'ID de session pour plus de sécurité
-            } else {
-                // Session standard (expire à la fermeture du navigateur)
-                // session_set_cookie_params(0);
+            // Vérifier si une session existe déjà
+            if (session_status() === PHP_SESSION_NONE) {
+                // Aucune session active : démarrer une nouvelle session
+                session_start();
             }
 
-            // 7) Créer une session utilisateur
+            // Régénérer l'ID de session pour la sécurité
+            session_regenerate_id(true);
+
+            // Si "Se souvenir de moi" est coché, créer un cookie persistant
+            if ($rememberMe) {
+                $token = bin2hex(random_bytes(32));
+                $expiresAt = time() + (30 * 24 * 60 * 60); // 30 jours
+                setcookie('remember_me_token', $token, $expiresAt, '/', '', false, true);
+
+                // Stocker le token dans la base de données
+                // $stmt = $this->db->prepare("UPDATE users SET remember_token = ?, remember_expires_at = ? WHERE id = ?");
+                // $stmt->execute([$token, date('Y-m-d H:i:s', $expiresAt), $user['id']]);
+            } else {
+                // Supprimer tout cookie de persistance existant
+                if (isset($_COOKIE['remember_me_token'])) {
+                    setcookie('remember_me_token', '', time() - 3600, '/');
+                    // $stmt = $this->db->prepare("UPDATE users SET remember_token = NULL, remember_expires_at = NULL WHERE id = ?");
+                    // $stmt->execute([$user['id']]);
+                }
+            }
+
+            // Enregistrer les données de l'utilisateur dans la session
             $_SESSION['user'] = [
                 'id' => $user['id'],
                 'email' => $user['email'],
@@ -184,7 +201,7 @@ class AuthController
                 'confirmed' => (int)$user['is_confirmed']
             ];
 
-            // 8) Récupérer le profil de l'utilisateur
+            // 7) Récupérer le profil de l'utilisateur
             $profileStmt = $this->db->prepare("SELECT profile_picture, english_level FROM user_profiles WHERE user_id = ?");
             $profileStmt->execute([$user['id']]);
             $profile = $profileStmt->fetch(\PDO::FETCH_ASSOC);
@@ -192,7 +209,7 @@ class AuthController
             $_SESSION['user']['profile_picture'] = $profile['profile_picture'] ?? 'default.png';
             $_SESSION['user']['english_level'] = $profile['english_level'] ?? null;
 
-            // 9) Répondre avec une réponse JSON réussie
+            // 8) Répondre avec une réponse JSON réussie
             echo json_encode([
                 'success' => true,
                 'message' => 'Connexion réussie.',
