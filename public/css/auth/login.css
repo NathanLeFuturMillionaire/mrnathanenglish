@@ -259,7 +259,7 @@ h3 {
 
 /* Lien "Pas encore inscrit ? Créez un compte" */
 .register-link {
-  color: #b22234;
+  color: #5a57a3;
   font-weight: 600;
   text-decoration: none;
   transition: color 0.3s ease;
@@ -267,6 +267,84 @@ h3 {
 
 .register-link:hover {
   color: #3c3b6e;
+}
+
+.error-message {
+    color: #d32f2f;
+    font-size: 0.9rem;
+    margin-top: 5px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.error-message[data-for="general"] {
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.shake {
+    animation: shake 0.5s;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    50% { transform: translateX(5px); }
+    75% { transform: translateX(-5px); }
+}
+
+.checkbox-container {
+    display: flex;
+    align-items: center;
+    margin: 15px 0;
+}
+
+.checkbox-container input[type="checkbox"] {
+    display: none;
+}
+
+.checkbox-container .checkbox-label {
+    position: relative;
+    padding-left: 30px;
+    cursor: pointer;
+    font-size: 1rem;
+    color: #333;
+    user-select: none;
+}
+
+.checkbox-container .checkbox-label::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
+    border: 2px solid #333;
+    border-radius: 4px;
+    background-color: #fff;
+    transition: all 0.3s ease;
+}
+
+.checkbox-container input[type="checkbox"]:checked + .checkbox-label::before {
+    background-color: #5a57a3;
+    border-color: #5a57a3;
+}
+
+.checkbox-container .checkbox-label::after {
+    content: '\2714';
+    position: absolute;
+    left: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #fff;
+    font-size: 14px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.checkbox-container input[type="checkbox"]:checked + .checkbox-label::after {
+    opacity: 1;
 }
 
 /* Animation Shake */

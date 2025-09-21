@@ -14,7 +14,6 @@ document.addEventListener('DOMContentLoaded', function () {
             errorElement.textContent = message;
             errorElement.style.opacity = '1';
         }
-        // Animation shake pour les champs d'entrée uniquement
         if (input) {
             input.classList.add('shake');
             setTimeout(() => input.classList.remove('shake'), 500);
@@ -29,7 +28,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // Efface l'erreur dès que l'utilisateur tape
     fields.forEach(field => {
         const input = document.getElementById(field.id);
         if (input) {
@@ -39,67 +37,68 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // Effacer les erreurs générales
     function clearGeneralError() {
         clearError('general');
     }
 
     form.addEventListener('submit', function (e) {
         e.preventDefault();
-        btn.classList.add('loading'); // Afficher le spinner de chargement
+        btn.classList.add('loading');
 
         let isValid = true;
 
-        // Réinitialiser toutes les erreurs
         fields.forEach(field => clearError(field.id));
-        clearGeneralError(); // Effacer les erreurs générales
+        clearGeneralError();
 
         fields.forEach(field => {
             let value = document.getElementById(field.id).value.trim();
-
-            // Vérification longueur minimale
             if (field.min && value.length < field.min) {
                 showError(field.id, field.message);
                 isValid = false;
             }
-
-            // Vérification email
             if (field.type === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
                 showError(field.id, field.message);
                 isValid = false;
             }
         });
 
-        // Soumettre ou afficher erreurs
         if (isValid) {
-            // Effectuer un fetch vers la même page
-            const formData = new FormData(form); // Créer un FormData avec toutes les données du formulaire
+            const formData = new FormData(form);
             fetch(window.location.href, {
                 method: 'POST',
                 body: formData
             })
-            .then(response => response.json()) // Convertir la réponse en JSON
-            .then(data => {
-                btn.classList.remove('loading'); // Cacher le spinner de chargement
-
-                if (data.success) {
-                    // Connexion réussie
-                    window.location.href = '/dashboard'; // Rediriger vers le tableau de bord
-                } else {
-                    // Afficher les erreurs dans les champs correspondants
-                    if (data.errors) {
-                        for (const [field, message] of Object.entries(data.errors)) {
-                            showError(field, message); // Afficher l'erreur pour chaque champ
-                        }
-                    } else if (data.message) {
-                        // Afficher une erreur générale
-                        showError('general', data.message);
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Erreur HTTP: ${response.status} ${response.statusText}`);
+                }
+                return response.text();
+            })
+            .then(text => {
+                try {
+                    const data = JSON.parse(text);
+                    btn.classList.remove('loading');
+                    if (data.success) {
+                        window.location.href = './';
                     } else {
-                        showError('general', 'Une erreur est survenue.');
+                        if (data.errors) {
+                            for (const [field, message] of Object.entries(data.errors)) {
+                                showError(field, message);
+                            }
+                        } else if (data.message) {
+                            showError('general', data.message);
+                        } else {
+                            showError('general', 'Une erreur est survenue.');
+                        }
                     }
+                } catch (e) {
+                    console.error('Erreur de parsing JSON:', e, 'Réponse brute:', text);
+                    btn.classList.remove('loading');
+                    showError('general', 'Erreur de communication avec le serveur.');
                 }
             })
             .catch(error => {
+                console.error('Erreur fetch:', error);
                 btn.classList.remove('loading');
                 showError('general', 'Une erreur est survenue. Veuillez réessayer.');
             });

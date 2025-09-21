@@ -126,15 +126,16 @@ class AuthController
         exit;
     }
 
-    // Traite la soumission de l'envoi du formulaire
-    public function loginPost()
-    {
-        session_start(); // S'assurer que la session est démarrée
-        header('Content-Type: application/json');
+public function loginPost()
+{
+    session_start();
+    header('Content-Type: application/json');
 
+    try {
         // 1) Récupérer les données du formulaire
         $email = trim($_POST['email'] ?? '');
         $password = $_POST['password'] ?? '';
+        $rememberMe = isset($_POST['remember_me']) && $_POST['remember_me'] === 'on';
 
         // 2) Validation rapide
         if (empty($email) || empty($password)) {
@@ -143,18 +144,18 @@ class AuthController
         }
 
         // 3) Vérifier si l'utilisateur existe dans la base de données 
-        $stmt = $this->db->prepare("SELECT u.id, u.email, p.english_level, u.username, u.fullname, u.password, u.is_confirmed FROM users u INNER JOIN user_profiles p ON u.id = p.user_id WHERE u.email = ?");
+        $stmt = $this->db->prepare("SELECT id, email, username, fullname, password, is_confirmed FROM users WHERE email = ?");
         $stmt->execute([$email]);
         $user = $stmt->fetch(\PDO::FETCH_ASSOC);
 
         if (!$user) {
-            echo json_encode(['success' => false, 'message' => 'Utilisateur introuvable.']);
+            echo json_encode(['success' => false, 'message' => 'Email ou mot de passe invalide.']);
             return;
         }
 
         // 4) Vérifier si le mot de passe est correct
         if (!password_verify($password, $user['password'])) {
-            echo json_encode(['success' => false, 'message' => 'Ce mail existe mais le mot de passe n\'est pas le bon.']);
+            echo json_encode(['success' => false, 'message' => 'Email ou mot de passe invalide.']);
             return;
         }
 
@@ -164,40 +165,47 @@ class AuthController
             return;
         }
 
-        try {
-            // 6) Créer une session utilisateur
-            $_SESSION['user'] = [
-                'id' => $user['id'],
-                'email' => $user['email'],
-                'username' => $user['username'],
-                'fullname' => $user['fullname'],
-                'english_level' => $user["english_level"],
-                'confirmed' => (int)$user['is_confirmed']
-            ];
-
-            // 7) Récupérer le profil de l'utilisateur
-            $profileStmt = $this->db->prepare("SELECT * FROM user_profiles WHERE user_id = ?");
-            $profileStmt->execute([$user['id']]);
-            $profile = $profileStmt->fetch(\PDO::FETCH_ASSOC);
-
-            $_SESSION['user']['profile_picture'] = $profile['profile_picture'] ?? 'default.png';
-            $_SESSION["user"]['english_level'] = $profile["english_level"];
-
-            // 8) Répondre avec une réponse JSON réussie
-            echo json_encode([
-                'success' => true,
-                'message' => 'Connexion réussie.',
-                'user'    => $_SESSION['user'] // Renvoie aussi les informations de l'utilisateur à la réponse
-            ]);
-        } catch (\Exception $e) {
-            echo json_encode([
-                'success' => false,
-                'message' => 'Une erreur est survenue lors de la connexion.',
-                'error'   => $e->getMessage()
-            ]);
+        // 6) Configurer la session
+        if ($rememberMe) {
+            // Prolonger la durée de vie de la session (par exemple, 30 jours)
+            session_set_cookie_params(30 * 24 * 60 * 60);
+            session_regenerate_id(true); // Régénérer l'ID de session pour plus de sécurité
+        } else {
+            // Session standard (expire à la fermeture du navigateur)
+            // session_set_cookie_params(0);
         }
-    }
 
+        // 7) Créer une session utilisateur
+        $_SESSION['user'] = [
+            'id' => $user['id'],
+            'email' => $user['email'],
+            'username' => $user['username'],
+            'fullname' => $user['fullname'],
+            'confirmed' => (int)$user['is_confirmed']
+        ];
+
+        // 8) Récupérer le profil de l'utilisateur
+        $profileStmt = $this->db->prepare("SELECT profile_picture, english_level FROM user_profiles WHERE user_id = ?");
+        $profileStmt->execute([$user['id']]);
+        $profile = $profileStmt->fetch(\PDO::FETCH_ASSOC);
+
+        $_SESSION['user']['profile_picture'] = $profile['profile_picture'] ?? 'default.png';
+        $_SESSION['user']['english_level'] = $profile['english_level'] ?? null;
+
+        // 9) Répondre avec une réponse JSON réussie
+        echo json_encode([
+            'success' => true,
+            'message' => 'Connexion réussie.',
+            'user' => $_SESSION['user']
+        ]);
+    } catch (\Exception $e) {
+        error_log('Erreur lors de la connexion: ' . $e->getMessage());
+        echo json_encode([
+            'success' => false,
+            'message' => 'Une erreur est survenue lors de la connexion.'
+        ]);
+    }
+}
 
     public function confirmPost()
     {

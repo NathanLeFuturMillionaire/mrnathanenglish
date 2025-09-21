@@ -35,7 +35,7 @@
                             name="email"
                             placeholder="exemple@gmail.com"
                             value="<?= htmlspecialchars($old['email'] ?? '') ?>">
-                        <div class="error-message" data-for="email"></div> <!-- Erreur pour l'email -->
+                        <div class="error-message" data-for="email"></div>
 
                         <!-- Mot de passe -->
                         <label for="password">Mot de passe</label>
@@ -44,11 +44,17 @@
                             id="password"
                             name="password"
                             placeholder="Votre mot de passe">
-                        <div class="error-message" data-for="password"></div> <!-- Erreur pour le mot de passe -->
+                        <div class="error-message" data-for="password"></div>
+
+                        <!-- Case à cocher "Ne pas me déconnecter" -->
+                        <div class="checkbox-container">
+                            <input type="checkbox" id="remember-me" name="remember_me">
+                            <label for="remember-me" class="checkbox-label">Ne pas me déconnecter</label>
+                        </div>
 
                         <div class="form-bottom-line">
                             <a href="/forgot-password" class="forgot-password-link">Mot de passe oublié ?</a>
-                            <a href="./register" class="register-link">Pas encore inscrit ? Créez un compte</a>
+                            <a href="./register" class="register-link">Créez un compte</a>
                         </div>
 
                         <button type="submit" id="btn-submit" class="btn-submit">
