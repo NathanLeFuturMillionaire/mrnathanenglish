@@ -5,18 +5,18 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Mr Nathan English - Apprenez l'anglais facilement avec une méthode claire, motivante et efficace. Cours, exercices, quiz et plus." />
-    <meta name="keywords" content="anglais, apprendre anglais, formation anglais, cours anglais, Mr Nathan, e-learning" />
-    <meta name="author" content="Mr Nathan" />
-    <meta property="og:title" content="Mr Nathan English - Formation en ligne d'anglais" />
-    <meta property="og:description" content="Découvrez une méthode simple et motivante pour apprendre l’anglais avec Mr Nathan." />
+    <meta name="description" content="OpenDoorsClass - Apprenez l'anglais facilement avec une méthode claire, motivante et efficace. Cours, exercices, quiz et plus." />
+    <meta name="keywords" content="anglais, apprendre anglais, formation anglais, cours anglais, OpenDoorsClass, e-learning" />
+    <meta name="author" content="OpenDoorsClass" />
+    <meta property="og:title" content="OpenDoorsClass - Formation en ligne d'anglais" />
+    <meta property="og:description" content="Découvrez une méthode simple et motivante pour apprendre l’anglais sur OpenDoorsClass" />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="http://localhost/mrnathan-english/public/" />
     <meta property="og:image" content="http://localhost/mrnathan-english/public/images/og-image.png" />
     <link rel="icon" href="/images/favicon.ico" type="image/x-icon" />
 
     <link rel="stylesheet" href="../public/css/style.css">
-    <title>Accueil - Mr Nathan English</title>
+    <title>OpenDoorsClass - Accueil</title>
 </head>
 
 <body>
