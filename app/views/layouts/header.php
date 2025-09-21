@@ -42,8 +42,8 @@
                     <!-- Photo de profil -->
                     <li>
                         <img src="./uploads/profiles/<?= htmlspecialchars($_SESSION['user']['profile_picture'] ?? '/assets/img/default.png') ?>"
-                             alt="Photo de profil"
-                             style="width:40px; height:40px; border-radius:50%; vertical-align:middle;">
+                            alt="Photo de profil"
+                            style="width:40px; height:40px; border-radius:50%; vertical-align:middle;object-fit:cover;">
                     </li>
 
                     <!-- Déconnexion -->
@@ -106,10 +106,22 @@
                     </ul>
                 </li>
                 <li><a href="./courses">Cours</a></li>
-                <li>
-                    <img src="../<?= htmlspecialchars($_SESSION['user']['profile_picture'] ?? '/assets/img/default.png') ?>"
-                         alt="Photo de profil"
-                         style="width:40px; height:40px; border-radius:50%;">
+                <li style="display: flex;">
+                    <img src="./uploads/profiles/<?= htmlspecialchars($_SESSION['user']['profile_picture'] ?? '/assets/img/default.png') ?>" alt="Photo de profil" style="width:40px; height:40px; border-radius:50%; vertical-align:middle;object-fit:cover;">
+                    <div style="line-height: 20px;margin-left:10px;" class="username"><?= htmlspecialchars($_SESSION['user']["username"]); ?> <br>
+                        <small style="display:inline-block;font-size: 0.7em;">
+                            <!-- // Affiche le niveau de l'élève -->
+                            <?php
+                                if($_SESSION["user"]["english_level"] === "beginner") {
+                                    echo "Débutant";
+                                } else if($_SESSION["user"]["english_level"] === "intermediate") {
+                                    echo "Intermédiaire";
+                                } else {
+                                    echo "Niveau avancé";
+                                }
+                            ?>
+                        </small>
+                    </div>
                 </li>
                 <li><a href="./logout">Déconnexion</a></li>
             <?php else: ?>
