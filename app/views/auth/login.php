@@ -10,6 +10,7 @@
 </head>
 
 <body>
+    <?php require_once '../app/views/layouts/header.php'; ?>
     <main>
         <section class="login-page">
             <div class="login-container">
@@ -53,7 +54,7 @@
                         </div>
 
                         <div class="form-bottom-line">
-                            <a href="/forgot-password" class="forgot-password-link">Mot de passe oublié ?</a>
+                            <a href="./forgot-password" class="forgot-password-link">Mot de passe oublié ?</a>
                             <a href="./register" class="register-link">Créez un compte</a>
                         </div>
 

@@ -126,86 +126,86 @@ class AuthController
         exit;
     }
 
-public function loginPost()
-{
-    session_start();
-    header('Content-Type: application/json');
+    public function loginPost()
+    {
+        session_start();
+        header('Content-Type: application/json');
 
-    try {
-        // 1) Récupérer les données du formulaire
-        $email = trim($_POST['email'] ?? '');
-        $password = $_POST['password'] ?? '';
-        $rememberMe = isset($_POST['remember_me']) && $_POST['remember_me'] === 'on';
+        try {
+            // 1) Récupérer les données du formulaire
+            $email = trim($_POST['email'] ?? '');
+            $password = $_POST['password'] ?? '';
+            $rememberMe = isset($_POST['remember_me']) && $_POST['remember_me'] === 'on';
 
-        // 2) Validation rapide
-        if (empty($email) || empty($password)) {
-            echo json_encode(['success' => false, 'message' => 'Email ou mot de passe manquant.']);
-            return;
+            // 2) Validation rapide
+            if (empty($email) || empty($password)) {
+                echo json_encode(['success' => false, 'message' => 'Email ou mot de passe manquant.']);
+                return;
+            }
+
+            // 3) Vérifier si l'utilisateur existe dans la base de données 
+            $stmt = $this->db->prepare("SELECT id, email, username, fullname, password, is_confirmed FROM users WHERE email = ?");
+            $stmt->execute([$email]);
+            $user = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+            if (!$user) {
+                echo json_encode(['success' => false, 'message' => 'Email ou mot de passe invalide.']);
+                return;
+            }
+
+            // 4) Vérifier si le mot de passe est correct
+            if (!password_verify($password, $user['password'])) {
+                echo json_encode(['success' => false, 'message' => 'Email ou mot de passe invalide.']);
+                return;
+            }
+
+            // 5) Vérifier si l'utilisateur est confirmé
+            if ((int)$user['is_confirmed'] !== 1) {
+                echo json_encode(['success' => false, 'message' => 'Votre compte n\'est pas confirmé.']);
+                return;
+            }
+
+            // 6) Configurer la session
+            if ($rememberMe) {
+                // Prolonger la durée de vie de la session (par exemple, 30 jours)
+                session_set_cookie_params(30 * 24 * 60 * 60);
+                session_regenerate_id(true); // Régénérer l'ID de session pour plus de sécurité
+            } else {
+                // Session standard (expire à la fermeture du navigateur)
+                // session_set_cookie_params(0);
+            }
+
+            // 7) Créer une session utilisateur
+            $_SESSION['user'] = [
+                'id' => $user['id'],
+                'email' => $user['email'],
+                'username' => $user['username'],
+                'fullname' => $user['fullname'],
+                'confirmed' => (int)$user['is_confirmed']
+            ];
+
+            // 8) Récupérer le profil de l'utilisateur
+            $profileStmt = $this->db->prepare("SELECT profile_picture, english_level FROM user_profiles WHERE user_id = ?");
+            $profileStmt->execute([$user['id']]);
+            $profile = $profileStmt->fetch(\PDO::FETCH_ASSOC);
+
+            $_SESSION['user']['profile_picture'] = $profile['profile_picture'] ?? 'default.png';
+            $_SESSION['user']['english_level'] = $profile['english_level'] ?? null;
+
+            // 9) Répondre avec une réponse JSON réussie
+            echo json_encode([
+                'success' => true,
+                'message' => 'Connexion réussie.',
+                'user' => $_SESSION['user']
+            ]);
+        } catch (\Exception $e) {
+            error_log('Erreur lors de la connexion: ' . $e->getMessage());
+            echo json_encode([
+                'success' => false,
+                'message' => 'Une erreur est survenue lors de la connexion.'
+            ]);
         }
-
-        // 3) Vérifier si l'utilisateur existe dans la base de données 
-        $stmt = $this->db->prepare("SELECT id, email, username, fullname, password, is_confirmed FROM users WHERE email = ?");
-        $stmt->execute([$email]);
-        $user = $stmt->fetch(\PDO::FETCH_ASSOC);
-
-        if (!$user) {
-            echo json_encode(['success' => false, 'message' => 'Email ou mot de passe invalide.']);
-            return;
-        }
-
-        // 4) Vérifier si le mot de passe est correct
-        if (!password_verify($password, $user['password'])) {
-            echo json_encode(['success' => false, 'message' => 'Email ou mot de passe invalide.']);
-            return;
-        }
-
-        // 5) Vérifier si l'utilisateur est confirmé
-        if ((int)$user['is_confirmed'] !== 1) {
-            echo json_encode(['success' => false, 'message' => 'Votre compte n\'est pas confirmé.']);
-            return;
-        }
-
-        // 6) Configurer la session
-        if ($rememberMe) {
-            // Prolonger la durée de vie de la session (par exemple, 30 jours)
-            session_set_cookie_params(30 * 24 * 60 * 60);
-            session_regenerate_id(true); // Régénérer l'ID de session pour plus de sécurité
-        } else {
-            // Session standard (expire à la fermeture du navigateur)
-            // session_set_cookie_params(0);
-        }
-
-        // 7) Créer une session utilisateur
-        $_SESSION['user'] = [
-            'id' => $user['id'],
-            'email' => $user['email'],
-            'username' => $user['username'],
-            'fullname' => $user['fullname'],
-            'confirmed' => (int)$user['is_confirmed']
-        ];
-
-        // 8) Récupérer le profil de l'utilisateur
-        $profileStmt = $this->db->prepare("SELECT profile_picture, english_level FROM user_profiles WHERE user_id = ?");
-        $profileStmt->execute([$user['id']]);
-        $profile = $profileStmt->fetch(\PDO::FETCH_ASSOC);
-
-        $_SESSION['user']['profile_picture'] = $profile['profile_picture'] ?? 'default.png';
-        $_SESSION['user']['english_level'] = $profile['english_level'] ?? null;
-
-        // 9) Répondre avec une réponse JSON réussie
-        echo json_encode([
-            'success' => true,
-            'message' => 'Connexion réussie.',
-            'user' => $_SESSION['user']
-        ]);
-    } catch (\Exception $e) {
-        error_log('Erreur lors de la connexion: ' . $e->getMessage());
-        echo json_encode([
-            'success' => false,
-            'message' => 'Une erreur est survenue lors de la connexion.'
-        ]);
     }
-}
 
     public function confirmPost()
     {
@@ -554,5 +554,74 @@ public function loginPost()
         ];
 
         require_once __DIR__ . '/../views/auth/welcome.php';
+    }
+
+    public function forgotPasswordPage()
+    {
+        require_once __DIR__ . '/../views/auth/forgotPassword.php';
+    }
+
+    public function forgotPasswordPost()
+    {
+        // Désactiver l'affichage des erreurs pour éviter les sorties HTML
+        ini_set('display_errors', 0);
+        ini_set('display_startup_errors', 0);
+        error_reporting(E_ALL);
+
+        session_start();
+        header('Content-Type: application/json');
+
+        try {
+            // 1) Récupérer l'email
+            $email = trim($_POST['find-email'] ?? '');
+
+            // 2) Validation
+            if (empty($email)) {
+                echo json_encode(['success' => false, 'message' => 'Veuillez entrer une adresse e-mail.']);
+                return;
+            }
+
+            // 3) Vérifier si l'utilisateur existe
+            $stmt = $this->db->prepare("SELECT id, email, fullname FROM users WHERE email = ?");
+            $stmt->execute([$email]);
+            $user = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+            if (!$user) {
+                echo json_encode(['success' => false, 'message' => 'Aucun compte n\'est associé à cette adresse e-mail.']);
+                return;
+            }
+
+            // 4) Générer un token de réinitialisation
+            $token = bin2hex(random_bytes(32));
+            $expiresAt = date('Y-m-d H:i:s', strtotime('+1 hour'));
+
+            // 5) Mettre à jour la table users avec le token et la date d'expiration
+            $stmt = $this->db->prepare("UPDATE users SET reset_token = ?, reset_expires_at = ? WHERE id = ?");
+            $stmt->execute([$token, $expiresAt, $user['id']]);
+
+            // 6) Envoyer l'e-mail avec le lien de réinitialisation
+            $resetLink = "http://localhost/mrnathanenglish/public/reset-password?token=$token";
+            $mailService = new MailService();
+            $sent = $mailService->sendPasswordResetLink($email, $user['fullname'], $resetLink);
+
+            if (!$sent) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Erreur lors de l\'envoi de l\'e-mail de réinitialisation. Veuillez réessayer.'
+                ]);
+                return;
+            }
+
+            echo json_encode([
+                'success' => true,
+                'message' => 'Un lien de réinitialisation a été envoyé à votre adresse e-mail.'
+            ]);
+        } catch (\Exception $e) {
+            error_log('Erreur lors de la demande de réinitialisation: ' . $e->getMessage());
+            echo json_encode([
+                'success' => false,
+                'message' => 'Une erreur est survenue. Veuillez réessayer.'
+            ]);
+        }
     }
 }

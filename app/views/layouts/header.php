@@ -1,7 +1,7 @@
 <header class="main-header">
     <div class="container">
         <div class="logo">
-            <a href="/"><strong>Mr Nathan English</strong></a>
+            <a href="./"><strong>Mr Nathan English</strong></a>
         </div>
 
         <nav class="nav-menu">

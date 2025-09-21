@@ -15,10 +15,10 @@ class MailService
 
         // Config SMTP
         $this->mailer->isSMTP();
-        $this->mailer->Host       = 'smtp.gmail.com'; // Remplace par ton SMTP
+        $this->mailer->Host       = 'smtp.gmail.com';
         $this->mailer->SMTPAuth   = true;
-        $this->mailer->Username   = 'misterntkofficiel2.0@gmail.com'; // Ton email
-        $this->mailer->Password   = 'tqlrzdeuawbjuhkm'; // Ton mot de passe / App Password
+        $this->mailer->Username   = 'misterntkofficiel2.0@gmail.com';
+        $this->mailer->Password   = 'tqlrzdeuawbjuhkm';
         $this->mailer->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
         $this->mailer->Port       = 587;
 
@@ -34,17 +34,41 @@ class MailService
             $this->mailer->Subject = 'Votre code de confirmation';
             $this->mailer->Body    = "
                 <h2>Confirmation de votre compte</h2>
-                <p>Mr Nathan vous salut <strong>{$toName}</strong>,</p>
+                <p>Mr Nathan vous salue <strong>{$toName}</strong>,</p>
                 <p>Voici votre code de confirmation :</p>
                 <h3 style='color:#3c3b6e;'>{$code}</h3>
                 <p>Ce code est valable 10 minutes.</p>
                 <hr>
-                <small>Si vous n'êtes pas à l'origine de cette demande, ignorez cet email.</small>
+                <small>Si vous n'êtes pas à l'origine de cette demande, ignorez cet e-mail.</small>
             ";
 
             $this->mailer->send();
             return true;
         } catch (Exception $e) {
+            return false;
+        }
+    }
+
+    public function sendPasswordResetLink($toEmail, $toName, $resetLink)
+    {
+        try {
+            $this->mailer->addAddress($toEmail, $toName);
+            $this->mailer->isHTML(true);
+            $this->mailer->Subject = 'Réinitialisation de votre mot de passe';
+            $this->mailer->Body    = "
+                <h2>Réinitialisation de mot de passe</h2>
+                <p>Bonjour <strong>{$toName}</strong>,</p>
+                <p>Vous avez demandé à réinitialiser votre mot de passe. Cliquez sur le lien ci-dessous pour procéder :</p>
+                <a href='{$resetLink}' style='display: inline-block; padding: 10px 20px; background-color: #5a57a3; color: #fff; text-decoration: none; border-radius: 5px;'>Réinitialiser mon mot de passe</a>
+                <p>Ce lien est valable pendant 1 heure.</p>
+                <hr>
+                <small>Si vous n'êtes pas à l'origine de cette demande, ignorez cet e-mail.</small>
+            ";
+
+            $this->mailer->send();
+            return true;
+        } catch (Exception $e) {
+            error_log('Erreur lors de l\'envoi de l\'e-mail de réinitialisation: ' . $e->getMessage());
             return false;
         }
     }

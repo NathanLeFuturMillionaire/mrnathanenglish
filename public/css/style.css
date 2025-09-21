@@ -87,7 +87,6 @@ header.scrolled {
     padding: 10px 5px;
     transition: color 0.3s ease;
     cursor: pointer;
-    user-select: none;
 }
 
 .nav-menu ul li a:hover {

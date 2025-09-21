@@ -56,6 +56,14 @@ class Router
                 $controller->logout();
                 break;
 
+                case 'forgot-password':
+                    $controller = new AuthController();
+                    if($method === "POST") {
+                        $controller->forgotPasswordPost();
+                    } else {
+                        $controller->forgotPasswordPage();
+                    }
+                    break;
 
             case 'login':
                 $controller = new AuthController();
@@ -64,6 +72,7 @@ class Router
                 } else {
                     $controller->login();
                 }
+
 
             // default:
             //     http_response_code(404);
