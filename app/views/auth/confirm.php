@@ -7,12 +7,12 @@
     <!-- <link rel="stylesheet" href="../public/css/style.css"> -->
     <link rel="stylesheet" href="../public/css/auth/confirm.css">
     <link rel="stylesheet" href="../public/css/style.css">
-    <title>Vérification - Mr Nathan English</title>
+    <title>OpenDoorsClass - Vérification</title>
 </head>
 
 <body>
     <header>
-        <h1>Mr Nathan English</h1>
+        <h1>OpenDoorsClass</h1>
     </header>
     <div class="confirmation-container">
         <h1>Confirmez votre compte</h1>
@@ -73,9 +73,9 @@
     <script src="js/confirm.js"></script>
 
     <!-- Footer -->
-    <footer class="confirmation-footer">
-        <p>&copy; <?= date('Y') ?> Mr Nathan English. Tous droits réservés.</p>
-    </footer>
+<footer class="confirmation-footer">
+    <p>&copy; <?= date('Y') ?> Mr Nathan English. Tous droits réservés.</p>
+</footer>
 </body>
 
 </html>
