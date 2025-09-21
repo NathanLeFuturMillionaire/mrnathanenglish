@@ -142,19 +142,19 @@ class AuthController
             return;
         }
 
-        // 3) Vérifier si l'utilisateur existe dans la base de données
-        $stmt = $this->db->prepare("SELECT id, email, username, fullname, password, is_confirmed FROM users WHERE email = ?");
+        // 3) Vérifier si l'utilisateur existe dans la base de données 
+        $stmt = $this->db->prepare("SELECT u.id, u.email, p.english_level, u.username, u.fullname, u.password, u.is_confirmed FROM users u INNER JOIN user_profiles p ON u.id = p.user_id WHERE u.email = ?");
         $stmt->execute([$email]);
         $user = $stmt->fetch(\PDO::FETCH_ASSOC);
 
         if (!$user) {
-            echo json_encode(['success' => false, 'message' => 'Email ou mot de passe invalide.']);
+            echo json_encode(['success' => false, 'message' => 'Utilisateur introuvable.']);
             return;
         }
 
         // 4) Vérifier si le mot de passe est correct
         if (!password_verify($password, $user['password'])) {
-            echo json_encode(['success' => false, 'message' => 'Email ou mot de passe invalide.']);
+            echo json_encode(['success' => false, 'message' => 'Ce mail existe mais le mot de passe n\'est pas le bon.']);
             return;
         }
 

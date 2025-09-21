@@ -9,14 +9,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function showError(id, message) {
         const input = document.getElementById(id);
-        const errorElement = input.closest('.form-login').querySelector(`.error-message[data-for="${id}"]`);
+        const errorElement = input ? input.closest('.form-login').querySelector(`.error-message[data-for="${id}"]`) : document.querySelector(`.error-message[data-for="${id}"]`);
         if (errorElement) {
             errorElement.textContent = message;
             errorElement.style.opacity = '1';
         }
-        // Animation shake
-        input.classList.add('shake');
-        setTimeout(() => input.classList.remove('shake'), 500);
+        // Animation shake pour les champs d'entrée uniquement
+        if (input) {
+            input.classList.add('shake');
+            setTimeout(() => input.classList.remove('shake'), 500);
+        }
     }
 
     function clearError(id) {
@@ -39,11 +41,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Effacer les erreurs générales
     function clearGeneralError() {
-        const generalErrorElement = document.querySelector('.error-message[data-for="general"]');
-        if (generalErrorElement) {
-            generalErrorElement.textContent = '';
-            generalErrorElement.style.opacity = '0';
-        }
+        clearError('general');
     }
 
     form.addEventListener('submit', function (e) {
@@ -86,16 +84,18 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 if (data.success) {
                     // Connexion réussie
-                    window.location.href = '/dashboard'; // Rediriger vers le tableau de bord ou une autre page
+                    window.location.href = '/dashboard'; // Rediriger vers le tableau de bord
                 } else {
                     // Afficher les erreurs dans les champs correspondants
                     if (data.errors) {
                         for (const [field, message] of Object.entries(data.errors)) {
                             showError(field, message); // Afficher l'erreur pour chaque champ
                         }
-                    } else {
+                    } else if (data.message) {
                         // Afficher une erreur générale
-                        showError('general', data.message || 'Une erreur est survenue.');
+                        showError('general', data.message);
+                    } else {
+                        showError('general', 'Une erreur est survenue.');
                     }
                 }
             })

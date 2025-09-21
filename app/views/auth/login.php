@@ -13,7 +13,6 @@
     <main>
         <section class="login-page">
             <div class="login-container">
-
                 <!-- Colonne gauche : formulaire -->
                 <div class="login-left">
                     <!-- Flèche retour -->
@@ -24,6 +23,9 @@
                         <h2>Mr Nathan English</h2>
                         <h2>Se connecter</h2>
                         <p>Connectez-vous à votre compte pour accéder à vos cours d'anglais.</p>
+
+                        <!-- Message d'erreur général -->
+                        <div class="error-message" data-for="general"></div>
 
                         <!-- Pour email -->
                         <label for="email">Adresse e-mail</label>
@@ -54,7 +56,6 @@
                             <span class="spinner"></span>
                         </button>
                     </form>
-
                 </div>
 
                 <!-- Colonne droite : image -->
