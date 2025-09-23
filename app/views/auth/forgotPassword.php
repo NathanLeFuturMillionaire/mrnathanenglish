@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="../public/css/style.css">
     <link rel="stylesheet" href="../public/css/auth/forgotPassword.css">
-    <title>Mot de passe oublié - Mr Nathan English</title>
+    <title>Mot de passe oublié - OpenDoorsClass</title>
 </head>
 
 <body>

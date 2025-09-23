@@ -21,7 +21,7 @@
                         &#8592;
                     </a>
                     <form action="" method="POST" class="form-login" id="loginForm">
-                        <h2>Mr Nathan English</h2>
+                        <h2>OpenDoorsClass</h2>
                         <h2>Se connecter</h2>
                         <p>Connectez-vous à votre compte pour accéder à vos cours d'anglais.</p>
 
