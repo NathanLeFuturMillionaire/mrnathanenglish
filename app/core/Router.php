@@ -56,6 +56,11 @@ class Router
                 $controller->logout();
                 break;
 
+            case 'endtoken':
+                $controller = new HomeController();
+                $controller->endtoken();
+            break;
+
                 case 'forgot-password':
                     $controller = new AuthController();
                     if($method === "POST") {

@@ -26,6 +26,108 @@ class AuthController
         require_once __DIR__ . '/../views/auth/register.php';
     }
 
+    /**
+     * Récupère toutes les informations d’un utilisateur (user, profile, tokens)
+     *
+     * @param int $userId
+     * @return array|null
+     */
+    public function getUserWithDetails(string $token): ?array
+    {
+        $sql = "
+            SELECT 
+                u.id AS user_id,
+                u.fullname,
+                u.email,
+                u.password,
+                u.confirmation_code,
+                u.is_confirmed,
+                u.reset_link,
+                u.reset_token,
+                u.reset_expires_at,
+                u.created_at AS user_created_at,
+
+                p.id AS profile_id,
+                p.profile_picture,
+                p.birth_date,
+                p.country,
+                p.english_level,
+                p.phone_number,
+                p.bio,
+                p.updated_at AS profile_updated_at,
+
+                t.id AS token_id,
+                t.token,
+                t.expires_at AS token_expires_at,
+                t.created_at AS token_created_at,
+                t.ip_address,
+                t.device,
+                t.browser
+
+            FROM users u
+            INNER JOIN user_profiles p ON u.id = p.user_id
+            INNER JOIN user_remember_tokens t ON u.id = t.user_id
+            WHERE t.token = :token
+        ";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(':token', $token, PDO::PARAM_INT);
+        $stmt->execute();
+        $rows = $stmt->fetchAll();
+
+        if (!$rows) {
+            return null; // aucun utilisateur trouvé
+        }
+
+        // --- Structuration du résultat ---
+        $user = [
+            'id' => $rows[0]['user_id'],
+            'fullname' => $rows[0]['fullname'],
+            'email' => $rows[0]['email'],
+            'password' => $rows[0]['password'],
+            'confirmation_code' => $rows[0]['confirmation_code'],
+            'is_confirmed' => $rows[0]['is_confirmed'],
+            'reset_link' => $rows[0]['reset_link'],
+            'reset_token' => $rows[0]['reset_token'],
+            'reset_expires_at' => $rows[0]['reset_expires_at'],
+            'created_at' => $rows[0]['user_created_at'],
+            'profile' => null,
+            'tokens' => []
+        ];
+
+        // Profil (s’il existe)
+        if ($rows[0]['profile_id']) {
+            $user['profile'] = [
+                'id' => $rows[0]['profile_id'],
+                'profile_picture' => $rows[0]['profile_picture'],
+                'birth_date' => $rows[0]['birth_date'],
+                'country' => $rows[0]['country'],
+                'english_level' => $rows[0]['english_level'],
+                'phone_number' => $rows[0]['phone_number'],
+                'bio' => $rows[0]['bio'],
+                'updated_at' => $rows[0]['profile_updated_at']
+            ];
+        }
+
+        // Tokens (il peut y en avoir plusieurs)
+        foreach ($rows as $row) {
+            if ($row['token_id']) {
+                $user['token'][] = [
+                    'id' => $row['token_id'],
+                    'tokens' => $row['token'],
+                    'expires_at' => $row['token_expires_at'],
+                    'created_at' => $row['token_created_at'],
+                    'ip_address' => $row['ip_address'],
+                    'device' => $row['device'],
+                    'browser' => $row['browser'],
+                ];
+            }
+        }
+
+        return $user;
+        require __DIR__ . './../views/login.php';
+    }
+
     // Affiche le formulaire de connexion
     public function login()
     {
@@ -174,23 +276,55 @@ class AuthController
             // Régénérer l'ID de session pour la sécurité
             session_regenerate_id(true);
 
-            // Si "Se souvenir de moi" est coché, créer un cookie persistant
+            // Vérifie si la case "Se souvenir de moi" est cochée
             if ($rememberMe) {
                 $token = bin2hex(random_bytes(32));
                 $expiresAt = time() + (30 * 24 * 60 * 60); // 30 jours
+
+                // Définir le cookie côté client
                 setcookie('remember_me_token', $token, $expiresAt, '/', '', false, true);
 
-                // Stocker le token dans la base de données
-                // $stmt = $this->db->prepare("UPDATE users SET remember_token = ?, remember_expires_at = ? WHERE id = ?");
-                // $stmt->execute([$token, date('Y-m-d H:i:s', $expiresAt), $user['id']]);
+                // Vérifie si un token existe déjà pour cet utilisateur
+                $stmt = $this->db->prepare("SELECT id FROM user_remember_tokens WHERE user_id = ?");
+                $stmt->execute([$user['id']]);
+                $existing = $stmt->fetch();
+
+                if ($existing) {
+                    // Mettre à jour le token existant
+                    $stmt = $this->db->prepare("UPDATE user_remember_tokens 
+                                    SET token = ?, expires_at = ?, ip_address = ?, device = ?, browser = ?, created_at = NOW() 
+                                    WHERE user_id = ?");
+                    $stmt->execute([
+                        $token,
+                        date('Y-m-d H:i:s', $expiresAt),
+                        $_SERVER['REMOTE_ADDR'] ?? null,
+                        $_SERVER['HTTP_USER_AGENT'] ?? null, // tu peux parser pour isoler device/browser si tu veux
+                        $_SERVER['HTTP_USER_AGENT'] ?? null,
+                        $user['id']
+                    ]);
+                } else {
+                    // Insérer un nouveau token
+                    $stmt = $this->db->prepare("INSERT INTO user_remember_tokens (user_id, token, expires_at, ip_address, device, browser, created_at) 
+                                    VALUES (?, ?, ?, ?, ?, ?, NOW())");
+                    $stmt->execute([
+                        $user['id'],
+                        $token,
+                        date('Y-m-d H:i:s', $expiresAt),
+                        $_SERVER['REMOTE_ADDR'] ?? null,
+                        $_SERVER['HTTP_USER_AGENT'] ?? null,
+                        $_SERVER['HTTP_USER_AGENT'] ?? null
+                    ]);
+                }
             } else {
-                // Supprimer tout cookie de persistance existant
+                // Si l'utilisateur ne coche pas la case, supprimer le cookie + token en base
                 if (isset($_COOKIE['remember_me_token'])) {
-                    setcookie('remember_me_token', '', time() - 3600, '/');
-                    // $stmt = $this->db->prepare("UPDATE users SET remember_token = NULL, remember_expires_at = NULL WHERE id = ?");
-                    // $stmt->execute([$user['id']]);
+                    setcookie('remember_me_token', '', time() - 3600, '/', '', false, true);
+
+                    $stmt = $this->db->prepare("DELETE FROM user_remember_tokens WHERE user_id = ?");
+                    $stmt->execute([$user['id']]);
                 }
             }
+
 
             // Enregistrer les données de l'utilisateur dans la session
             $_SESSION['user'] = [
