@@ -1,0 +1,3 @@
+Ne pas oublier de faire la vérification de la valeur envoyée en POST,
+car un visiteur pourrait modifier et envoyer la mauvaise valeur, donc préparer
+un code qui gère ce cas.

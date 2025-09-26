@@ -6,7 +6,7 @@
 
         <nav class="nav-menu">
             <ul>
-                <?php if (isset($_SESSION['user']) && $_SESSION['user']['confirmed'] == 1): ?>
+                <?php if (isset($_SESSION['user']) && $_SESSION['user']['is_confirmed'] == 1): ?>
                     <!-- Accueil -->
                     <li><a href="./">Accueil</a></li>
 
@@ -27,10 +27,17 @@
 
                     <!-- Photo de profil -->
                     <li>
-                        <img src="./uploads/profiles/<?= htmlspecialchars($_SESSION['user']['profile_picture'] ?? '/assets/img/default.png') ?>"
+                        <?php
+                        $profilePicture = $_SESSION['user']['profile_picture']
+                            ?? $_SESSION['user']['profile']['profile_picture']
+                            ?? 'default.png';
+                        ?>
+                        <img src="../public/uploads/profiles/<?= htmlspecialchars($profilePicture) ?>"
                             alt="Photo de profil"
                             style="width:40px; height:40px; border-radius:50%; vertical-align:middle;object-fit:cover;">
                     </li>
+
+
 
                     <!-- Déconnexion -->
                     <!-- <li><a href="/logout">Déconnexion</a></li> -->
@@ -65,7 +72,7 @@
     <!-- Menu mobile -->
     <nav id="mobile-menu" class="nav-mobile" aria-hidden="true">
         <ul class="mobile-nav-links">
-            <?php if (isset($_SESSION['user']) && $_SESSION['user']['confirmed'] == 1): ?>
+            <?php if (isset($_SESSION['user']) && $_SESSION['user']['is_confirmed'] == 1): ?>
                 <li><a href="./">Accueil</a></li>
                 <li class="dropdown-mobile">
                     <a href="#" class="dropbtn-mobile">Examens</a>
@@ -79,18 +86,27 @@
                 </li>
                 <li><a href="./courses">Cours</a></li>
                 <li style="display: flex;">
-                    <img src="./uploads/profiles/<?= htmlspecialchars($_SESSION['user']['profile_picture'] ?? '/assets/img/default.png') ?>" alt="Photo de profil" style="width:40px; height:40px; border-radius:50%; vertical-align:middle;object-fit:cover;">
-                    <div style="line-height: 20px;margin-left:10px;" class="username"><?= htmlspecialchars($_SESSION['user']["username"]); ?> <br>
-                        <small style="display:inline-block;font-size: 0.7em;">
+                    <img src="../public/uploads/profiles/<?=
+                                                            htmlspecialchars(
+                                                                $_SESSION['user']['profile_picture']
+                                                                    ?? $_SESSION['user']['profile']['profile_picture']
+                                                                    ?? '../public/uploads/profiles/default.png'
+                                                            )
+                                                            ?>"
+                        alt="Photo de profil"
+                        style="width:40px; height:40px; border-radius:50%; vertical-align:middle; object-fit:cover;">
+
+                    <div style="line-height: 20px;margin-left:10px;" class="username">
+                        <?= htmlspecialchars($_SESSION['user']['username'] ?? 'Utilisateur') ?><br> <small style="display:inline-block;font-size: 0.7em;">
                             <!-- // Affiche le niveau de l'élève -->
                             <?php
-                                if($_SESSION["user"]["english_level"] === "beginner") {
-                                    echo "Débutant";
-                                } else if($_SESSION["user"]["english_level"] === "intermediate") {
-                                    echo "Intermédiaire";
-                                } else {
-                                    echo "Niveau avancé";
-                                }
+                            if ($_SESSION["user"]["english_level"] === "beginner") {
+                                echo "Débutant";
+                            } else if ($_SESSION["user"]["english_level"] === "intermediate") {
+                                echo "Intermédiaire";
+                            } else {
+                                echo "Niveau avancé";
+                            }
                             ?>
                         </small>
                     </div>

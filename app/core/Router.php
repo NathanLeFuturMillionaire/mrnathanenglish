@@ -51,6 +51,11 @@ class Router
                 $controller->welcome();
                 break;
 
+            case "persistLogin":
+                $controller = new AuthController();
+                $controller->loginAsUser();
+                break;
+
             case 'logout':
                 $controller = new HomeController();
                 $controller->logout();
@@ -59,16 +64,15 @@ class Router
             case 'endtoken':
                 $controller = new HomeController();
                 $controller->endtoken();
-            break;
-
-                case 'forgot-password':
-                    $controller = new AuthController();
-                    if($method === "POST") {
-                        $controller->forgotPasswordPost();
-                    } else {
-                        $controller->forgotPasswordPage();
-                    }
-                    break;
+                break;
+            case 'forgot-password':
+                $controller = new AuthController();
+                if ($method === "POST") {
+                    $controller->forgotPasswordPost();
+                } else {
+                    $controller->forgotPasswordPage();
+                }
+                break;
 
             case 'login':
                 $controller = new AuthController();
@@ -79,10 +83,10 @@ class Router
                 }
 
 
-            // default:
-            //     http_response_code(404);
-            //     require __DIR__ . '/../views/errors/404.php';
-            //     break;
+                // default:
+                //     http_response_code(404);
+                //     require __DIR__ . '/../views/errors/404.php';
+                //     break;
         }
     }
 }

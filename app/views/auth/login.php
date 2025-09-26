@@ -28,6 +28,10 @@ function formatDateFr($date)
 
     return $formatter->format(new \DateTime($date));
 }
+
+if(isset($_POST["userLoginSubmit"])) {
+    // $loginAsUser = $auth->loginAsUser();
+}
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -49,26 +53,29 @@ function formatDateFr($date)
                 <div class="login-left login-left-cookie">
                     <a href="javascript:window.history.back();" class="back-arrow">&#8592;</a>
 
-                    <h2>OpenDoorsClass</h2>
-                    <h2>Se connecter</h2>
-                    <p>Connectez-vous à votre compte pour accéder à vos cours d'anglais.</p>
-
                     <?php if ($userFromCookie): ?>
                         <!-- Infos de l'utilisateur depuis le cookie -->
                         <div class="user-remember-info">
+                            <h2>OpenDoorsClass</h2>
+                            <h2>Bon retour !</h2>
+                            <p>Nous ne vous avons pas oublié <em><?= $userFromCookie["fullname"]; ?></em>, reconnectez-vous et continuez votre apprentissage de l'anglais.</p>
+
                             <?php if (!empty($userFromCookie['profile']['profile_picture'])): ?>
-                                <img src="../public/uploads/profiles/<?= htmlspecialchars($userFromCookie['profile']['profile_picture']) ?>"
-                                    alt="Photo de profil" width="120" style="border-radius:50%;margin-bottom:15px;">
+                                <?php if ($userFromCookie['profile']['profile_picture'] !== NULL): ?>
+                                    <img src="../public/uploads/profiles/<?= htmlspecialchars($userFromCookie['profile']['profile_picture']) ?>" alt="Photo de profil" width="120" style="border-radius:50%;margin-bottom:15px;">
+                                <?php else: ?>
+                                    <img src="../public/uploads/profiles/defaut.png" alt="Photo de profile" width="120" style="border-radius:50%;margin-bottom:15px;">
+                                <?php endif; ?>
                             <?php endif; ?>
                             <!-- Le nom de l'utilisateur -->
-                            <h4 style="margin-top: -20px;"><?= htmlspecialchars($userFromCookie["fullname"]); ?></h4>
+                            <h4 style="margin-top: -20px; margin-bottom: 20px;"><?= htmlspecialchars($userFromCookie["fullname"]); ?></h4>
                             <p>Né(e) <?= formatDateFr($userFromCookie['profile']['birth_date']) ?></p>
                             <p><?= htmlspecialchars($userFromCookie['profile']['phone_number'] ?? 'Numéro inconnu') ?></p>
-                            <a href="./endtoken" class="not-me-link">Ce n'est pas moi</a>
+                            <a href="./endtoken" class="not-me-link" style="margin-top: -30px;">Ce n'est pas moi</a>
 
-                            <form action="" method="POST" style="margin-top:15px;">
+                            <form action="./persistLogin" method="POST" style="margin-top:15px;">
                                 <input type="hidden" name="login_as_user_id" value="<?= $userFromCookie['id'] ?>">
-                                <button type="submit" class="btn-login-as-user">
+                                <button type="submit" class="btn-login-as-user" name="userLoginSubmit">
                                     Se connecter en tant que <?= htmlspecialchars($userFromCookie['fullname']) ?>
                                 </button>
                             </form>
@@ -76,6 +83,10 @@ function formatDateFr($date)
                     <?php else: ?>
                         <!-- Formulaire classique -->
                         <form action="" method="POST" class="form-login" id="loginForm">
+                            <h2>OpenDoorsClass</h2>
+                            <h2>Se connecter</h2>
+                            <p>Connectez-vous à votre compte pour accéder à vos cours d'anglais.</p>
+
                             <div class="error-message" data-for="general"></div>
 
                             <label for="email">Adresse e-mail</label>

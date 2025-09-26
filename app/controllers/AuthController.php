@@ -26,6 +26,54 @@ class AuthController
         require_once __DIR__ . '/../views/auth/register.php';
     }
 
+    public function loginAsUser()
+    {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login_as_user_id'])) {
+            $userId = (int) $_POST['login_as_user_id'];
+
+            // On récupère l'utilisateur dans la base
+            $sql = "SELECT u.id AS user_id, u.fullname, u.username AS username, u.email, u.password, u.confirmation_code, u.is_confirmed AS is_confirmed, u.reset_link, u.reset_token, u.reset_expires_at, u.created_at AS user_created_at, p.id AS profile_id, p.user_id, p.profile_picture, p.birth_date, p.country, p.english_level, p.phone_number, p.bio, p.updated_at AS profile_updated_at FROM users u INNER JOIN user_profiles p ON u.id = p.user_id WHERE u.id = ?";
+
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$userId]);
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($user) {
+                session_start();
+                // Création de la session
+                $_SESSION['user'] = [
+                    'id'            => $user['id'],
+                    'is_confirmed'  => $user['is_confirmed'],
+                    'username'      => $user['username'],
+                    'english_level' => $user['english_level'],
+                    'fullname'      => $user['fullname'],
+                    'email'         => $user['email'],
+                    'profile'       => [
+                        'profile_picture' => $user['profile_picture'],
+                        'birth_date'      => $user['birth_date'],
+                        'phone_number'    => $user['phone_number'],
+                        'bio'             => $user['bio'],
+                        'country'         => $user['country'],
+                    ],
+                ];
+
+                // Redirection vers le tableau de bord
+                header("Location: ./");
+                exit;
+            } else {
+                // Utilisateur non trouvé
+                $_SESSION['error'] = "Utilisateur introuvable.";
+                header("Location: /login");
+                exit;
+            }
+        } else {
+            // Si pas de POST, retour au login
+            header("Location: ./login");
+            exit;
+        }
+    }
+
+
     /**
      * Récupère toutes les informations d’un utilisateur (user, profile, tokens)
      *
@@ -38,10 +86,11 @@ class AuthController
             SELECT 
                 u.id AS user_id,
                 u.fullname,
+                u.username,
                 u.email,
                 u.password,
                 u.confirmation_code,
-                u.is_confirmed,
+                u.is_confirmed AS is_confirmed,
                 u.reset_link,
                 u.reset_token,
                 u.reset_expires_at,
@@ -83,6 +132,7 @@ class AuthController
         $user = [
             'id' => $rows[0]['user_id'],
             'fullname' => $rows[0]['fullname'],
+            'username' => $rows[0]['username'],
             'email' => $rows[0]['email'],
             'password' => $rows[0]['password'],
             'confirmation_code' => $rows[0]['confirmation_code'],
@@ -330,9 +380,9 @@ class AuthController
             $_SESSION['user'] = [
                 'id' => $user['id'],
                 'email' => $user['email'],
+                'is_confirmed' => $user['is_confirmed'],
                 'username' => $user['username'],
-                'fullname' => $user['fullname'],
-                'confirmed' => (int)$user['is_confirmed']
+                'fullname' => $user['fullname']
             ];
 
             // 7) Récupérer le profil de l'utilisateur
@@ -422,7 +472,7 @@ class AuthController
 
             // 7) Récupère les infos utilisateur avec profil
             $userData = $this->db->prepare("
-            SELECT u.id, u.email, u.username, u.fullname, u.is_confirmed, p.profile_picture
+            SELECT u.id, u.email, u.username, u.fullname, u.is_confirmed AS is_confirmed, p.profile_picture
             FROM users u
             LEFT JOIN user_profiles p ON u.id = p.user_id
             WHERE u.id = ?
@@ -436,7 +486,7 @@ class AuthController
                 'email' => $fullUser['email'],
                 'username' => $fullUser['username'],
                 'fullname' => $fullUser['fullname'],
-                'confirmed' => (int)$fullUser['is_confirmed'],
+                'is_confirmed' => (int)$fullUser['is_confirmed'],
                 'profile_picture' => $fullUser['profile_picture'] ?? 'default.png'
             ];
 

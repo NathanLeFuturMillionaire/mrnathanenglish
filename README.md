@@ -1,64 +1,59 @@
-# 📚 Mr Nathan English
+# 🌍 Opendoorsclass
 
-**Mr Nathan English** est une plateforme de formation en ligne dédiée à tous ceux qui veulent **apprendre l’anglais de manière simple, efficace et motivante**.  
-Créée par **Mr Nathan**, formateur passionné et créateur de contenu sur TikTok, cette plateforme a pour mission d’aider les francophones à **parler anglais avec confiance** et à atteindre leurs objectifs personnels ou professionnels.
-
----
-
-## 🚀 Notre mission
-Offrir à chacun, peu importe son niveau ou son âge, un accès à une formation **complète, structurée et motivante** pour progresser rapidement en anglais.  
-Nous croyons que **l’anglais n’est pas seulement une langue, mais une porte ouverte sur le monde**.
+**Opendoorsclass** est une plateforme éducative fondée par **MAYUKWA Nathan Harysthote** qui a pour mission d’ouvrir les portes de l’apprentissage des langues à tous.  
+Notre premier axe est l’**apprentissage de l’anglais**, avec des cours accessibles, interactifs et progressifs. Avec le temps, nous élargirons l’offre à d’autres langues du monde.
 
 ---
 
-## 🎯 Objectifs de la plateforme
-- Aider les **débutants** à acquérir les bases solides.
-- Permettre aux **intermédiaires** d’atteindre un niveau avancé.
-- Offrir aux **avancés** les outils pour perfectionner leur prononciation, leur vocabulaire et leur aisance à l’oral.
-- Proposer un apprentissage **100% pratique** grâce à des vidéos, exercices, quiz interactifs et supports téléchargeables.
+## 🚀 Notre Vision
+Nous croyons que **la maîtrise des langues est une clé universelle** qui ouvre les portes de l’éducation, du business et des opportunités internationales.  
+Opendoorsclass veut offrir une **alternative moderne et locale** à l’apprentissage, adaptée aux réalités des étudiants africains et du monde entier.
 
 ---
 
-## ✨ Fonctionnalités prévues
-- **Espace membre sécurisé** : suivez votre progression et retrouvez vos cours à tout moment.
-- **Cours en ligne interactifs** : vidéos, textes, et exercices pour tous les niveaux.
-- **Quiz et tests** : évaluez vos connaissances et améliorez-vous en continu.
-- **Paiement en ligne** : accès facile aux cours premium via Airtel Money, MoovMoney et d’autres méthodes.
-- **Support communautaire** : entraidez-vous avec d’autres apprenants motivés.
+## 📚 Contenu de la plateforme
+- **Cours d’anglais structurés** du niveau débutant (A1) au niveau avancé (C1).  
+- **Méthodologie progressive** : grammaire, vocabulaire, compréhension orale et écrite.  
+- **Exercices pratiques et interactifs** pour renforcer l’autonomie.  
+- **Accès gratuit à certains chapitres**, et abonnement **trimestriel** pour débloquer l’intégralité des cours.  
 
 ---
 
-## 💡 Pourquoi choisir Mr Nathan English ?
-- Un formateur **proche de ses élèves**, avec une pédagogie claire et motivante.
-- Des **méthodes modernes** adaptées au rythme de chacun.
-- Une communauté d’apprenants passionnés.
-- L’objectif final : **parler anglais naturellement et avec confiance**.
+## 💡 Fonctionnalités principales
+- 🔑 **Compte utilisateur sécurisé** avec gestion des profils.  
+- 📖 **Chapitres gratuits + payants** (abonnement).  
+- 💬 **Communauté d’apprenants** pour échanger et progresser ensemble.  
+- 🌐 **Accès multiplateforme** (ordinateur et mobile).  
+- 💳 **Paiements locaux** via Airtel Money et MoovMoney (et autres méthodes à venir).  
 
 ---
 
-## 📌 Avancement du projet
-- ✅ Choix du nom de la plateforme  
-- ✅ Définition de la mission et des objectifs  
-- 🚧 Création du site web avec **HTML + CSS + JavaScript + PHP + MySQL**  
-- 🔜 Lancement officiel et inscriptions
+## 👤 À propos du fondateur
+Je suis **MAYUKWA Nathan Harysthote**, passionné par le développement web et les langues.  
+À travers Opendoorsclass, mon objectif est de **partager cette passion** et de rendre l’apprentissage des langues plus **accessible, moderne et motivant**.
 
 ---
 
-## 👨‍💻 Technologies utilisées
-- **HTML5** – Structure des pages
-- **CSS3** – Mise en forme et design
-- **JavaScript** – Interactivité et dynamisme
-- **PHP** – Gestion des données et fonctionnalités serveur
-- **MySQL** – Base de données pour stocker les utilisateurs et les cours
+## 📅 Feuille de route
+- ✅ Lancement des premiers modules d’anglais.  
+- 🔄 Ajout progressif d’exercices interactifs et vidéos.  
+- 🌍 Introduction d’autres langues (espagnol, mandarin, hindi...).  
+- 📱 Développement d’une application mobile.  
 
 ---
 
 ## 🤝 Contribution
-Toute personne passionnée par l’éducation et l’apprentissage des langues est la bienvenue pour contribuer à l’évolution de ce projet.  
-Si vous souhaitez aider, contactez-nous !
+Toute aide est la bienvenue ! 🚀  
+- Signaler un bug  
+- Proposer une amélioration  
+- Participer à l’enrichissement des contenus  
 
 ---
 
-## 📬 Contact
-📧 Email : *misterntkofficiel2.0@gmail.com*  
-🌍 TikTok : [@realmisternathan](https://www.tiktok.com/@realmisternathan)  
+## 📧 Contact
+📩 Email : [contact@opendoorsclass.com](mailto:contact@opendoorsclass.com)  
+🌍 Site officiel : bientôt disponible  
+
+---
+
+✨ *Opendoorsclass — Parce qu’apprendre une langue, c’est ouvrir une porte sur le monde.*
