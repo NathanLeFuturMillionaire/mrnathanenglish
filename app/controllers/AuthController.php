@@ -5,6 +5,8 @@ namespace App\controllers;
 use App\Core\Database;
 use App\Services\MailService;
 
+use DateTime;
+use Exception;
 use PDO;
 
 class AuthController
@@ -577,6 +579,94 @@ class AuthController
         return $publicIP;
     }
 
+    // Ajoute un nouveau membre
+    public function addMemberPost()
+    {
+        header('Content-Type: application/json');
+
+        try {
+            // Récupérer et valider les données du formulaire
+            $username = trim($_POST['nom'] ?? '');
+            $email = trim($_POST['email'] ?? '');
+            $phoneNumber = trim($_POST['telephone'] ?? '');
+            $duree = intval($_POST['duree'] ?? 0); // Durée en mois
+
+            // Calcul du prix en F CFA (3000 F CFA/mois * durée)
+            $price = $duree * 3000;
+            $subscriptionStart = $_POST['dateDebut'] ?? date('Y-m-d');
+            $subscriptionEnd = $_POST['dateFin'] ?? date('Y-m-d', strtotime("+{$duree} months"));
+
+            // Validation basique
+            if (empty($username) || empty($email) || empty($phoneNumber) || $duree < 1 || $duree > 12 || $price <= 0) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Données invalides. Vérifiez les champs requis.'
+                ]);
+                return;
+            }
+
+            // Appeler la méthode addNewMember
+            $result = $this->addNewMember($username, $email, $phoneNumber, $price, $duree, $subscriptionStart, $subscriptionEnd);
+
+            // Encoder et afficher le résultat en JSON
+            echo json_encode($result);
+        } catch (\Exception $e) {
+            error_log('Erreur lors de l\'ajout du membre premium: ' . $e->getMessage());
+            echo json_encode([
+                'success' => false,
+                'message' => 'Erreur serveur : ' . $e->getMessage()
+            ]);
+        }
+    }
+    // Ta méthode addNewMember reste inchangée, mais retire le header de l'intérieur
+    public function addNewMember($username, $email, $phoneNumber, $price, $subscriptionDuration, $subscriptionStart, $subscriptionEnd): array
+    {
+        try {
+            $statement = $this->db->prepare("
+            INSERT INTO opendoorsclass_premium_members(
+                username, 
+                email, 
+                phone_number, 
+                price, 
+                subscription_duration, 
+                subscription_start, 
+                subscription_end
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        ");
+
+            $success = $statement->execute([
+                $username,
+                $email,
+                $phoneNumber,
+                $price,
+                $subscriptionDuration,
+                $subscriptionStart,
+                $subscriptionEnd
+            ]);
+
+            if ($success) {
+                $memberId = $this->db->lastInsertId();
+                return [
+                    'success' => true,
+                    'message' => 'Membre premium ajouté avec succès ! ID: ' . $memberId,
+                    'member_id' => $memberId
+                ];
+            } else {
+                return [
+                    'success' => false,
+                    'message' => 'Erreur lors de l\'insertion en base.'
+                ];
+            }
+        } catch (\Exception $e) {
+            error_log('Erreur lors de l\'ajout du membre premium: ' . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'Erreur serveur : ' . $e->getMessage()
+            ];
+        }
+    }
+
+
 
     // Dans App\Controllers\AuthController
     public function welcome()
@@ -584,7 +674,7 @@ class AuthController
         session_start();
 
         // Vérifie si l'utilisateur est connecté et confirmé
-        if (!isset($_SESSION['user']) || (int)$_SESSION['user']['confirmed'] !== 1) {
+        if (!isset($_SESSION['user']) || (int)$_SESSION['user']['is_confirmed'] !== 1) {
             header('Location: ./login');
             exit;
         }
@@ -745,7 +835,7 @@ class AuthController
             'fullname' => $fullUser['fullname'],
             'username' => $fullUser['username'],
             'email' => $fullUser['email'],
-            'confirmed' => (int)$user['confirmed'],
+            'is_confirmed' => (int)$user['is_confirmed'],
             'profile_picture' => $fullUser['profile_picture'] ?? 'default.png',
             'birth_date' => $fullUser['birth_date'],
             'country' => $fullUser['country'],
@@ -795,10 +885,11 @@ class AuthController
             // 4) Générer un token de réinitialisation
             $token = bin2hex(random_bytes(32));
             $expiresAt = date('Y-m-d H:i:s', strtotime('+1 hour'));
+            $id = $user["id"];
 
             // 5) Mettre à jour la table users avec le token et la date d'expiration
             $stmt = $this->db->prepare("UPDATE users SET reset_token = ?, reset_expires_at = ? WHERE id = ?");
-            $stmt->execute([$token, $expiresAt, $user['id']]);
+            $stmt->execute([$token, $expiresAt, $id]);
 
             // 6) Envoyer l'e-mail avec le lien de réinitialisation
             $resetLink = "http://localhost/mrnathanenglish/public/reset-password?token=$token";
@@ -822,6 +913,223 @@ class AuthController
             echo json_encode([
                 'success' => false,
                 'message' => 'Une erreur est survenue. Veuillez réessayer.'
+            ]);
+        }
+    }
+
+    public function getAdmin(string $adminName): ?array
+    {
+        $sql = "
+        SELECT 
+            id,
+            admin_name,
+            admin_ip,
+            admin_role
+        FROM admins
+        WHERE admin_name = :admin_name
+    ";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(':admin_name', $adminName, PDO::PARAM_STR);
+        $stmt->execute();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$row) {
+            return null; // Aucun admin trouvé
+        }
+
+        // Structuration du résultat
+        $admin = [
+            'id' => $row['id'],
+            'admin_name' => $row['admin_name'],
+            'admin_ip' => $row['admin_ip'],
+            'admin_role' => $row['admin_role']
+        ];
+
+        return $admin;
+    }
+
+    public function adminPage()
+    {
+        require __DIR__ . '/../views/auth/admins.php';
+    }
+
+    public function getUserByResetToken($token)
+    {
+        try {
+            // Vérifier si le token est valide et récupérer toutes les infos de users
+            $stmt = $this->db->prepare("SELECT * FROM users WHERE reset_token = ?");
+            $stmt->execute([$token]);
+            $userData = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+            if ($userData) {
+                return [
+                    'success' => true,
+                    'data' => $userData // Retourne toutes les infos de users comme array
+                ];
+            } else {
+                return [
+                    'success' => false,
+                    'message' => 'Token invalide ou expiré.'
+                ];
+            }
+        } catch (\Exception $e) {
+            error_log('Erreur lors de la récupération de l\'utilisateur par token: ' . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'Une erreur est survenue lors de la récupération des détails.'
+            ];
+        }
+    }
+
+    public function resetPasswordPage($token)
+    {
+        $userDetails = null;
+        $error = null;
+
+        // Log pour débogage
+        error_log("Token reçu: " . $token);
+
+        // Utiliser la nouvelle méthode pour récupérer toutes les infos de users
+        $userDetails = $this->getUserByResetToken($token);
+
+        error_log("User data: " . print_r($userDetails, true)); // Log pour voir ce qui est retourné
+
+        if (!$userDetails || !$userDetails['success']) {
+            $error = $userDetails['message'] ?? 'Token invalide ou expiré. Veuillez demander un nouveau lien de réinitialisation.';
+        }
+
+        // Passer les variables à la vue
+        extract([
+            'userDetails' => $userDetails,
+            'error' => $error
+        ]);
+
+        require __DIR__ . '/../views/auth/resetPasswordPage.php';
+    }
+
+    public function members()
+    {
+
+        require __DIR__ . '/../views/auth/members.php';
+    }
+
+    // Dans AuthController.php
+    public function membersPage()
+    {
+        $members = [];
+        $error = null;
+
+        try {
+            // Récupérer la liste des membres premium
+            $stmt = $this->db->prepare("
+            SELECT 
+                id, 
+                username, 
+                email, 
+                phone_number, 
+                price, 
+                subscription_duration, 
+                subscription_start, 
+                subscription_end
+            FROM opendoorsclass_premium_members 
+            ORDER BY subscription_end DESC
+        ");
+            $stmt->execute();
+            $members = $stmt->fetchAll();
+
+            // Calculer les jours restants pour chaque membre
+            foreach ($members as &$member) {
+                try {
+                    $endDate = new DateTime($member['subscription_end']);
+                    $today = new DateTime();
+                    $interval = $endDate->diff($today);
+                    $member['days_remaining'] = $interval->days >= 0 ? $interval->days : 0;
+                    $member['status'] = $member['days_remaining'] > 0 ? 'Actif' : 'Expiré';
+                } catch (Exception $dateError) {
+                    // Date invalide : marquer comme expiré sans crash
+                    $member['days_remaining'] = 0;
+                    $member['status'] = 'Expiré';
+                    error_log('Erreur date pour membre ID ' . $member['id'] . ': ' . $dateError->getMessage());
+                }
+            }
+            unset($member); // Libérer la référence
+
+            if (empty($members)) {
+                $error = 'Aucun membre premium trouvé.';
+            }
+        } catch (\Exception $e) {
+            error_log('Erreur lors de la récupération des membres: ' . $e->getMessage());
+            $error = 'Impossible de charger la liste des membres. Veuillez réessayer plus tard.';
+            $members = []; // Tableau vide pour éviter erreurs dans la vue
+        }
+
+        // Passer les données à la vue
+        extract([
+            'members' => $members,
+            'error' => $error
+        ]);
+
+        require __DIR__ . '/../views/auth/members.php';
+    }
+
+       /**
+     * Delete a premium member from the database
+     * @param int $memberId
+     * @return array
+     */
+    public function deleteMember($memberId): array
+    {
+        try {
+            $stmt = $this->db->prepare("DELETE FROM opendoorsclass_premium_members WHERE id = ?");
+            $success = $stmt->execute([$memberId]);
+
+            if ($success && $stmt->rowCount() > 0) {
+                return [
+                    'success' => true,
+                    'message' => 'Membre supprimé avec succès.'
+                ];
+            } else {
+                return [
+                    'success' => false,
+                    'message' => 'Membre non trouvé ou erreur lors de la suppression.'
+                ];
+            }
+        } catch (\Exception $e) {
+            error_log('Erreur lors de la suppression du membre: ' . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'Erreur serveur lors de la suppression.'
+            ];
+        }
+    }
+
+    /**
+     * Handle POST request for deleting a member
+     */
+    public function deleteMemberPost()
+    {
+        header('Content-Type: application/json');
+
+        try {
+            $memberId = intval($_POST['member_id'] ?? 0); // Ou extrait de l'URL si GET, mais POST pour sécurité
+
+            if ($memberId <= 0) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'ID de membre invalide.'
+                ]);
+                return;
+            }
+
+            $result = $this->deleteMember($memberId);
+
+            echo json_encode($result);
+        } catch (\Exception $e) {
+            error_log('Erreur dans deleteMemberPost: ' . $e->getMessage());
+            echo json_encode([
+                'success' => false,
+                'message' => 'Erreur serveur.'
             ]);
         }
     }

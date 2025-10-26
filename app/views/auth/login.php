@@ -75,7 +75,7 @@ if(isset($_POST["userLoginSubmit"])) {
 
                             <form action="./persistLogin" method="POST" style="margin-top:15px;">
                                 <input type="hidden" name="login_as_user_id" value="<?= $userFromCookie['id'] ?>">
-                                <button type="submit" class="btn-login-as-user" name="userLoginSubmit">
+                                <button type="submit" class="btn-login-as-user" name="userLoginSubmit" title="Se connecter maintenant, <?= $userFromCookie['username']; ?>.">
                                     Se connecter en tant que <?= htmlspecialchars($userFromCookie['fullname']) ?>
                                 </button>
                             </form>

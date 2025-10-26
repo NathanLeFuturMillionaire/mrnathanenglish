@@ -81,8 +81,50 @@ class Router
                 } else {
                     $controller->login();
                 }
+                break;
 
+            case 'admins':
+                $controller = new AuthController();
+                if ($method === 'POST') {
+                    $controller->addMemberPost(); // Ajout du nouveau membre premium
+                } else {
+                    $controller->adminPage();
+                }
+                break;
 
+            case "reset-password":
+                $controller = new AuthController();
+
+                $token = $_GET["token"] ?? null;
+
+                if ($token && $token !== "") {
+                    $controller->resetPasswordPage($token);
+                } else {
+                    // Gérer le cas où le token est manquant : afficher une page d'erreur ou rediriger
+                    // header('Location: /forgot-password?error=missing_token');
+                    // exit;
+                }
+                break;
+
+            case 'admins/members':
+                $controller = new AuthController();
+                if ($method === 'POST' && isset($_GET['action']) && $_GET['action'] === 'delete') {
+                    // $controller->deleteMember();
+                } else {
+                    $controller->membersPage();
+                }
+                break;
+
+            case 'members/edit':
+                $controller = new AuthController();
+                $id = explode('/', $url)[2]; // Récupère l'ID de l'URL
+                // $controller->editMember($id);
+                break;
+
+            case 'members/delete':
+                $controller = new AuthController();
+                $controller->deleteMemberPost(); // Utilise $_POST['member_id']
+                break;
                 // default:
                 //     http_response_code(404);
                 //     require __DIR__ . '/../views/errors/404.php';

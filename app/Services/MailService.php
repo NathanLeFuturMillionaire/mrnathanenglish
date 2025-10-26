@@ -23,7 +23,7 @@ class MailService
         $this->mailer->Port       = 587;
 
         // Expéditeur par défaut
-        $this->mailer->setFrom('misterntkofficiel2.0@gmail.com', 'Mr Nathan English');
+        $this->mailer->setFrom('misterntkofficiel2.0@gmail.com', 'OpenDoorsClass');
     }
 
     public function sendConfirmationCode($toEmail, $toName, $code)
@@ -34,7 +34,7 @@ class MailService
             $this->mailer->Subject = 'Votre code de confirmation';
             $this->mailer->Body    = "
                 <h2>Confirmation de votre compte</h2>
-                <p>Mr Nathan vous salue <strong>{$toName}</strong>,</p>
+                <p>L'équipe OpenDoorsClass vous salue <strong>{$toName}</strong>,</p>
                 <p>Voici votre code de confirmation :</p>
                 <h3 style='color:#3c3b6e;'>{$code}</h3>
                 <p>Ce code est valable 10 minutes.</p>
@@ -54,7 +54,7 @@ class MailService
         try {
             $this->mailer->addAddress($toEmail, $toName);
             $this->mailer->isHTML(true);
-            $this->mailer->Subject = 'Réinitialisation de votre mot de passe';
+            $this->mailer->Subject = 'Reinitialisation de votre mot de passe';
             $this->mailer->Body    = "
                 <h2>Réinitialisation de mot de passe</h2>
                 <p>Bonjour <strong>{$toName}</strong>,</p>

@@ -96,7 +96,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         const data = JSON.parse(text);
                         btn.classList.remove('loading');
                         if (data.success) {
-                            showToast(data.message || 'Un lien de réinitialisation a été envoyé à votre adresse e-mail.', 'success');
+                            showToast(data.message || 'Nous avons envoyé un lien de réinitialisation dans votre email.', 'success');
                         } else {
                             if (data.errors) {
                                 for (const [field, message] of Object.entries(data.errors)) {
