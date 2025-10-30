@@ -57,7 +57,6 @@
                                     <td class="actions">
                                         <a href="./members/edit/<?= $member['id'] ?>" class="btn-edit" title="Modifier">✏️</a>
                                         <form action="./members/delete&amp;id=<?= $member["id"]; ?>" method="POST" style="display: inline;" onsubmit="return confirm('Supprimer ce membre ?')">
-                                            <input type="hidden" name="member_id">
                                             <button type="submit" class="btn-delete" title="Supprimer">🗑️</button>
                                         </form>
                                     </td>

@@ -1,9 +1,9 @@
 <?php
-
 namespace App\Core;
 
 use App\Controllers\HomeController;
 use App\Controllers\AuthController;
+use App\controllers\UserController;
 
 class Router
 {
@@ -107,7 +107,7 @@ class Router
                 break;
 
             case 'admins/members':
-                $controller = new AuthController();
+                $controller = new AuthController(); 
                 if ($method === 'POST' && isset($_GET['action']) && $_GET['action'] === 'delete') {
                     // $controller->deleteMember();
                 } else {
@@ -117,14 +117,19 @@ class Router
 
             case 'members/edit':
                 $controller = new AuthController();
-                $id = explode('/', $url)[2]; // Récupère l'ID de l'URL
-                // $controller->editMember($id);
+                // $controller->editMember();
                 break;
 
-            case 'members/delete':
-                $controller = new AuthController();
-                $controller->deleteMemberPost(); // Utilise $_POST['member_id']
-                break;
+            case 'profile':
+                session_start();
+                $userController = new UserController();
+                if(isset($_SESSION['user']['id'])) {
+                    $userController->user($_SESSION['user']['id']);
+                } else {
+                    // var_dump($_SESSION);
+                    header('Location: ./');
+                }
+
                 // default:
                 //     http_response_code(404);
                 //     require __DIR__ . '/../views/errors/404.php';
