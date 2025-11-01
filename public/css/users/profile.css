@@ -10,6 +10,8 @@ body {
 main {
     display: flex;
     width: 100%;
+    margin-top: 120px;
+
 }
 
 .left-menu {
@@ -23,7 +25,9 @@ main {
 }
 
 /* --- Éléments du menu (améliorés) --- */
-.left-menu ul { padding-top: 12px; }
+.left-menu ul {
+    padding-top: 12px;
+}
 
 .left-menu li {
     width: 100%;
@@ -33,18 +37,24 @@ main {
 .left-menu li a {
     display: flex;
     align-items: center;
-    gap: 12px;                   /* espace entre icône et texte */
-    padding: 12px 16px;          /* zone cliquable confortable */
-    font-size: 15px;             /* taille lisible sans être trop grosse */
+    gap: 12px;
+    /* espace entre icône et texte */
+    padding: 12px 16px;
+    /* zone cliquable confortable */
+    font-size: 15px;
+    /* taille lisible sans être trop grosse */
     line-height: 1;
-    color: #0f1724;              /* couleur par défaut (texte & icône via currentColor) */
+    color: #0f1724;
+    /* couleur par défaut (texte & icône via currentColor) */
     text-decoration: none;
     border-radius: 8px;
     transition: background-color 220ms ease, color 220ms ease, transform 160ms ease;
     white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis;     /* tronquer si jamais texte long */
-    cursor: pointer;         /* garantit que tout l'item est cliquable */
+    text-overflow: ellipsis;
+    /* tronquer si jamais texte long */
+    cursor: pointer;
+    /* garantit que tout l'item est cliquable */
 }
 
 /* Icônes (Lucide : svg utilisant currentColor) */
@@ -77,15 +87,61 @@ main {
     /* transform: translateX(0); */
 }
 
-/* Adaptation du conteneur de l'item lors du hover du menu (pour cohérence) */
-.left-menu:hover li a {
-    /* padding-left: 20px; */
-}
-
-main {
-    margin-top: 100px;
-}
-
-.right-content {
+.left-menu ~ .right-content {
     margin-left: 170px;
+}
+
+.content-section {
+    display: none;
+    position: absolute;
+    opacity: 0;
+    /* transform: translateY(15px); */
+    transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.content-section.active {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* -------- SPINNER -------- */
+.spinner {
+    position: absolute;
+    top: 30%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border: 5px solid #e5e7eb;
+    border-top: 5px solid #2563eb;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    animation: spin 1s linear infinite;
+    z-index: 10;
+}
+
+@keyframes spin {
+    to {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* -------- MESSAGE D'ERREUR -------- */
+.error {
+    background-color: #fee2e2;
+    color: #991b1b;
+    padding: 12px 18px;
+    border: 1px solid #fecaca;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
