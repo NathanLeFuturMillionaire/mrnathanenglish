@@ -4,7 +4,6 @@ namespace App\Models;
 
 use App\Core\Database;
 
-
 class UserRepository
 {
 
@@ -38,8 +37,8 @@ class UserRepository
                     urt.token,
                     urt.expires_at
                 FROM users u
-                LEFT JOIN user_profiles up ON u.id = up.user_id
-                LEFT JOIN user_remember_tokens urt ON u.id = urt.user_id
+                INNER JOIN user_profiles up ON u.id = up.user_id
+                INNER JOIN user_remember_tokens urt ON u.id = urt.user_id
                 WHERE u.id = ?
             ");
             $stmt->execute([$userId]);
@@ -52,7 +51,7 @@ class UserRepository
                 ];
             }
 
-            return [
+            $data = [
                 'success' => true,
                 'data' => [
                     'user' => [
@@ -73,6 +72,16 @@ class UserRepository
                     ]
                 ]
             ];
+
+            // Stockage des informations dans la session si le succès est vrai
+            if ($data['success']) {
+                if (session_status() === PHP_SESSION_NONE) {
+                    session_start();
+                }
+                $_SESSION['user_details'] = $data['data'];
+            }
+
+            return $data;
         } catch (\Exception $e) {
             error_log('Erreur lors de la récupération des détails de l\'utilisateur: ' . $e->getMessage());
             return [

@@ -74,7 +74,7 @@ $showAdminLink = isset($admin) && $admin["admin_name"] === 'Nathan';
                                         </div>
                                     </a>
                                 </li>
-                                <li><a href="./lessons">Mon cours</a></li>
+                                <li><a href="./lessons">Cours</a></li>
                                 <li><a href="./logout">Déconnexion</a></li>
                             </div>
                         </ul>

@@ -19,17 +19,16 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 document.addEventListener("DOMContentLoaded", () => {
-    lucide.createIcons();
-
+    
     const menuItems = document.querySelectorAll(".menu-item");
     const sections = document.querySelectorAll(".content-section");
     const spinner = document.getElementById("loading-spinner");
     const errorMessage = document.getElementById("error-message");
-
+    
     menuItems.forEach(item => {
         item.addEventListener("click", async e => {
             e.preventDefault();
-
+            
             // Réinitialiser état
             menuItems.forEach(i => i.classList.remove("active"));
             item.classList.add("active");
@@ -63,7 +62,7 @@ document.addEventListener("DOMContentLoaded", () => {
 /**
  * Fonction qui simule un chargement avec "connexion"
  * Elle résout toujours sans erreur pour assurer un fonctionnement à 100%
- */
+*/
 function simulateLoading() {
     return new Promise((resolve) => {
         // Durée du chargement entre 0.8s et 2s
@@ -74,3 +73,44 @@ function simulateLoading() {
         }, duration);
     });
 }
+
+// lucide.createIcons();
+document.addEventListener("DOMContentLoaded", () => {
+    const menuLinks = document.querySelectorAll(".profile-menu .menu-links a");
+    const sections = document.querySelectorAll(".profile-content > .profile-section");
+
+    // Masque toutes les sections
+    function hideAllSections() {
+        sections.forEach(section => {
+            section.style.display = "none";
+        });
+    }
+
+    // Active le lien du menu
+    function setActiveLink(clickedLink) {
+        menuLinks.forEach(link => link.classList.remove("active"));
+        clickedLink.classList.add("active");
+    }
+
+    // Affiche la section par défaut (la première)
+    hideAllSections();
+    if (sections.length > 0) {
+        sections[0].style.display = "block";
+    }
+
+    // Gestion du clic sur chaque lien du menu
+    menuLinks.forEach(link => {
+        link.addEventListener("click", (e) => {
+            e.preventDefault();
+
+            const targetId = link.getAttribute("href").replace("#", "");
+            const targetSection = document.getElementById(targetId);
+
+            if (targetSection) {
+                hideAllSections();          // Masque toutes les sections
+                targetSection.style.display = "block"; // Affiche la section sélectionnée
+                setActiveLink(link);        // Active le lien
+            }
+        });
+    });
+});

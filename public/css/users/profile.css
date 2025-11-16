@@ -1,13 +1,283 @@
-body {
-    margin: 0;
-    font-family: "Poppins", sans-serif;
-    background-color: #f5f7fa;
-    height: 100vh;
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Roboto:wght@300;400;500&display=swap');
+
+/* ===== Layout principal ===== */
+.profile-layout {
+    display: flex;
+    min-height: 100vh;
+    background: #f9f9f9;
+    font-family: 'Roboto', sans-serif;
+    margin-top: 100px;
 }
 
-.banner {
+/* ===== Menu gauche ===== */
+.profile-menu {
+    width: 250px;
+    background: #fff;
+    border-right: 1px solid #eee;
+    padding: 30px 20px;
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 50px;
+    bottom: 0;
+    left: 0;
+}
+
+.menu-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.menu-header .avatar {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #5a57a3;
+    margin-bottom: 10px;
+}
+
+.menu-header h2 {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.4rem;
+    color: #3c3b6e;
+}
+
+.menu-links {
+    display: flex;
+    flex-direction: column;
+}
+
+.menu-links a {
+    padding: 12px 15px;
+    margin-bottom: 8px;
+    color: #333;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 500;
+    text-decoration: none;
+    border-radius: 8px;
+    transition: 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.menu-links a.active,
+.menu-links a:hover {
+    background: #5a57a3;
+    color: #fff;
+}
+
+/* ===== Contenu droite ===== */
+.profile-content {
+    flex: 1;
+    padding: 30px 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+    margin-left: 250px;
+}
+
+/* ===== Sections ===== */
+.profile-section {
+    background: #fff;
+    padding: 25px;
+    border-radius: 18px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+    transition: 0.3s;
+}
+
+.profile-section:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.1);
+}
+
+.profile-section h3 {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.4rem;
+    margin-bottom: 18px;
+    color: #3c3b6e;
+}
+
+/* ===== Info row ===== */
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.info-row .label {
+    font-weight: bold;
+    color: #444;
+}
+
+.info-row .value {
+    color: #333;
+}
+
+.value.confirmed {
+    color: #3c3b6e;
+    font-weight: bold;
+}
+
+/* ===== Progress bar ===== */
+.progress-item p {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.progress-bar {
     width: 100%;
-    height: 200px;
-    background: linear-gradient(135deg, #5A4FF0 0%, #A55DE0 40%, #7AB3E9 100%);
-    margin-top: -50px;
+    height: 13px;
+    background: #eee;
+    border-radius: 30px;
+    overflow: hidden;
+}
+
+.progress {
+    height: 100%;
+    background: linear-gradient(135deg, #3c3b6e, #5a57a3);
+    border-radius: 30px;
+}
+
+.progress-item small {
+    color: #555;
+}
+
+/* ===== Badges ===== */
+.badge-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.badge {
+    background: #5a57a3;
+    color: #fff;
+    font-family: 'Montserrat', sans-serif;
+    padding: 6px 12px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+}
+
+/* ===== Boutons ===== */
+.btn-setting {
+    width: 100%;
+    padding: 12px;
+    margin-top: 12px;
+    background: #5a57a3;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Montserrat', sans-serif;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.btn-setting.logout {
+    background: #d32f2f;
+}
+
+.btn-setting:hover {
+    transform: translateY(-2px);
+    opacity: 0.9;
+}
+
+.profile-section {
+    padding: 20px 30px;
+    font-family: "Montserrat", sans-serif;
+    color: #222;
+}
+
+.section-title {
+    font-size: 26px;
+    font-weight: 700;
+    margin-bottom: 25px;
+}
+
+.card {
+    background: #fff;
+    padding: 20px 25px;
+    border-radius: 12px;
+    box-shadow: rgba(0, 0, 0, 0.16) 0px 10px 36px 0px, rgba(0, 0, 0, 0.06) 0px 0px 0px 1px;
+    margin-bottom: 30px;
+}
+
+.card-title {
+    font-size: 20px;
+    margin-bottom: 18px;
+    font-weight: 600;
+}
+
+/* ===== INFO LIST - VERTICAL ===== */
+.info-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.info-item label {
+    font-size: 14px;
+    color: #666;
+    font-weight: 500;
+}
+
+.info-item p {
+    margin-top: 5px;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.status.success {
+    color: #1dbf73;
+}
+
+.status.danger {
+    color: #e63946;
+}
+
+.profile-section {
+    display: none; /* masqué par défaut */
+    padding: 20px;
+}
+.profile-section:first-child {
+    display: block; /* première section visible au chargement */
+}
+
+
+/* Responsive */
+@media (max-width: 600px) {
+    .profile-section {
+        padding: 15px;
+    }
+
+    .section-title {
+        font-size: 22px;
+    }
+}
+
+
+/* ===== Responsive ===== */
+@media(max-width:900px) {
+    .profile-layout {
+        flex-direction: column;
+    }
+
+    .profile-menu {
+        width: 100%;
+        flex-direction: row;
+        overflow-x: auto;
+        border-right: none;
+        border-bottom: 1px solid #eee;
+    }
+
+    .menu-links {
+        flex-direction: row;
+    }
+
+    .menu-links a {
+        margin-right: 8px;
+    }
 }

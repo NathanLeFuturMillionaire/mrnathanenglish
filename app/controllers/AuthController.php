@@ -34,7 +34,7 @@ class AuthController
             $userId = (int) $_POST['login_as_user_id'];
 
             // On récupère l'utilisateur dans la base
-            $sql = "SELECT u.id AS user_id, u.fullname, u.username AS username, u.email, u.password, u.confirmation_code, u.is_confirmed AS is_confirmed, u.reset_link, u.reset_token, u.reset_expires_at, u.created_at AS user_created_at, p.id AS profile_id, p.user_id, p.profile_picture, p.birth_date, p.country, p.english_level, p.phone_number, p.bio, p.updated_at AS profile_updated_at FROM users u INNER JOIN user_profiles p ON u.id = p.user_id WHERE u.id = ?";
+            $sql = "SELECT u.id, u.fullname, u.username AS username, u.email, u.password, u.confirmation_code, u.is_confirmed AS is_confirmed, u.reset_link, u.reset_token, u.reset_expires_at, u.created_at AS user_created_at, p.id AS profile_id, p.user_id, p.profile_picture, p.birth_date, p.country, p.english_level, p.phone_number, p.bio, p.updated_at AS profile_updated_at FROM users u INNER JOIN user_profiles p ON u.id = p.user_id WHERE u.id = ?";
 
             $stmt = $this->db->prepare($sql);
             $stmt->execute([$userId]);
@@ -65,7 +65,7 @@ class AuthController
             } else {
                 // Utilisateur non trouvé
                 $_SESSION['error'] = "Utilisateur introuvable.";
-                header("Location: /login");
+                header("Location: ./login");
                 exit;
             }
         } else {
