@@ -9,9 +9,6 @@ class UserController
 {
     public function user($userId)
     {
-        $userRepository = new UserRepository();
-        $user = $userRepository->getUserWithDetails($userId);
-
         require __DIR__ . '/../views/users/profile.php';
 
     }

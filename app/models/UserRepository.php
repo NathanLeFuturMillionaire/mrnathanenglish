@@ -3,91 +3,64 @@
 namespace App\Models;
 
 use App\Core\Database;
+use PDO;
 
 class UserRepository
 {
+    private Database $connection;
+    private PDO $db;
 
-    protected $db;
-    protected $errors = [];
-
-    public function __construct()
+    public function __construct(Database $connection)
     {
-        $database = new Database();
-        $this->db = $database->connect();
+        $this->connection = $connection;
+        // On récupère la connexion PDO une fois pour toutes
+        $this->db = $this->connection->connect();
     }
 
     /**
-     * Retrieve user details with associated profile and remember token
-     * @param int $userId
-     * @return array
+     * Met à jour le mot de passe de l'utilisateur
      */
-    public function getUserWithDetails($userId): array
+    public function updatePassword(int $userId, string $newPassword): bool
     {
         try {
-            $stmt = $this->db->prepare("
-                SELECT 
-                    u.id AS user_id,
-                    u.fullname,
-                    u.email,
-                    u.username,
-                    u.is_confirmed,
-                    up.profile_picture,
-                    up.birthdate,
-                    up.phone_number,
-                    urt.token,
-                    urt.expires_at
-                FROM users u
-                INNER JOIN user_profiles up ON u.id = up.user_id
-                INNER JOIN user_remember_tokens urt ON u.id = urt.user_id
-                WHERE u.id = ?
-            ");
-            $stmt->execute([$userId]);
-            $result = $stmt->fetch(\PDO::FETCH_ASSOC);
+            $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
 
-            if (!$result) {
-                return [
-                    'success' => false,
-                    'message' => 'Utilisateur non trouvé.'
-                ];
-            }
-
-            $data = [
-                'success' => true,
-                'data' => [
-                    'user' => [
-                        'id' => $result['user_id'],
-                        'fullname' => $result['fullname'],
-                        'email' => $result['email'],
-                        'username' => $result['username'],
-                        'confirmed' => $result['is_confirmed']
-                    ],
-                    'profile' => [
-                        'profile_picture' => $result['profile_picture'] ?? 'default.png',
-                        'birthdate' => $result['birthdate'],
-                        'phone_number' => $result['phone_number']
-                    ],
-                    'remember_token' => [
-                        'token' => $result['token'],
-                        'expires_at' => $result['expires_at']
-                    ]
-                ]
-            ];
-
-            // Stockage des informations dans la session si le succès est vrai
-            if ($data['success']) {
-                if (session_status() === PHP_SESSION_NONE) {
-                    session_start();
-                }
-                $_SESSION['user_details'] = $data['data'];
-            }
-
-            return $data;
+            $stmt = $this->db->prepare("UPDATE users SET password = ? WHERE id = ?");
+            return $stmt->execute([$hashedPassword, $userId]);
         } catch (\Exception $e) {
-            error_log('Erreur lors de la récupération des détails de l\'utilisateur: ' . $e->getMessage());
-            return [
-                'success' => false,
-                'message' => 'Une erreur est survenue lors de la récupération des détails.'
-            ];
+            error_log("Erreur lors de la mise à jour du mot de passe (user ID $userId) : " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Récupère un utilisateur par son token de réinitialisation
+     */
+    public function getUserByResetToken(string $token): ?array
+    {
+        try {
+            $stmt = $this->db->prepare("SELECT * FROM users WHERE reset_token = ? LIMIT 1");
+            $stmt->execute([$token]);
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            return $user ?: null; // Retourne null si aucun utilisateur trouvé
+        } catch (\Exception $e) {
+            error_log("Erreur getUserByResetToken : " . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Supprime le token de réinitialisation après utilisation
+     */
+    public function clearResetToken(int $userId): bool
+    {
+        try {
+            $stmt = $this->db->prepare("UPDATE users SET reset_token = NULL, reset_token_expires_at = NULL WHERE id = ?");
+            return $stmt->execute([$userId]);
+        } catch (\Exception $e) {
+            error_log("Erreur clearResetToken (user ID $userId) : " . $e->getMessage());
+            return false;
         }
     }
 }
