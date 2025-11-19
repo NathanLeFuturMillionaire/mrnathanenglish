@@ -884,7 +884,7 @@ class AuthController
 
             // 4) Générer un token de réinitialisation
             $token = bin2hex(random_bytes(32));
-            $expiresAt = date('Y-m-d H:i:s', strtotime('+1 hour'));
+            $expiresAt = date('Y-m-d H:i:s', strtotime('+5 hour'));
             $id = $user["id"];
 
             // 5) Mettre à jour la table users avec le token et la date d'expiration
