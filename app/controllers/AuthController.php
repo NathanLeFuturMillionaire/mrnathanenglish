@@ -884,7 +884,7 @@ class AuthController
 
             // 4) Générer un token de réinitialisation
             $token = bin2hex(random_bytes(32));
-            $expiresAt = date('Y-m-d H:i:s', strtotime('+1 hour'));
+            $expiresAt = date('Y-m-d H:i:s', strtotime('+5 hour'));
             $id = $user["id"];
 
             // 5) Mettre à jour la table users avec le token et la date d'expiration
@@ -952,60 +952,6 @@ class AuthController
     public function adminPage()
     {
         require __DIR__ . '/../views/auth/admins.php';
-    }
-
-    public function getUserByResetToken($token)
-    {
-        try {
-            // Vérifier si le token est valide et récupérer toutes les infos de users
-            $stmt = $this->db->prepare("SELECT * FROM users WHERE reset_token = ?");
-            $stmt->execute([$token]);
-            $userData = $stmt->fetch(\PDO::FETCH_ASSOC);
-
-            if ($userData) {
-                return [
-                    'success' => true,
-                    'data' => $userData // Retourne toutes les infos de users comme array
-                ];
-            } else {
-                return [
-                    'success' => false,
-                    'message' => 'Token invalide ou expiré.'
-                ];
-            }
-        } catch (\Exception $e) {
-            error_log('Erreur lors de la récupération de l\'utilisateur par token: ' . $e->getMessage());
-            return [
-                'success' => false,
-                'message' => 'Une erreur est survenue lors de la récupération des détails.'
-            ];
-        }
-    }
-
-    public function resetPasswordPage($token)
-    {
-        $userDetails = null;
-        $error = null;
-
-        // Log pour débogage
-        error_log("Token reçu: " . $token);
-
-        // Utiliser la nouvelle méthode pour récupérer toutes les infos de users
-        $userDetails = $this->getUserByResetToken($token);
-
-        error_log("User data: " . print_r($userDetails, true)); // Log pour voir ce qui est retourné
-
-        if (!$userDetails || !$userDetails['success']) {
-            $error = $userDetails['message'] ?? 'Token invalide ou expiré. Veuillez demander un nouveau lien de réinitialisation.';
-        }
-
-        // Passer les variables à la vue
-        extract([
-            'userDetails' => $userDetails,
-            'error' => $error
-        ]);
-
-        require __DIR__ . '/../views/auth/resetPasswordPage.php';
     }
 
     public function members()

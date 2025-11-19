@@ -1,8 +1,10 @@
 <?php
+
 namespace App\Core;
 
 use App\Controllers\HomeController;
 use App\Controllers\AuthController;
+use App\Controllers\ResetPasswordController;
 use App\controllers\UserController;
 
 class Router
@@ -92,22 +94,26 @@ class Router
                 }
                 break;
 
-            case "reset-password":
-                $controller = new AuthController();
+            case 'reset-password':
+                $controller = new ResetPasswordController();
+                $token = $_GET['token'] ?? null;
 
-                $token = $_GET["token"] ?? null;
-
-                if ($token && $token !== "") {
-                    $controller->resetPasswordPage($token);
+                if ($method === 'POST') {
+                    // Traitement de la soumission du formulaire (mise à jour du mot de passe)
+                    $controller->reset();
                 } else {
-                    // Gérer le cas où le token est manquant : afficher une page d'erreur ou rediriger
-                    // header('Location: /forgot-password?error=missing_token');
-                    // exit;
+                    // Affichage de la page avec le token
+                    if ($token && $token !== '') {
+                        $controller->resetPasswordPage($token);
+                    } else {
+                        // Token manquant → erreur ou redirection
+                        $controller->resetPasswordPage(null); // ou une page d'erreur dédiée
+                    }
                 }
                 break;
 
             case 'admins/members':
-                $controller = new AuthController(); 
+                $controller = new AuthController();
                 if ($method === 'POST' && isset($_GET['action']) && $_GET['action'] === 'delete') {
                     // $controller->deleteMember();
                 } else {
@@ -123,7 +129,7 @@ class Router
             case 'profile':
                 session_start();
                 $userController = new UserController();
-                if(isset($_SESSION['user']['id'])) {
+                if (isset($_SESSION['user']['id'])) {
                     $userController->user($_SESSION['user']['id']);
                 } else {
                     // var_dump($_SESSION);
