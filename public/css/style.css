@@ -120,6 +120,7 @@ header.scrolled {
   /* Organisation verticale */
   display: flex;
   flex-direction: column;
+  z-index: 55;
 }
 
 /* Liens rapprochés dans le dropdown */

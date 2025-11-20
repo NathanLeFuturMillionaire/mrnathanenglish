@@ -62,7 +62,7 @@ class ResetPasswordController
         $user = $result['data'];
 
         // Mettre à jour le mot de passe
-        $updated = $this->userRepo->updatePasswordByResetToken($user['id'], $newPassword);
+        $updated = $this->userRepo->updatePasswordByResetToken($token, $newPassword);
 
         if (!$updated) {
             echo json_encode(['success' => false, 'message' => 'Erreur lors de la mise à jour du mot de passe.']);
@@ -70,7 +70,7 @@ class ResetPasswordController
         }
 
         // Nettoyer le token (plus réutilisable)
-        $this->userRepo->clearResetToken($user['id']);
+        // $this->userRepo->clearResetToken($user['id']);
 
         // Succès !
         echo json_encode([

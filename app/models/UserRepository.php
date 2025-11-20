@@ -29,9 +29,11 @@ class UserRepository
         try {
             // Vérifier si le token est valide et non expiré
             $stmt = $this->db->prepare("
-                SELECT id 
+                SELECT * 
                 FROM users 
-                WHERE reset_token = ?
+                WHERE reset_token = ? 
+                  AND reset_expires_at > NOW()
+                LIMIT 1
             ");
             $stmt->execute([$token]);
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -80,7 +82,9 @@ class UserRepository
             $stmt = $this->db->prepare("
             SELECT id, fullname, email, username, is_confirmed
             FROM users 
-            WHERE reset_token = ?
+            WHERE reset_token = ? 
+              AND reset_expires_at > NOW()
+            LIMIT 1
         ");
             $stmt->execute([$token]);
             $user = $stmt->fetch(\PDO::FETCH_ASSOC);

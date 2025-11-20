@@ -87,6 +87,6 @@
     <div id="toast-container"></div>
 
     <script src="./js/main.js"></script>
-    <script src="./js/reset-password.js"></script>
+    <script src="./js/resetPassword.js"></script>
 </body>
 </html>
