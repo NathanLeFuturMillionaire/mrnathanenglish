@@ -97,6 +97,7 @@ if ($_SESSION['user']['is_confirmed'] != 1) {
 
                 <div class="card">
                     <h2 class="card-title">Informations du compte</h2>
+                    <!-- <?php var_dump($_SESSION); ?> -->
                     <div class="info-list">
                         <div class="info-item">
                             <label>État du compte :</label>
@@ -106,7 +107,54 @@ if ($_SESSION['user']['is_confirmed'] != 1) {
                         </div>
                         <div class="info-item">
                             <label>Date de création :</label>
-                            <p><?= htmlspecialchars($_SESSION["user"]["created_at"] ?? ($_SESSION["user"]["profile"]["created_at"] ?? "Non disponible")); ?></p>
+                            <p>
+                                <?php
+                                $createdAt = $_SESSION['user']['created_at'] ?? null;
+
+                                if ($createdAt && !in_array($createdAt, ['0000-00-00 00:00:00', '0000-00-00'])) {
+                                    try {
+                                        // Créer l'objet DateTime
+                                        $date = new DateTime($createdAt);
+
+                                        // Formater la date
+                                        $day   = $date->format('j');                    // Jour sans zéro (20)
+                                        $month = $date->format('F');                    // Mois en anglais (November)
+                                        $year  = $date->format('Y');                    // Année (2025)
+                                        $hour  = $date->format('H');                    // Heure 24h (14)
+                                        $min   = $date->format('i');                    // Minutes (30)
+                                        $sec   = $date->format('s');                    // Secondes (25)
+
+                                        // Traduction du mois en français
+                                        $monthsFr = [
+                                            'January'   => 'Janvier',
+                                            'February'  => 'Février',
+                                            'March'     => 'Mars',
+                                            'April'     => 'Avril',
+                                            'May'       => 'Mai',
+                                            'June'      => 'Juin',
+                                            'July'      => 'Juillet',
+                                            'August'    => 'Août',
+                                            'September' => 'Septembre',
+                                            'October'   => 'Octobre',
+                                            'November'  => 'Novembre',
+                                            'December'  => 'Décembre'
+                                        ];
+
+                                        $monthFr = $monthsFr[$month] ?? $month;
+
+                                        // "1er" pour le premier du mois
+                                        $dayDisplay = ($day == 1) ? '1er' : $day;
+
+                                        // Format final
+                                        echo "Le {$dayDisplay} {$monthFr} {$year} à {$hour}h{$min}m{$sec}s";
+                                    } catch (Exception $e) {
+                                        echo "Date invalide";
+                                    }
+                                } else {
+                                    echo "Non disponible";
+                                }
+                                ?>
+                            </p>
                         </div>
                         <div class="info-item">
                             <label>Dernière connexion :</label>

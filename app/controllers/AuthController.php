@@ -50,6 +50,7 @@ class AuthController
                     'english_level' => $user['english_level'],
                     'fullname'      => $user['fullname'],
                     'email'         => $user['email'],
+                    'created_at'    => $user['created_at'],
                     'profile'       => [
                         'profile_picture' => $user['profile_picture'],
                         'birth_date'      => $user['birth_date'],
@@ -297,7 +298,23 @@ class AuthController
             }
 
             // 3) Vérifier si l'utilisateur existe dans la base de données 
-            $stmt = $this->db->prepare("SELECT id, email, username, fullname, password, is_confirmed FROM users WHERE email = ?");
+            $stmt = $this->db->prepare("
+                    SELECT 
+                        u.id,
+                        u.email,
+                        u.username,
+                        u.fullname,
+                        u.password,
+                        u.is_confirmed,
+                        u.created_at,
+                        up.profile_picture,
+                        up.bio,
+                        up.country,
+                        up.phone_number
+                    FROM users u
+                    INNER JOIN user_profiles up ON u.id = up.user_id
+                    WHERE u.email = ?
+                ");
             $stmt->execute([$email]);
             $user = $stmt->fetch(\PDO::FETCH_ASSOC);
 
@@ -313,7 +330,7 @@ class AuthController
             }
 
             // 5) Vérifier si l'utilisateur est confirmé
-            if ((int)$user['is_confirmed'] !== 1) {
+            if ($user['is_confirmed'] !== 1) {
                 echo json_encode(['success' => false, 'message' => 'Votre compte n\'est pas confirmé.']);
                 return;
             }
@@ -384,7 +401,11 @@ class AuthController
                 'email' => $user['email'],
                 'is_confirmed' => $user['is_confirmed'],
                 'username' => $user['username'],
-                'fullname' => $user['fullname']
+                'fullname' => $user['fullname'],
+                'phone_number' => $user["phone_number"],
+                'country' => $user["country"],
+                'bio' => $user["bio"],
+                'created_at' => $user["created_at"],
             ];
 
             // 7) Récupérer le profil de l'utilisateur
@@ -409,6 +430,7 @@ class AuthController
             ]);
         }
     }
+
 
     public function confirmPost()
     {
@@ -822,9 +844,9 @@ class AuthController
 
         // --- Récupération infos utilisateur pour affichage ---
         $stmt = $this->db->prepare("
-        SELECT u.id, u.fullname, u.username, u.email, p.profile_picture, p.birth_date, p.country, p.phone_number, p.english_level, p.bio
+        SELECT u.id, u.fullname, u.username, u.email, u.is_confirmed is_confirmed, p.profile_picture, p.birth_date, p.country, p.phone_number, p.english_level, p.bio
         FROM users u
-        LEFT JOIN user_profiles p ON u.id = p.user_id
+        INNER JOIN user_profiles p ON u.id = p.user_id
         WHERE u.id = ?
     ");
         $stmt->execute([$user['id']]);
@@ -835,7 +857,7 @@ class AuthController
             'fullname' => $fullUser['fullname'],
             'username' => $fullUser['username'],
             'email' => $fullUser['email'],
-            'is_confirmed' => (int)$user['is_confirmed'],
+            'is_confirmed' => $user['is_confirmed'],
             'profile_picture' => $fullUser['profile_picture'] ?? 'default.png',
             'birth_date' => $fullUser['birth_date'],
             'country' => $fullUser['country'],
