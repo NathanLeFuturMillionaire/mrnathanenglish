@@ -1,75 +1,92 @@
 <!DOCTYPE html>
 <html lang="fr">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Réinitialisation du mot de passe - OpenDoorsClass</title>
     <link rel="stylesheet" href="./css/style.css">
     <link rel="stylesheet" href="./css/auth/resetPasswordPage.css">
-    <title>Réinitialisation du mot de passe - Mr Nathan English</title>
 </head>
-
 <body>
-    <div class="header-layout" style="width: 100%;">
-        <?php require_once '../app/views/layouts/header.php'; ?>
-    </div>
+
+    <?php require_once '../app/views/layouts/header.php'; ?>
+
     <main>
         <section class="reset-password-page">
             <div class="reset-password-container">
+
                 <!-- Colonne gauche -->
                 <div class="reset-left">
-                    <!-- Flèche retour -->
-                    <a href="javascript:window.history.back();" class="back-arrow">
-                        &#8592;
-                    </a>
+                    <a href="./forgot-password" class="back-arrow">←</a>
 
-                    <?php if ($error): ?>
-                        <!-- Message d'erreur si token invalide -->
-                        <div class="error-container">
+                    <?php if (!empty($error)): ?>
+                        <!-- Token invalide ou expiré -->
+                        <div class="error-block">
                             <h2>OpenDoorsClass</h2>
-                            <h2>Erreur de réinitialisation</h2>
+                            <h3>Token invalide ou expiré</h3>
                             <p><?= htmlspecialchars($error) ?></p>
-                            <a href="./forgot-password" class="back-link">Demander un nouveau lien</a>
+                            <a href="./forgot-password" class="btn-primary">Demander un nouveau lien</a>
                         </div>
+
                     <?php else: ?>
-                        <!-- Formulaire standard si pas de token valide -->
-                        <form action="/reset-password" method="POST" class="form-reset-password" id="resetPasswordForm">
+                        <!-- Formulaire de réinitialisation -->
+                        <div class="reset-form-wrapper">
                             <h2>OpenDoorsClass</h2>
-                            <h2>Réinitialiser votre mot de passe</h2>
-                            <p>Entrez votre nouveau mot de passe pour réinitialiser votre compte.</p>
+                            <h3>Réinitialiser votre mot de passe</h3>
+                            <p>Choisissez un nouveau mot de passe sécurisé.</p>
 
-                            <div class="error-message" data-for="general"></div>
+                            <!-- Message d'erreur général -->
+                            <div class="error-message general-error" data-for="general"></div>
 
-                            <label for="new-password">Nouveau mot de passe</label>
-                            <input type="password" id="new-password" name="new_password" placeholder="Nouveau mot de passe" required>
-                            <div class="error-message" data-for="new-password"></div>
+                            <form id="resetPasswordForm" method="post">
+                                <!-- Token caché (récupéré par JS depuis l'URL) -->
+                                <input type="hidden" name="token" id="token-input" value="<?= htmlspecialchars($token ?? '') ?>">
 
-                            <label for="confirm-password">Confirmer le mot de passe</label>
-                            <input type="password" id="confirm-password" name="confirm_password" placeholder="Confirmer le mot de passe" required>
-                            <div class="error-message" data-for="confirm-password"></div>
+                                <div class="input-group">
+                                    <label for="new-password">Nouveau mot de passe</label>
+                                    <input 
+                                        type="password" 
+                                        id="new-password" 
+                                        name="new-password" 
+                                        placeholder="Au moins 8 caractères"
+                                    >
+                                    <div class="error-message" data-for="new-password"></div>
+                                </div>
 
-                            <div class="form-bottom-line">
-                                <a href="/login" class="forgot-password-link">Retour à la connexion</a>
-                            </div>
+                                <div class="input-group">
+                                    <label for="confirm-password">Confirmer le mot de passe</label>
+                                    <input 
+                                        type="password" 
+                                        id="confirm-password" 
+                                        name="confirm-password" 
+                                        placeholder="Répétez le mot de passe"
+                                    >
+                                    <div class="error-message" data-for="confirm-password"></div>
+                                </div>
 
-                            <button type="submit" id="btn-submit" class="form-submit">
-                                <span class="btn-text">Réinitialiser</span>
-                                <span class="spinner"></span>
-                            </button>
-                        </form>
+                                <button type="submit" id="btn-submit" class="btn-submit">
+                                    <span class="btn-text">Réinitialiser mon mot de passe</span>
+                                    <span class="spinner"></span>
+                                </button>
+                            </form>
+
+                            <p class="login-link">
+                                <a href="./login">← Retour à la connexion</a>
+                            </p>
+                        </div>
                     <?php endif; ?>
                 </div>
 
-                <!-- Colonne droite : image -->
-                <div class="login-right"></div>
+                <!-- Colonne droite (image décorative) -->
+                <div class="reset-right"></div>
             </div>
         </section>
     </main>
 
+    <!-- Toast container -->
     <div id="toast-container"></div>
 
-    <script src="z/js/main.js"></script>
-    <script src="/js/reset-password.js"></script>
+    <script src="./js/main.js"></script>
+    <script src="./js/resetPassword.js"></script>
 </body>
-
 </html>

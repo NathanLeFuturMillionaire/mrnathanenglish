@@ -10,6 +10,5 @@ class UserController
     public function user($userId)
     {
         require __DIR__ . '/../views/users/profile.php';
-
     }
 }
