@@ -50,7 +50,7 @@ class AuthController
                     'english_level' => $user['english_level'],
                     'fullname'      => $user['fullname'],
                     'email'         => $user['email'],
-                    'created_at'    => $user['created_at'],
+                    'created_at'    => $user['user_created_at'],
                     'profile'       => [
                         'profile_picture' => $user['profile_picture'],
                         'birth_date'      => $user['birth_date'],

@@ -108,4 +108,33 @@ class UserRepository
             ];
         }
     }
+
+    public function getUserWithProfileById(int $userId): ?array
+    {
+        $sql = "
+            SELECT 
+                u.id,
+                u.fullname,
+                u.username,
+                u.email,
+                u.is_confirmed,
+                u.created_at,
+                p.profile_picture,
+                p.birth_date,
+                p.phone_number,
+                p.bio,
+                p.country
+            FROM users u
+            INNER JOIN user_profiles p ON u.id = p.user_id
+            WHERE u.id = ?
+            LIMIT 1
+        ";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$userId]);
+
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $result ?: null;
+    }
 }

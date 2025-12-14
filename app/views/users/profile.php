@@ -113,18 +113,15 @@ if ($_SESSION['user']['is_confirmed'] != 1) {
 
                                 if ($createdAt && !in_array($createdAt, ['0000-00-00 00:00:00', '0000-00-00'])) {
                                     try {
-                                        // Créer l'objet DateTime
                                         $date = new DateTime($createdAt);
 
-                                        // Formater la date
-                                        $day   = $date->format('j');                    // Jour sans zéro (20)
-                                        $month = $date->format('F');                    // Mois en anglais (November)
-                                        $year  = $date->format('Y');                    // Année (2025)
-                                        $hour  = $date->format('H');                    // Heure 24h (14)
-                                        $min   = $date->format('i');                    // Minutes (30)
-                                        $sec   = $date->format('s');                    // Secondes (25)
+                                        $day   = $date->format('j');
+                                        $month = $date->format('F');
+                                        $year  = $date->format('Y');
+                                        $hour  = $date->format('H');
+                                        $min   = $date->format('i');
 
-                                        // Traduction du mois en français
+                                        // Traduction des mois
                                         $monthsFr = [
                                             'January'   => 'Janvier',
                                             'February'  => 'Février',
@@ -141,12 +138,9 @@ if ($_SESSION['user']['is_confirmed'] != 1) {
                                         ];
 
                                         $monthFr = $monthsFr[$month] ?? $month;
-
-                                        // "1er" pour le premier du mois
                                         $dayDisplay = ($day == 1) ? '1er' : $day;
 
-                                        // Format final
-                                        echo "Le {$dayDisplay} {$monthFr} {$year} à {$hour}h{$min}m{$sec}s";
+                                        echo "Le {$dayDisplay} {$monthFr} {$year} à {$hour}h{$min}";
                                     } catch (Exception $e) {
                                         echo "Date invalide";
                                     }
@@ -156,10 +150,7 @@ if ($_SESSION['user']['is_confirmed'] != 1) {
                                 ?>
                             </p>
                         </div>
-                        <div class="info-item">
-                            <label>Dernière connexion :</label>
-                            <p><?= htmlspecialchars($_SESSION["user"]["last_login"] ?? ($_SESSION["user"]["profile"]["last_login"] ?? "Non disponible")); ?></p>
-                        </div>
+
                         <div class="info-item">
                             <label>Type d'abonnement :</label>
                             <p><?= htmlspecialchars($_SESSION["user"]["subscription_type"] ?? ($_SESSION["user"]["profile"]["subscription_type"] ?? "Gratuit")); ?></p>
