@@ -2,9 +2,6 @@
 
 use App\controllers\AuthController;
 
-$authController = new AuthController();
-$admin = $authController->getAdmin("Nathan");
-$showAdminLink = isset($admin) && $admin["admin_name"] === 'Nathan';
 ?>
 
 <header class="main-header">
@@ -33,6 +30,12 @@ $showAdminLink = isset($admin) && $admin["admin_name"] === 'Nathan';
 
                     <!-- Cours -->
                     <li><a href="./courses">Cours</a></li>
+
+                    <?php if (isset($_SESSION['user']) && ($_SESSION['user']['is_admin'] ?? false) === true): ?>
+                        <li><a href="./dashboard">Créer un cours</a></li>
+                    <?php endif; ?>
+
+
 
                     <!-- Photo de profil -->
                     <li id="profile-btn">
@@ -93,10 +96,6 @@ $showAdminLink = isset($admin) && $admin["admin_name"] === 'Nathan';
                         </ul>
                     </li>
                     <li><a href="./courses">Cours</a></li>
-                    <!-- Lien admins -->
-                    <?php if ($showAdminLink): ?>
-                        <li><a href="./admins">Admins</a></li>
-                    <?php endif; ?>
 
                     <li><a href="./register">Inscription</a></li>
                     <li><a href="./login">Connexion</a></li>
@@ -128,6 +127,9 @@ $showAdminLink = isset($admin) && $admin["admin_name"] === 'Nathan';
                     </ul>
                 </li>
                 <li><a href="./courses">Mon cours</a></li>
+                <?php if (isset($_SESSION['user']) && ($_SESSION['user']['is_admin'] ?? false) === true): ?>
+                    <li><a href="./dashboard">Créer un cours</a></li>
+                <?php endif; ?>
                 <li style="display: flex;">
                     <img src="../public/uploads/profiles/<?= htmlspecialchars($_SESSION['user']['profile_picture'] ?? $_SESSION['user']['profile']['profile_picture'] ?? 'default.png') ?>"
                         alt="Photo de profil"

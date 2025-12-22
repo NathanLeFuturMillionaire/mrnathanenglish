@@ -1,4 +1,5 @@
 <?php
+
 // Active l'autoload de Composer
 require_once __DIR__ . '/../vendor/autoload.php';
 

@@ -8,13 +8,11 @@ use Exception;
 
 class UserRepository
 {
-    private Database $database;
-    private PDO $db;
+    protected PDO $db;
 
-    public function __construct(Database $database)
+    public function __construct(PDO $db)
     {
-        $this->database = $database;
-        $this->db = $database->connect(); // On récupère la connexion PDO
+        $this->db = $db;
     }
 
     /**
@@ -108,33 +106,69 @@ class UserRepository
             ];
         }
     }
-
-    public function getUserWithProfileById(int $userId): ?array
+    /**
+     * Récupère un utilisateur avec son profil et toutes ses informations d'abonnement
+     *
+     * @param int $userId
+     * @return array|null Tableau associatif contenant toutes les données ou null si non trouvé
+     */
+    public function getUserWithProfileAndSubscriptionsById(int $userId): ?array
     {
-        $sql = "
-            SELECT 
-                u.id,
-                u.fullname,
-                u.username,
-                u.email,
-                u.is_confirmed,
-                u.created_at,
-                p.profile_picture,
-                p.birth_date,
-                p.phone_number,
-                p.bio,
-                p.country
-            FROM users u
-            INNER JOIN user_profiles p ON u.id = p.user_id
-            WHERE u.id = ?
-            LIMIT 1
-        ";
+        $sql = "SELECT 
+            u.id,
+            u.fullname,
+            u.email,
+            u.username,
+            u.is_confirmed,
+            u.created_at,
 
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([$userId]);
+            p.profile_picture,
+            p.birth_date,
+            p.phone_number,
+            p.bio,
+            p.country,
+            p.english_level,
 
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            s.id AS subscription_id,
+            s.type AS subscription_type,
+            s.amount,
+            s.currency,
+            s.pawa_pay_deposit_id,
+            s.pawa_pay_status,
+            s.pawa_pay_correlation_id,
+            s.pawa_pay_mobile_number,
+            s.pawa_pay_country_code,
+            s.pawa_pay_operator,
+            s.pawa_pay_response_raw,
+            s.billing_period,
+            s.start_date,
+            s.end_date,
+            s.next_billing_date,
+            s.status AS subscription_status,
+            s.canceled_at,
+            s.ended_at,
+            s.created_at AS subscription_created_at,
+            s.updated_at AS subscription_updated_at
+        FROM users u
+        LEFT JOIN user_profiles p ON u.id = p.user_id
+        LEFT JOIN subscriptions s ON u.id = s.id_user
+        WHERE u.id = ?
+        ORDER BY s.start_date DESC";
 
-        return $result ?: null;
+        try {
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$userId]);
+
+            $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+            if (!$rows) {
+                return null;
+            }
+
+            return $rows; // Retourne un tableau indexé avec toutes les lignes (1 ligne utilisateur + autant de lignes que d'abonnements)
+        } catch (\Exception $e) {
+            error_log('Erreur getUserWithProfileAndSubscriptionsById : ' . $e->getMessage());
+            return null;
+        }
     }
 }

@@ -24,6 +24,8 @@
 
     <main>
 
+    <!-- <?php var_dump($_SESSION); ?> -->
+
         <section class="banner">
             <div class="container banner-content">
                 <div class="banner-left">

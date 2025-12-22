@@ -5,3 +5,7 @@ un code qui gère ce cas.
 Les 2 types d'abonnement OpenDoorsClass :
     1 - Libre accès
     2 - Premium
+
+
+I created a subscriptions table that contents : id, id_user, type(subscriptions type), start_date, end_date and status.
+You already know the structure of my users table, so make a join between this later and the subscription table, use SQL

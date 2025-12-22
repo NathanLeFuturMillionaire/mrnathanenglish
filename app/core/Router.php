@@ -2,10 +2,15 @@
 
 namespace App\Core;
 
+use App\Controllers\AdminController;
 use App\Controllers\HomeController;
 use App\Controllers\AuthController;
 use App\Controllers\ResetPasswordController;
 use App\controllers\UserController;
+
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 
 class Router
 {
@@ -135,6 +140,38 @@ class Router
                     // var_dump($_SESSION);
                     header('Location: ./');
                 }
+                break;
+
+            case 'dashboard':
+                session_start();
+                $adminController = new AdminController();
+                if (isset($_SESSION["user"]["id"])) {
+                    $adminController->dashboard();
+                }
+                break;
+
+            case 'courses/create':
+                session_start();
+
+                if (!isset($_SESSION['user']) || !($_SESSION['user']['is_admin'] ?? false)) {
+                    header("Location: ./login");
+                    exit;
+                }
+
+                $adminController = new AdminController();
+
+                // Détection AJAX
+                $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+                    strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+
+                if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAjax) {
+                    $adminController->ajaxCreateCourse();
+                    exit;
+                }
+
+                // Sinon : affichage de la page
+                $adminController->createCourse();
+                break;
 
                 // default:
                 //     http_response_code(404);

@@ -7,13 +7,15 @@ use App\Models\UserRepository;
 
 class ResetPasswordController
 {
-    private Database $connection;
+    private \PDO $connection;
     private UserRepository $userRepo;
 
     public function __construct()
     {
-        $this->connection = new Database();
-        $this->userRepo   = new userRepository($this->connection);
+        $database = new Database();
+        $this->connection = $database->connect(); // ✅ PDO
+
+        $this->userRepo = new UserRepository($this->connection); // ✅ PDO
     }
 
     /**

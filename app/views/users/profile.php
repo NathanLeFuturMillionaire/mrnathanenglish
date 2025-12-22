@@ -49,6 +49,7 @@ if ($_SESSION['user']['is_confirmed'] != 1) {
 
             <nav class="menu-links">
                 <a href="#infos" class="active"><i class="fa-solid fa-user"></i> Mon profil</a>
+                <a href="#courses"><i class="fa-solid fa-user"></i> Mes cours</a>
                 <a href="#progression"><i class="fa-solid fa-chart-line"></i> Progression</a>
                 <a href="#badges"><i class="fa-solid fa-award"></i> Badges</a>
                 <a href="#objectifs"><i class="fa-solid fa-bullseye"></i> Objectifs</a>
@@ -153,14 +154,40 @@ if ($_SESSION['user']['is_confirmed'] != 1) {
 
                         <div class="info-item">
                             <label>Type d'abonnement :</label>
-                            <p><?= htmlspecialchars($_SESSION["user"]["subscription_type"] ?? ($_SESSION["user"]["profile"]["subscription_type"] ?? "Gratuit")); ?></p>
+
+                            <?php if (!empty($subscriptions[0]["type"]) && $subscriptions[0]["type"] === "premium"): ?>
+                                <p>Premium</p>
+                            <?php else: ?>
+                                <p>Accès libre</p>
+                            <?php endif; ?>
                         </div>
                         <div class="info-item">
                             <label>Prochain renouvellement :</label>
-                            <p><?= htmlspecialchars($_SESSION["user"]["renew_date"] ?? ($_SESSION["user"]["profile"]["renew_date"] ?? "Aucun")); ?></p>
+                            <div class="info-item">
+
+                                <?php if (!empty($subscriptions[0]["next_billing_date"])): ?>
+                                    <?php
+                                    // Conversion de la date en format français (ex: 17 décembre 2025)
+                                    $date = new DateTime($subscriptions[0]["next_billing_date"]);
+                                    $formatter = new IntlDateFormatter('fr_FR', IntlDateFormatter::LONG, IntlDateFormatter::NONE);
+                                    $dateFormatee = $formatter->format($date);
+                                    ?>
+                                    <p><?= htmlspecialchars($dateFormatee) ?></p>
+                                <?php else: ?>
+                                    <p>Aucun abonnement actif</p>
+                                <?php endif; ?>
+                            </div>
                         </div>
                     </div>
 
+                </div>
+            </section>
+
+            <!-- ===== COURS ===== -->
+            <section id="courses" class="profile-section" style="display:none;">
+                <h1 class="section-title">Mes cours</h1>
+                <div class="card">
+                    
                 </div>
             </section>
 
@@ -222,13 +249,67 @@ if ($_SESSION['user']['is_confirmed'] != 1) {
             <section id="subscription" class="profile-section" style="display:none;">
                 <h1 class="section-title">Abonnement & Paiements</h1>
                 <div class="card">
-                    <div class="info-item"><label>Plan actuel :</label>
-                        <p>Trimestriel - Anglais</p>
-                    </div>
-                    <div class="info-item"><label>Expiration :</label>
-                        <p>15/12/2025</p>
-                    </div>
-                    <button class="btn-setting"><i class="fa-solid fa-credit-card"></i> Renouveler / Upgrade</button>
+                    <?php if (!empty($subscriptions)): ?>
+                        <h3>Vos abonnements</h3>
+                        <?php foreach ($subscriptions as $sub): ?>
+                            <div class="subscription">
+                                <?php
+                                // Check if we have the required dates
+                                if (!empty($sub['start_date']) && !empty($sub['end_date'])) {
+                                    $startDate = new DateTime($sub['start_date']);
+                                    $endDate   = new DateTime($sub['end_date']);
+                                    $today     = new DateTime(); // Current date: December 20, 2025
+
+                                    if ($today > $endDate) {
+                                        // Subscription expired
+                                        $daysRemaining = 0;
+                                        $daysMessage   = "Expiré";
+                                        $statusClass   = "expired";
+                                    } else {
+                                        $interval      = $today->diff($endDate);
+                                        $daysRemaining = $interval->days;
+
+                                        if ($daysRemaining == 0) {
+                                            $daysMessage = "Arrive à terme aujourd'hui";
+                                        } elseif ($daysRemaining == 1) {
+                                            $daysMessage = "1 jour restant";
+                                        } else {
+                                            $daysMessage = "$daysRemaining jours restant";
+                                        }
+                                        $statusClass = ($daysRemaining <= 7) ? "warning" : "active";
+                                    }
+                                } else {
+                                    // No subscription or missing dates
+                                    $daysRemaining = 0;
+                                    $daysMessage   = "Aucun abonnement actif";
+                                    $statusClass   = "none";
+                                }
+                                ?>
+
+                                <p>Type: <?= htmlspecialchars($sub['type'] ?? 'Unknown') ?></p>
+                                <p>Prix: <?= number_format($sub['amount'] ?? 0, 0, ',', ' ') ?> <?= htmlspecialchars($sub['currency'] ?? 'FCFA') ?></p>
+
+                                <p>
+                                    Status: <span class="<?= $statusClass ?>"><?= htmlspecialchars($sub['status'] ?? 'Unknown') ?></span>
+                                    (<?= htmlspecialchars($daysMessage) ?>)
+                                </p>
+
+                                <!-- <p>PawaPay Payment: <?= htmlspecialchars($sub['pawa_pay_status'] ?? 'N/A') ?></p> -->
+
+                                <?php if (!empty($sub['start_date']) && !empty($sub['end_date'])): ?>
+                                    <p>
+                                        <!-- Début: <?= htmlspecialchars($sub['start_date']) ?> →
+                                        Fin: <?= htmlspecialchars($sub['end_date']) ?> -->
+                                    </p>
+                                <?php else: ?>
+                                    <p>Dates: Aucun abonnement actif</p>
+                                <?php endif; ?>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <p>Aucun abonnement actif.</p>
+                    <?php endif; ?>
+                    <button class="btn-setting"><i class="fa-solid fa-credit-card"></i> Renouveler</button>
                 </div>
             </section>
 

@@ -4,6 +4,7 @@ namespace App\controllers;
 
 use App\Core\Database;
 use App\Services\MailService;
+use App\Models\AdminRepository;
 
 use DateTime;
 use Exception;
@@ -48,6 +49,7 @@ class AuthController
                     'is_confirmed'  => $user['is_confirmed'],
                     'username'      => $user['username'],
                     'english_level' => $user['english_level'],
+                    'role'          => 'admin',
                     'fullname'      => $user['fullname'],
                     'email'         => $user['email'],
                     'created_at'    => $user['user_created_at'],
@@ -407,6 +409,18 @@ class AuthController
                 'bio' => $user["bio"],
                 'created_at' => $user["created_at"],
             ];
+
+            // Par défaut
+            $_SESSION['user']['is_admin'] = false;
+
+            // Vérifier s’il est admin
+            $adminRepo = new AdminRepository($this->db);
+            $admin = $adminRepo->findByUserId($user['id']);
+
+            if ($admin && $admin['is_active'] == 1) {
+                $_SESSION['user']['is_admin'] = true;
+            }
+
 
             // 7) Récupérer le profil de l'utilisateur
             $profileStmt = $this->db->prepare("SELECT profile_picture, english_level FROM user_profiles WHERE user_id = ?");
@@ -944,15 +958,14 @@ class AuthController
         $sql = "
         SELECT 
             id,
-            admin_name,
-            admin_ip,
-            admin_role
+            username,
+            role
         FROM admins
-        WHERE admin_name = :admin_name
+        WHERE username = :username
     ";
 
         $stmt = $this->db->prepare($sql);
-        $stmt->bindValue(':admin_name', $adminName, PDO::PARAM_STR);
+        $stmt->bindValue(':username', $adminName, PDO::PARAM_STR);
         $stmt->execute();
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -963,9 +976,8 @@ class AuthController
         // Structuration du résultat
         $admin = [
             'id' => $row['id'],
-            'admin_name' => $row['admin_name'],
-            'admin_ip' => $row['admin_ip'],
-            'admin_role' => $row['admin_role']
+            'username' => $row['username'],
+            'admin_role' => $row['role']
         ];
 
         return $admin;
