@@ -34,9 +34,9 @@
         <nav class="sidebar-nav">
             <ul>
                 <li><a href="#" class="active"><i class="fas fa-chart-line"></i> Tableau de bord</a></li>
-                <li><a href="./courses/create"><i class="fas fa-plus-circle"></i> Créer un cours</a></li>
-                <li><a href="#"><i class="fas fa-users"></i> Mes étudiants</a></li>
-                <li><a href="#"><i class="fas fa-book-open"></i> Mes formations</a></li>
+                <li><a href="./courses"><i class="fas fa-users"></i> Cours</a></li>
+                <li><a href="#"><i class="fas fa-users"></i> Étudiants</a></li>
+                <li><a href="#"><i class="fas fa-book-open"></i> Formations</a></li>
             </ul>
         </nav>
     </aside>

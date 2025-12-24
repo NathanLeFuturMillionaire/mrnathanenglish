@@ -7,6 +7,7 @@ use App\Controllers\HomeController;
 use App\Controllers\AuthController;
 use App\Controllers\ResetPasswordController;
 use App\controllers\UserController;
+use App\Models\DraftRepository;
 
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
@@ -150,6 +151,28 @@ class Router
                 }
                 break;
 
+            case 'courses':
+                session_start();
+
+                // Sécurité renforcée : utilisateur connecté ET admin/formateur
+                if (!isset($_SESSION['user'])) {
+                    header("Location: ./login");
+                    exit;
+                }
+
+                if (!($_SESSION['user']['is_admin'] ?? false)) {
+                    // Si ce n'est pas un admin, redirection vers 404 ou tableau de bord étudiant
+                    header("Location: ./profile");
+                    exit;
+                }
+
+                // Instanciation du controller
+                $adminController = new AdminController();
+
+                // Appel de la méthode qui affiche la liste des cours du formateur
+                $adminController->listCourses();
+                break;
+
             case 'courses/create':
                 session_start();
 
@@ -158,6 +181,8 @@ class Router
                     exit;
                 }
 
+                // Nouvelles instanciations
+                $draftRepository = new DraftRepository();
                 $adminController = new AdminController();
 
                 // Détection AJAX
@@ -169,7 +194,71 @@ class Router
                     exit;
                 }
 
-                // Sinon : affichage de la page
+            case 'courses/create':
+                // session_start();
+
+                // Sécurité : utilisateur connecté et admin/formateur
+                if (!isset($_SESSION['user'])) {
+                    header("Location: ./login");
+                    exit;
+                }
+
+                if (!($_SESSION['user']['is_admin'] ?? false)) {
+                    header("Location: ./404");
+                    exit;
+                }
+
+                $adminController = new AdminController();
+                $trainerId = (int)$_SESSION['user']['id'];
+
+                // === VÉRIFICATION : L'utilisateur a-t-il déjà un brouillon ? ===
+                $existingDraft = $draftRepository->findByTrainer($trainerId);
+
+                // Si aucun brouillon n'existe → on en crée un vide automatiquement
+                if (!$existingDraft) {
+                    // Création d'un brouillon vide avec structure minimale
+                    $emptyDraftData = [
+                        'course_infos' => [
+                            'title_course'       => '',
+                            'description_course' => '',
+                            'language_taught'    => '',
+                            'learner_level'      => '',
+                            'time_course'        => null,
+                            'validation_period' => null,
+                            'price_course'       => 0,
+                            'is_free'            => 0,
+                            'publish_now'        => 0,
+                            'profile_picture'    => null
+                        ],
+                        'modules' => []
+                    ];
+
+                    $jsonData = json_encode($emptyDraftData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+                    $draftRepository->create($trainerId, $jsonData);
+                } else {
+                    // Création d'un brouillon vide avec structure minimale
+                    $emptyDraftData = [
+                        'course_infos' => [
+                            'title_course'       => '',
+                            'description_course' => '',
+                            'language_taught'    => '',
+                            'learner_level'      => '',
+                            'time_course'        => null,
+                            'validation_period' => null,
+                            'price_course'       => 0,
+                            'is_free'            => 0,
+                            'publish_now'        => 0,
+                            'profile_picture'    => null
+                        ],
+                        'modules' => []
+                    ];
+                    $jsonData = json_encode($emptyDraftData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+                    $draftRepository->create($trainerId, $jsonData);
+                }
+
+                // Affichage de la page de création (avec ou sans brouillon existant)
                 $adminController->createCourse();
                 break;
 
