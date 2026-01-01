@@ -152,24 +152,9 @@ class Router
                 break;
 
             case 'courses':
+
                 session_start();
-
-                // Sécurité renforcée : utilisateur connecté ET admin/formateur
-                if (!isset($_SESSION['user'])) {
-                    header("Location: ./login");
-                    exit;
-                }
-
-                if (!($_SESSION['user']['is_admin'] ?? false)) {
-                    // Si ce n'est pas un admin, redirection vers 404 ou tableau de bord étudiant
-                    header("Location: ./profile");
-                    exit;
-                }
-
-                // Instanciation du controller
                 $adminController = new AdminController();
-
-                // Appel de la méthode qui affiche la liste des cours du formateur
                 $adminController->listCourses();
                 break;
 
@@ -177,90 +162,68 @@ class Router
                 session_start();
 
                 if (!isset($_SESSION['user']) || !($_SESSION['user']['is_admin'] ?? false)) {
-                    header("Location: ./login");
+                    header('Location: ./login');
                     exit;
                 }
 
-                // Nouvelles instanciations
+                // Dépendances
                 $draftRepository = new DraftRepository();
-                $adminController = new AdminController();
+
+                // Injection dans le contrôleur
+                $adminController = new AdminController($draftRepository);
 
                 // Détection AJAX
                 $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
                     strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
 
+                // ======================
+                // AUTOSAVE AJAX
+                // ======================
                 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAjax) {
                     $adminController->ajaxCreateCourse();
                     exit;
                 }
 
-            case 'courses/create':
-                // session_start();
-
-                // Sécurité : utilisateur connecté et admin/formateur
-                if (!isset($_SESSION['user'])) {
-                    header("Location: ./login");
-                    exit;
-                }
-
-                if (!($_SESSION['user']['is_admin'] ?? false)) {
-                    header("Location: ./404");
-                    exit;
-                }
-
-                $adminController = new AdminController();
-                $trainerId = (int)$_SESSION['user']['id'];
-
-                // === VÉRIFICATION : L'utilisateur a-t-il déjà un brouillon ? ===
-                $existingDraft = $draftRepository->findByTrainer($trainerId);
-
-                // Si aucun brouillon n'existe → on en crée un vide automatiquement
-                if (!$existingDraft) {
-                    // Création d'un brouillon vide avec structure minimale
-                    $emptyDraftData = [
-                        'course_infos' => [
-                            'title_course'       => '',
-                            'description_course' => '',
-                            'language_taught'    => '',
-                            'learner_level'      => '',
-                            'time_course'        => null,
-                            'validation_period' => null,
-                            'price_course'       => 0,
-                            'is_free'            => 0,
-                            'publish_now'        => 0,
-                            'profile_picture'    => null
-                        ],
-                        'modules' => []
-                    ];
-
-                    $jsonData = json_encode($emptyDraftData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-
-                    $draftRepository->create($trainerId, $jsonData);
-                } else {
-                    // Création d'un brouillon vide avec structure minimale
-                    $emptyDraftData = [
-                        'course_infos' => [
-                            'title_course'       => '',
-                            'description_course' => '',
-                            'language_taught'    => '',
-                            'learner_level'      => '',
-                            'time_course'        => null,
-                            'validation_period' => null,
-                            'price_course'       => 0,
-                            'is_free'            => 0,
-                            'publish_now'        => 0,
-                            'profile_picture'    => null
-                        ],
-                        'modules' => []
-                    ];
-                    $jsonData = json_encode($emptyDraftData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-
-                    $draftRepository->create($trainerId, $jsonData);
-                }
-
-                // Affichage de la page de création (avec ou sans brouillon existant)
+                // ======================
+                // AFFICHAGE DE LA VUE
+                // ======================
                 $adminController->createCourse();
                 break;
+
+            case 'courses/auto-save-content':
+                session_start();
+
+                if (!isset($_SESSION['user']) || !($_SESSION['user']['is_admin'] ?? false)) {
+                    http_response_code(403);
+                    echo json_encode(['success' => false, 'message' => 'Accès refusé.']);
+                    exit;
+                }
+
+                $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+                    strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !$isAjax) {
+                    http_response_code(403);
+                    echo json_encode(['success' => false, 'message' => 'Requête invalide.']);
+                    exit;
+                }
+
+                $draftRepository = new DraftRepository();
+                $adminController = new AdminController($draftRepository);
+                $adminController->autoSaveContent();
+                exit;
+                break;
+
+            case 'courses/delete-draft':
+                session_start();
+
+                $draftRepository = new DraftRepository();
+                $adminController = new AdminController($draftRepository);
+
+                $adminController->deleteDraft();
+                break;
+
+
 
                 // default:
                 //     http_response_code(404);
