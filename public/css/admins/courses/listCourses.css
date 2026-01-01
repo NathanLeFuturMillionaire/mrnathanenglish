@@ -383,3 +383,44 @@ body {
         display: flex;
     }
 }
+
+.empty-state {
+    min-height: 60vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: #718096;
+    padding: 2rem;
+}
+
+.empty-state i {
+    font-size: 4.5rem;
+    margin-bottom: 1.25rem;
+    color: #cbd5e0;
+}
+
+.empty-state p {
+    font-size: 1.2rem;
+    font-weight: 500;
+    max-width: 320px;
+}
+
+.empty-state a {
+    display: inline-block;
+    color: #6366f1;
+    text-decoration: none;
+    text-align: center;
+    transition: .4s;
+}
+
+.empty-state a:hover {
+    color: #8b5cf6;
+    transition: .4s;
+}
+
+.course-description {
+    margin-top: -25px;
+    margin-bottom: 30px;
+}

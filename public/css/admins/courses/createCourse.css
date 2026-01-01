@@ -676,3 +676,74 @@ body {
   border-color: #e53e3e;
   background-color: #fff5f5;
 }
+
+.module-card {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  overflow: hidden;
+}
+
+.module-header {
+  background: #f8f9fa;
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+  font-weight: 600;
+}
+
+.module-actions button {
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: #666;
+  cursor: pointer;
+  margin-left: 12px;
+  padding: 8px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.module-actions button:hover {
+  background: #e9ecef;
+  color: #333;
+}
+
+.module-actions .btn-remove-module:hover {
+  color: #dc3545;
+}
+
+.module-content {
+  padding: 24px;
+  transition: max-height 0.4s ease;
+}
+
+.module-content.collapsed {
+  max-height: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.lesson-item {
+  background: #f1f3f5;
+  border-radius: 10px;
+  padding: 20px;
+  margin-top: 16px;
+  border: 1px solid #dee2e6;
+}
+
+.lesson-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  font-weight: 600;
+}
+
+.btn-add-lesson {
+  margin-top: 12px;
+}
