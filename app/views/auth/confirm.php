@@ -30,8 +30,8 @@
             <label for="code">Code de confirmation</label>
             <input
                 type="text"
-                id="code"
-                name="code"
+                id="confirmation_code"
+                name="confirmation_code"
                 placeholder="6 chiffres"
                 inputmode="numeric"
                 autocomplete="one-time-code"

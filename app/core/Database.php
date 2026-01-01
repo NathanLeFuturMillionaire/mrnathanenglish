@@ -26,4 +26,17 @@ class Database {
         }
         return $this->conn;
     }
+
+    // Ajout de la méthode prepare
+    public function prepare($query) {
+        $this->connect(); // Assure la connexion si pas faite
+        return $this->conn->prepare($query);
+    }
+
+    // Ajoute d'autres méthodes comme execute, fetch si besoin
+    public function query($query, $params = []) {
+        $stmt = $this->prepare($query);
+        $stmt->execute($params);
+        return $stmt->fetchAll();
+    }
 }

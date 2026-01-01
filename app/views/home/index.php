@@ -6,7 +6,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="OpenDoorsClass - Apprenez l'anglais facilement avec une méthode claire, motivante et efficace. Cours, exercices, quiz et plus." />
-    <meta name="keywords" content="anglais, apprendre anglais, formation anglais, cours anglais, OpenDoorsClass, e-learning" />
+    <meta name="keywords" content="anglais, apprendre anglais, apprendre l'anglais, apprendre l'anglais sur OpenDoorsClass, formation anglais, cours anglais, OpenDoorsClass, e-learning" />
     <meta name="author" content="OpenDoorsClass" />
     <meta property="og:title" content="OpenDoorsClass - Formation en ligne d'anglais" />
     <meta property="og:description" content="Découvrez une méthode simple et motivante pour apprendre l’anglais sur OpenDoorsClass" />
@@ -23,6 +23,8 @@
     <?php require "../app/views/layouts/header.php" ?>
 
     <main>
+
+    <!-- <?php var_dump($_SESSION); ?> -->
 
         <section class="banner">
             <div class="container banner-content">

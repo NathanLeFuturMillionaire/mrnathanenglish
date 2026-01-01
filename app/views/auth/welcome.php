@@ -1,5 +1,5 @@
 <?php
-if (!isset($_SESSION['user']) || (int)$_SESSION['user']['confirmed'] !== 1) {
+if (!isset($_SESSION['user']) || (int)$_SESSION['user']['is_confirmed'] !== 1) {
     header('Location: ./login');
     exit;
 }

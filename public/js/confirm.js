@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('confirmForm');
-    const codeInput = document.getElementById('code');
+    const codeInput = document.getElementById('confirmation_code');
     const messageDiv = document.getElementById('message');
     const resendLink = document.getElementById('resend-link');
     const resendMessage = document.getElementById('resend-message');
@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const data = new FormData();
-        data.append('code', code);
+        data.append('confirmation_code', code);
         data.append('email', email);
 
         try {
@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 messageDiv.textContent = result.message || 'Compte confirmé avec succès !';
 
                 // --- Mise à jour dynamique du header ---
-                if (result.user && result.user.confirmed === 1) {
+                if (result.user && result.user.is_confirmed === 1) {
                     updateHeaderAfterConfirmation(result.user);
                 }
 

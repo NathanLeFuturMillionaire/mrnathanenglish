@@ -73,3 +73,54 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 });
+
+document.addEventListener('DOMContentLoaded', () => {
+  const profileBtn = document.getElementById('profile-btn');
+  const dropdownMenu = document.getElementById('dropdown-menu');
+  const links = document.querySelectorAll('.dropdown-content li a');
+
+  // Toggle du dropdown
+  profileBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    dropdownMenu.classList.toggle('show');
+    profileBtn.classList.toggle('active');
+  });
+
+  // Fermer si clic à l’extérieur
+  document.addEventListener('click', () => {
+    dropdownMenu.classList.remove('show');
+    profileBtn.classList.remove('active');
+  });
+
+  // Fermer avec la touche Echap
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      dropdownMenu.classList.remove('show');
+      profileBtn.classList.remove('active');
+    }
+  });
+
+  // Effet onde sur chaque lien
+  links.forEach(link => {
+    link.addEventListener('click', function(e) {
+      // Position du clic
+      const rect = this.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      // Création du span "ripple"
+      const ripple = document.createElement('span');
+      ripple.classList.add('ripple');
+      ripple.style.left = `${x}px`;
+      ripple.style.top = `${y}px`;
+
+      // Ajout à l'élément cliqué
+      this.appendChild(ripple);
+
+      // Suppression après l’animation
+      setTimeout(() => {
+        ripple.remove();
+      }, 600);
+    });
+  });
+});

@@ -7,9 +7,7 @@
     <link rel="stylesheet" href="../public/css/style.css">
     <link rel="stylesheet" href="../public/css/auth/register.css">
 
-    <title>Inscription - Mr Nathan English</title>
-
-    <title>OpenDoorsClass - Inscription</title>
+    <title>Inscription - OpenDoorsClass</title>
 
 </head>
 

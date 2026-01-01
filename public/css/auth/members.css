@@ -1,0 +1,92 @@
+/* ======= STYLE GÉNÉRAL ======= */
+body {
+    background-color: #d3d3d3; /* gris clair autour du tableau */
+    font-family: 'Poppins', sans-serif;
+    color: #333;
+    margin: 0;
+    padding: 40px;
+}
+
+/* ======= CONTENEUR DU TABLEAU ======= */
+.table-container {
+    max-width: 1100px;
+    margin: 0 auto;
+    background-color: #fff;
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* ======= TABLEAU ======= */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    border-spacing: 0;
+    text-align: left;
+}
+
+/* ======= EN-TÊTE ======= */
+thead {
+    background-color: #003640; /* bleu nuit */
+    color: #fff;
+}
+
+thead th {
+    padding: 10px;
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+/* ======= CORPS DU TABLEAU ======= */
+tbody tr:nth-child(odd) {
+    background-color: #ffffff; /* blanc */
+}
+
+tbody tr:nth-child(even) {
+    background-color: #eaf9ff; /* bleu très clair */
+}
+
+tbody td {
+    padding: 14px 18px;
+    color: #333;
+}
+
+/* ======= HOVER ======= */
+tbody tr:hover {
+    background-color: #dff2fa;
+    transition: 0.2s ease;
+}
+
+/* ======= RESPONSIVE ======= */
+@media (max-width: 768px) {
+    thead {
+        display: none;
+    }
+
+    tbody tr {
+        display: block;
+        margin-bottom: 20px;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+
+    tbody td {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 15px;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    tbody td:last-child {
+        border-bottom: none;
+    }
+
+    tbody td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        text-transform: uppercase;
+        color: #555;
+    }
+}
