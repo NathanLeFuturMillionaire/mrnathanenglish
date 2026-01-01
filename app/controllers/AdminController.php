@@ -5,12 +5,14 @@ namespace App\Controllers;
 use App\Core\Database;
 use App\Models\CourseRepository;
 use App\Models\DraftRepository;
+use Exception;
 
 class AdminController
 {
+
+    private DraftRepository $draftRepository;
     protected $db;
     protected $courseRepository;
-    protected $draftRepository;
 
     public function __construct()
     {
@@ -52,8 +54,24 @@ class AdminController
      */
     public function createCourse(): void
     {
-        // Récupère les données temporaires si elles existent
-        $tempData = $_SESSION['temp_course_creation'] ?? [];
+        $draft = $this->draftRepository->findByTrainer($_SESSION['user']['id']);
+
+        // Récupération sécurisée des données du brouillon (injectées par le contrôleur)
+        $draftData = $draft ?? []; // Tableau contenant toutes les colonnes de la table draft
+
+        // Valeurs par défaut pour éviter les notices PHP et assurer une expérience fluide
+        $title            = htmlspecialchars($draftData['title_course'] ?? '');
+        $description      = htmlspecialchars($draftData['description_course'] ?? '');
+        $language         = htmlspecialchars($draftData['language_taught'] ?? '');
+        $level            = htmlspecialchars($draftData['learner_level'] ?? '');
+        $duration         = htmlspecialchars($draftData['time_course'] ?? '');
+        $validationPeriod = htmlspecialchars($draftData['validation_period'] ?? '');
+        $price            = htmlspecialchars($draftData['price_course'] ?? '0');
+        $is_free          = !empty($draftData['is_free']) ? (int)$draftData['is_free'] : 1; // 1 = gratuit par défaut
+        $profilePicture   = $draftData['profile_picture'] ?? null;
+        $draftId          = $draftData['id'] ?? null;
+
+        $modules = []; // futur autosave step 2
 
         require __DIR__ . '/../views/admins/courses/createCourse.php';
     }
@@ -61,6 +79,10 @@ class AdminController
     /**
      * AJAX : Étape 1 du wizard – Sauvegarde des informations générales dans le brouillon (table draft)
      * Le cours n'est PAS créé dans la table courses à ce stade
+     */
+
+    /**
+     * AJAX : Étape 1 du wizard – Sauvegarde auto dans la table draft
      */
     public function ajaxCreateCourse(): void
     {
@@ -71,14 +93,13 @@ class AdminController
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !$isAjax) {
             http_response_code(403);
-            echo json_encode(['success' => false, 'message' => 'Accès refusé ou méthode invalide.']);
+            echo json_encode(['success' => false, 'message' => 'Accès refusé.']);
             exit;
         }
 
-        // ID du formateur connecté
         $trainerId = $_SESSION['user']['id'];
 
-        // Récupération des données du formulaire
+        // Données formulaire
         $title            = trim($_POST['title_course'] ?? '');
         $description      = trim($_POST['description_course'] ?? '');
         $language         = $_POST['language_taught'] ?? '';
@@ -86,63 +107,57 @@ class AdminController
         $duration         = !empty($_POST['time_course']) ? (int)$_POST['time_course'] : null;
         $validationPeriod = !empty($_POST['validation_period']) ? (int)$_POST['validation_period'] : null;
         $price            = (float)($_POST['price_course'] ?? 0);
-        $is_free          = isset($_POST['is_free']) ? 1 : 0;
-        $publish_now      = isset($_POST['publish_now']) ? 1 : 0;
+        $isFree           = isset($_POST['is_free']) ? 1 : 0;
 
-        // Validation
+        // Validation minimale (compatible autosave)
         $errors = [];
-        if ($title === '') $errors[] = "Le titre du cours est obligatoire.";
-        if ($description === '') $errors[] = "La description du cours est obligatoire.";
-        if ($language === '') $errors[] = "La langue enseignée est obligatoire.";
-        if ($level === '') $errors[] = "Le niveau du cours est obligatoire.";
+        if ($title === '') $errors[] = "Le titre est obligatoire.";
+        if ($description === '') $errors[] = "La description est obligatoire.";
+        if ($language === '') $errors[] = "La langue est obligatoire.";
+        if ($level === '') $errors[] = "Le niveau est obligatoire.";
         if ($validationPeriod === null) $errors[] = "La période de validation est obligatoire.";
         if ($price < 0) $errors[] = "Le prix ne peut pas être négatif.";
 
-        // Gestion de l'image de couverture
-        $newImagePath = null;
-        $oldImagePath = null;
+        // Brouillon existant ?
+        $draft = $this->draftRepository->findByTrainer($trainerId);
 
-        // Récupérer l'ancien chemin d'image depuis le brouillon existant (si mise à jour)
-        $existingDraft = $this->draftRepository->findByTrainer($trainerId);
-        if ($existingDraft) {
-            $existingData = json_decode($existingDraft['draft_data'], true);
-            $oldImagePath = $existingData['course_infos']['profile_picture'] ?? null;
-        }
+        // Image existante
+        $oldImagePath = $draft['profile_picture'] ?? null;
+        $newImagePath = $oldImagePath;
 
+        // Upload image (si fournie)
         if (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] === UPLOAD_ERR_OK) {
             $uploadDir = __DIR__ . '/../../public/uploads/courses/';
-            if (!is_dir($uploadDir) && !mkdir($uploadDir, 0755, true)) {
-                $errors[] = "Impossible de créer le répertoire d'upload.";
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
+
+            $allowed = ['jpg', 'jpeg', 'png', 'webp'];
+            $ext = strtolower(pathinfo($_FILES['profile_picture']['name'], PATHINFO_EXTENSION));
+
+            if (!in_array($ext, $allowed)) {
+                $errors[] = "Format d’image non autorisé.";
+            } elseif ($_FILES['profile_picture']['size'] > 5 * 1024 * 1024) {
+                $errors[] = "Image trop lourde (max 5 Mo).";
             } else {
-                $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-                $ext = strtolower(pathinfo($_FILES['profile_picture']['name'], PATHINFO_EXTENSION));
+                $fileName = uniqid('course_') . '.' . $ext;
+                $filePath = $uploadDir . $fileName;
 
-                if (!in_array($ext, $allowed)) {
-                    $errors[] = "Format d'image non autorisé.";
-                } elseif ($_FILES['profile_picture']['size'] > 5 * 1024 * 1024) {
-                    $errors[] = "L'image ne doit pas dépasser 5 Mo.";
-                } else {
-                    $fileName = uniqid('course_draft_') . '.' . $ext;
-                    $filePath = $uploadDir . $fileName;
+                if (move_uploaded_file($_FILES['profile_picture']['tmp_name'], $filePath)) {
+                    $newImagePath = '/uploads/courses/' . $fileName;
 
-                    if (move_uploaded_file($_FILES['profile_picture']['tmp_name'], $filePath)) {
-                        $newImagePath = '/uploads/courses/' . $fileName;
-
-                        // Supprimer l'ancienne image si elle existe
-                        if ($oldImagePath && $oldImagePath !== $newImagePath && file_exists(__DIR__ . '/../../public' . $oldImagePath)) {
-                            @unlink(__DIR__ . '/../../public' . $oldImagePath);
-                        }
-                    } else {
-                        $errors[] = "Échec de l'enregistrement de l'image.";
+                    if ($oldImagePath && file_exists(__DIR__ . '/../../public' . $oldImagePath)) {
+                        @unlink(__DIR__ . '/../../public' . $oldImagePath);
                     }
+                } else {
+                    $errors[] = "Échec de l’upload de l’image.";
                 }
             }
-        } else {
-            // Pas de nouvelle image : on conserve l'ancienne si elle existe
-            $newImagePath = $oldImagePath;
-            if (!$newImagePath && empty($existingDraft)) {
-                $errors[] = "L'image de couverture est obligatoire pour commencer.";
-            }
+        }
+
+        // Image obligatoire uniquement à la première sauvegarde
+        if (!$draft && !$newImagePath) {
+            $errors[] = "L’image de couverture est obligatoire.";
         }
 
         if (!empty($errors)) {
@@ -151,97 +166,200 @@ class AdminController
             exit;
         }
 
-        // Construction des données du brouillon
-        $draftData = [
-            'course_infos' => [
-                'title_course'       => $title,
-                'description_course' => $description,
-                'language_taught'    => $language,
-                'learner_level'      => $level,
-                'time_course'        => $duration,
-                'validation_period' => $validationPeriod,
-                'price_course'       => $price,
-                'is_free'            => $is_free,
-                'publish_now'        => $publish_now,
-                'profile_picture'    => $newImagePath
-            ],
-            'modules' => [] // Sera rempli à l'étape 2
-        ];
-
-        $jsonData = json_encode($draftData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-
-        try {
-            if ($existingDraft) {
-                // Mise à jour du brouillon existant
-                $success = $this->draftRepository->update($existingDraft['id'], $jsonData);
-                $message = "Brouillon mis à jour. Passez au contenu du cours.";
-            } else {
-                // Création d'un nouveau brouillon
-                $draftId = $this->draftRepository->create($trainerId, $jsonData);
-                $success = $draftId !== false;
-                $message = "Brouillon créé. Vous pouvez maintenant construire le contenu du cours.";
+        // Créer brouillon si inexistant
+        if (!$draft) {
+            $draftId = $this->draftRepository->createEmptyDraft($trainerId);
+            if (!$draftId) {
+                http_response_code(500);
+                echo json_encode(['success' => false, 'message' => 'Création du brouillon impossible.']);
+                exit;
             }
-
-            if ($success) {
-                echo json_encode([
-                    'success' => true,
-                    'message' => $message
-                ]);
-            } else {
-                throw new \Exception("Échec de la sauvegarde du brouillon.");
-            }
-        } catch (\Exception $e) {
-            http_response_code(500);
-            echo json_encode([
-                'success' => false,
-                'message' => 'Erreur lors de la sauvegarde du brouillon : ' . $e->getMessage()
-            ]);
+        } else {
+            $draftId = $draft['id'];
         }
 
+        // Données à persister
+        $draftData = [
+            'title_course'       => $title,
+            'description_course' => $description,
+            'profile_picture'    => $newImagePath,
+            'time_course'        => $duration,
+            'validation_period'  => $validationPeriod,
+            'price_course'       => $price,
+            'language_taught'    => $language,
+            'learner_level'      => $level,
+            'is_free'            => $isFree
+        ];
+
+        // Mise à jour
+        if (!$this->draftRepository->updateDraft($draftId, $draftData)) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Échec de la sauvegarde.']);
+            exit;
+        }
+
+        echo json_encode([
+            'success' => true,
+            'draft_id' => $draftId,
+            'message' => 'Brouillon enregistré automatiquement.'
+        ]);
         exit;
     }
 
+
     /**
-     * Page réservée à l'admin/formateur : Liste de ses cours publiés + brouillons
+     * Page réservée à l'admin / formateur :
+     * Liste des cours publiés + brouillons
      */
     public function listCourses(): void
     {
-        $trainerId = (int)$_SESSION['user']['id'];
 
-        // 1. Récupération des cours publiés du formateur
-        $publishedCourses = $this->courseRepository->findByTrainerPublished($trainerId);
-
-        // 2. Récupération de TOUS les brouillons du formateur
-        $draftCourses = [];
-        $drafts = $this->draftRepository->findAllByTrainer($trainerId);
-
-        if ($drafts && is_array($drafts)) {
-            foreach ($drafts as $draft) {
-                if (!is_array($draft) || !isset($draft['draft_data'])) {
-                    continue; // Sécurité
-                }
-
-                $data = json_decode($draft['draft_data'], true);
-                if (!is_array($data)) {
-                    continue;
-                }
-
-                $courseInfos = $data['course_infos'] ?? [];
-
-                $draftCourses[] = [
-                    'draft_id'        => $draft['id'],
-                    'title_course'    => $courseInfos['title_course'] ?? 'Sans titre',
-                    'profile_picture' => $courseInfos['profile_picture'] ?? '/assets/img/default-course.jpg',
-                    'updated_at'      => $draft['updated_at'] ?? $draft['created_at'] ?? 'Inconnue',
-                    'is_draft'        => true
-                ];
-            }
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            session_start();
         }
 
-        // Fusion : brouillons en haut, puis cours publiés
+        if (!isset($_SESSION['user'])) {
+            header('Location: ./login');
+            exit;
+        }
+
+        if (
+            empty($_SESSION['user']['is_admin']) &&
+            empty($_SESSION['user']['is_trainer'])
+        ) {
+            http_response_code(403);
+            exit('Accès interdit');
+        }
+
+        // Sécurité minimale : un formateur authentifié
+        $trainerId = (int) ($_SESSION['user']['id'] ?? 0);
+
+        if ($trainerId <= 0) {
+            http_response_code(403);
+            exit('Accès interdit');
+        }
+
+        // 1. Cours publiés
+        $publishedCourses = $this->courseRepository
+            ->findByTrainerPublished($trainerId);
+
+        // 2. Brouillons
+        $drafts = $this->draftRepository
+            ->findAllByTrainer($trainerId);
+
+        $draftCourses = array_map(
+            static function (array $draft): array {
+                return [
+                    'draft_id'        => $draft['id'],
+                    'title_course'    => $draft['title_course'] ?? 'Sans titre',
+                    'description_course' => $draft['description_course'] ?? 'Aucune description',
+                    'profile_picture' => $draft['profile_picture']
+                        ?: '/assets/img/default-course.jpg',
+                    'updated_at'      => $draft['updated_at']
+                        ?? $draft['created_at'],
+                    'is_draft'        => true,
+                ];
+            },
+            $drafts
+        );
+
+
+        // 3. Fusion : brouillons en premier
         $allCourses = array_merge($draftCourses, $publishedCourses);
 
-        // Passage des données à la vue
+        // 4. Vue
         require __DIR__ . '/../views/admins/courses/listCourses.php';
+    }
+
+
+    public function autoSaveContent(): void
+    {
+        header('Content-Type: application/json');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST' || empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Accès refusé.']);
+            exit;
+        }
+
+        $trainerId = $_SESSION['user']['id'];
+        $contentData = $_POST['content_data'] ?? null;
+
+        if (!$contentData) {
+            echo json_encode(['success' => false, 'message' => 'Aucun contenu reçu.']);
+            exit;
+        }
+
+        // Récupérer ou créer le draft
+        $draft = $this->draftRepository->findByTrainer($trainerId);
+
+        if (!$draft) {
+            echo json_encode(['success' => false, 'message' => 'Aucun brouillon trouvé. Commencez par l\'étape 1.']);
+            exit;
+        }
+
+        try {
+            $this->draftRepository->updateDraft($draft['id'], [
+                'content_data' => $contentData,
+                'updated_at' => date('Y-m-d H:i:s')
+            ]);
+
+            echo json_encode([
+                'success' => true,
+                'message' => 'Contenu du cours sauvegardé automatiquement.',
+                'draft_id' => $draft['id']
+            ]);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Erreur serveur : ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Supprime un brouillon de cours
+     */
+    public function deleteDraft(): void
+    {
+        // Session (normalement déjà démarrée dans index.php)
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            session_start();
+        }
+
+        // Auth
+        if (empty($_SESSION['user']['id'])) {
+            header('Location: /nathan');
+            exit;
+        }
+
+        // Rôle
+        if (
+            empty($_SESSION['user']['is_admin']) &&
+            empty($_SESSION['user']['is_trainer'])
+        ) {
+            http_response_code(403);
+            exit('Accès interdit');
+        }
+
+        // ID depuis l’URL
+        $draftId = (int) ($_GET['id'] ?? 0);
+
+        if ($draftId <= 0) {
+            http_response_code(400);
+            exit('ID de brouillon invalide');
+        }
+
+        $trainerId = (int) $_SESSION['user']['id'];
+
+        // Suppression sécurisée
+        $deleted = $this->draftRepository->deleteById($draftId, $trainerId);
+
+        if (!$deleted) {
+            http_response_code(404);
+            exit('Brouillon introuvable ou non autorisé');
+        }
+
+        // Redirection propre
+        header('Location: ../courses');
+        exit;
     }
 }
