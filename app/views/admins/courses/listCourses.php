@@ -1,96 +1,143 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OpenDoorsClass - Créer un cours</title>
+    <title>Formations – OpenDoorsClass</title>
+
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <!-- Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <!-- Styles -->
     <link rel="stylesheet" href="../public/css/admins/courses/listCourses.css">
-    <title>Cours - OpenDoorsClass</title>
 </head>
 
 <body>
 
-    <!-- Bouton burger mobile -->
-    <div class="mobile-menu-toggle">
+    <!-- Menu mobile -->
+    <button class="mobile-menu-toggle" aria-label="Ouvrir le menu">
         <i class="fas fa-bars"></i>
-    </div>
+    </button>
 
     <!-- Sidebar -->
     <aside class="sidebar">
         <div class="sidebar-header">
             <h2>OpenDoorsClass</h2>
         </div>
+
         <nav class="sidebar-nav">
             <ul>
-                <li><a href="./dashboard"><i class="fas fa-chart-line"></i><span>Tableau de bord</span></a></li>
-                <li><a href="./courses" class="active"><i class="fas fa-book"></i><span>Cours</span></a></li>
-                <li><a href="#"><i class="fas fa-users"></i><span>Élèves</span></a></li>
-                <li><a href="#"><i class="fas fa-book-open"></i><span>Formations</span></a></li>
+                <li>
+                    <a href="../public/dashboard">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Tableau de bord</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="../public/courses" class="active">
+                        <i class="fas fa-book"></i>
+                        <span>Cours</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="../public/students">
+                        <i class="fas fa-users"></i>
+                        <span>Élèves</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#">
+                        <i class="fas fa-graduation-cap"></i>
+                        <span>Formations</span>
+                    </a>
+                </li>
             </ul>
         </nav>
     </aside>
 
     <main class="main-content">
+
         <header class="page-header">
             <h1>Formations</h1>
-            <p class="subtitle">Gérez vos cours publiés et vos brouillons en cours</p>
+            <p class="subtitle">Cours publiés et brouillons en cours</p>
+            <!-- <a href="../public/courses/create" class="btn-new-course">
+                <i class="fas fa-plus-circle"></i>
+                Créer un cours
+            </a> -->
         </header>
 
-        <a href="./courses/create" class="btn-new-course">
-            <i class="fas fa-plus-circle"></i>
-            Créer
-        </a>
-
         <?php if (empty($allCourses)): ?>
-            <div style="text-align: center; padding: 60px 20px; color: #718096;">
-                <i class="fas fa-book-open" style="font-size: 4rem; margin-bottom: 20px; color: #cbd5e0;"></i>
-                <p style="font-size: 1.2rem;">Vous n'avez aucun cours en cours ou publié pour le moment.</p>
-                <p>Commencez par en créer un nouveau !</p>
-            </div>
+            <section class="empty-state">
+                <i class="fas fa-book-open"></i>
+                <p><a href="../public/courses/create">Commencer à créer votre premier cours</a></p>
+            </section>
         <?php else: ?>
-            <div class="courses-grid">
+            <section class="courses-grid">
                 <?php foreach ($allCourses as $course): ?>
-                    <div class="course-card <?= ($course['is_draft'] ?? false) ? 'draft' : 'published' ?>">
-                        <img src=".<?= htmlspecialchars($course['profile_picture'] ?? '/assets/img/default-course.jpg') ?>"
-                            alt="<?= htmlspecialchars($course['title_course'] ?? 'Sans titre') ?>">
+                    <?php
+                    $isDraft = !empty($course['is_draft']);
+                    $courseId = $isDraft ? $course['draft_id'] : $course['id'];
+                    ?>
+
+                    <article class="course-card <?= $isDraft ? 'draft' : 'published' ?>">
+                        <img
+                            src=".<?= htmlspecialchars($course['profile_picture']) ?>"
+                            alt="Illustration du cours <?= htmlspecialchars($course['title_course']) ?>"
+                            loading="lazy">
 
                         <div class="course-card-content">
-                            <h3><?= htmlspecialchars($course['title_course'] ?? 'Sans titre') ?></h3>
+                            <h3><?= htmlspecialchars($course['title_course']) ?></h3>
 
-                            <?php if ($course['is_draft'] ?? false): ?>
-                                <span class="badge badge-draft">Brouillon</span>
-                                <div class="actions">
-                                    <a href="./courses/draft/<?= $course['draft_id'] ?>" class="btn-primary">
+                            <span class="badge <?= $isDraft ? 'badge-draft' : 'badge-published' ?>">
+                                <?= $isDraft ? 'Brouillon' : 'Publié' ?>
+                            </span>
+
+                            <div class="course-description">
+                                <p>
+                                    <?php
+                                    $description = html_entity_decode($course['description_course'] ?? '');
+                                    $excerpt = mb_strimwidth($description, 0, 100, '…', 'UTF-8');
+                                    echo htmlspecialchars($excerpt);
+                                    ?>
+                                </p>
+                            </div>
+
+
+                            <div class="actions">
+                                <?php if ($isDraft): ?>
+                                    <a href="../public/courses/create" class="btn-primary">
                                         <i class="fas fa-edit"></i> Reprendre
                                     </a>
-                                    <a href="../courses/delete-draft/<?= $course['draft_id'] ?>"
+                                    <a
+                                        href="../public/courses/delete-draft?id=<?= (int) $courseId ?>"
                                         class="btn-danger"
-                                        onclick="return confirm('Supprimer définitivement ce brouillon ?')">
+                                        onclick="return confirm('Supprimer définitivement ce brouillon ?');">
                                         <i class="fas fa-trash"></i> Supprimer
                                     </a>
-                                </div>
-                            <?php else: ?>
-                                <span class="badge badge-published">Publié</span>
-                                <div class="actions">
-                                    <a href="../courses/edit/<?= $course['id'] ?>" class="btn-primary">
+
+                                <?php else: ?>
+                                    <a href="/courses/edit/<?= $courseId ?>" class="btn-primary">
                                         <i class="fas fa-edit"></i> Modifier
                                     </a>
-                                    <a href="../courses/view/<?= $course['id'] ?>" class="btn-secondary">
-                                        <i class="fas fa-eye"></i> Voir en ligne
+                                    <a href="/courses/view/<?= $courseId ?>" class="btn-secondary">
+                                        <i class="fas fa-eye"></i> Voir
                                     </a>
-                                </div>
-                            <?php endif; ?>
+                                <?php endif; ?>
+                            </div>
                         </div>
-                    </div>
+                    </article>
                 <?php endforeach; ?>
-            </div>
+            </section>
         <?php endif; ?>
+
     </main>
+
 </body>
 
 </html>
