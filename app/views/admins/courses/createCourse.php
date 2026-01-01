@@ -61,37 +61,11 @@
             </div>
         </div>
 
-        <?php
-        // Récupération du brouillon du formateur connecté
-        $trainerId = $_SESSION['user']['id'] ?? 0; // À adapter si votre clé est différente
-        $draft = $this->draftRepository->findByTrainer($trainerId);
-
-        // Récupération sécurisée du brouillon
-        $draftData = [];
-        $courseInfos = [];
-        $modules = [];
-        $draftId = '';
-
-        if ($draft && is_array($draft) && isset($draft['draft_data'])) {
-            // Vérification que draft_data n'est pas null et est une chaîne valide
-            if ($draft['draft_data'] !== null && is_string($draft['draft_data'])) {
-                $decoded = json_decode($draft['draft_data'], true);
-
-                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-                    $draftData = $decoded;
-                    $courseInfos = $draftData['course_infos'] ?? [];
-                    $modules = $draftData['modules'] ?? [];
-                    $draftId = $draft['id'];
-                }
-                // Sinon, on garde les valeurs par défaut (vide)
-            }
-        }
-
-        $courseId = $draft ? $draft['id'] : ''; // ID du brouillon, pas du cours final
-        ?>
-
         <form id="create-course-form" class="course-builder" method="POST" enctype="multipart/form-data">
-            <input type="hidden" name="course_id" id="course_id_hidden" value="<?= htmlspecialchars($courseId) ?>">
+            <input type="hidden"
+                name="draft_id"
+                id="course_id_hidden"
+                value="<?= htmlspecialchars($draft['id'] ?? '') ?>">
 
             <!-- ====================== ÉTAPE 1 : Informations générales ====================== -->
             <section id="step-1" class="step-section active">
@@ -102,14 +76,16 @@
                         <div class="form-column">
                             <div class="form-group" id="group-title_course">
                                 <label>Titre du cours <span class="required">*</span></label>
-                                <input type="text" name="title_course" required placeholder="Ex: Anglais des affaires avancé"
-                                    value="<?= htmlspecialchars($courseInfos['title_course'] ?? '') ?>">
+                                <input type="text" name="title_course" required
+                                    placeholder="Ex: Anglais des affaires avancé"
+                                    value="<?= $title ?>">
                                 <div class="error-message" id="error-title_course"></div>
                             </div>
 
                             <div class="form-group" id="group-description_course">
                                 <label>Description <span class="required">*</span></label>
-                                <textarea name="description_course" rows="5" required placeholder="Présentez votre cours..."><?= htmlspecialchars($courseInfos['description_course'] ?? '') ?></textarea>
+                                <textarea name="description_course" rows="5" required
+                                    placeholder="Présentez votre cours..."><?= $description ?></textarea>
                                 <div class="error-message" id="error-description_course"></div>
                             </div>
 
@@ -118,8 +94,8 @@
                                     <label>Langue enseignée <span class="required">*</span></label>
                                     <select name="language_taught" required>
                                         <option value="">Choisir</option>
-                                        <option value="anglais" <?= ($courseInfos['language_taught'] ?? '') === 'anglais' ? 'selected' : '' ?>>Anglais</option>
-                                        <option value="espagnol" <?= ($courseInfos['language_taught'] ?? '') === 'espagnol' ? 'selected' : '' ?>>Espagnol</option>
+                                        <option value="anglais" <?= $language === 'anglais' ? 'selected' : '' ?>>Anglais</option>
+                                        <option value="espagnol" <?= $language === 'espagnol' ? 'selected' : '' ?>>Espagnol</option>
                                     </select>
                                     <div class="error-message" id="error-language_taught"></div>
                                 </div>
@@ -128,8 +104,8 @@
                                     <label>Niveau <span class="required">*</span></label>
                                     <select name="learner_level" required>
                                         <option value="">Choisir</option>
-                                        <option value="débutant" <?= ($courseInfos['learner_level'] ?? '') === 'débutant' ? 'selected' : '' ?>>Débutant</option>
-                                        <option value="intermédiaire" <?= ($courseInfos['learner_level'] ?? '') === 'intermédiaire' ? 'selected' : '' ?>>Intermédiaire</option>
+                                        <option value="débutant" <?= $level === 'débutant' ? 'selected' : '' ?>>Débutant</option>
+                                        <option value="intermédiaire" <?= $level === 'intermédiaire' ? 'selected' : '' ?>>Intermédiaire</option>
                                     </select>
                                     <div class="error-message" id="error-learner_level"></div>
                                 </div>
@@ -138,22 +114,22 @@
                             <div class="form-row">
                                 <div class="form-group">
                                     <label>Durée estimée (heures)</label>
-                                    <input type="number" name="time_course" min="1" placeholder="Ex: 20"
-                                        value="<?= htmlspecialchars($courseInfos['time_course'] ?? '') ?>">
+                                    <input type="number" name="time_course" min="1"
+                                        placeholder="Ex: 20" value="<?= $duration ?>">
                                     <div class="error-message" id="error-time_course"></div>
                                 </div>
 
                                 <div class="form-group" id="group-validation_period">
                                     <label>Sur une période de (jours) <span class="required">*</span></label>
-                                    <input type="number" name="validation_period" min="1" required placeholder="Ex: 90"
-                                        value="<?= htmlspecialchars($courseInfos['validation_period'] ?? '') ?>">
+                                    <input type="number" name="validation_period" min="1" required
+                                        placeholder="Ex: 90" value="<?= $validationPeriod ?>">
                                     <div class="error-message" id="error-validation_period"></div>
                                 </div>
 
                                 <div class="form-group" id="group-price_course">
                                     <label>Prix (F CFA) <span class="required">*</span></label>
-                                    <input type="number" name="price_course" step="100" min="0" required placeholder="0 = gratuit"
-                                        value="<?= htmlspecialchars($courseInfos['price_course'] ?? '') ?>">
+                                    <input type="number" name="price_course" step="100" min="0" required
+                                        placeholder="0 = gratuit" value="<?= $price ?>">
                                     <div class="error-message" id="error-price_course"></div>
                                 </div>
                             </div>
@@ -161,7 +137,7 @@
                             <div class="form-group">
                                 <label>Professeur responsable <span class="required">*</span></label>
                                 <input type="text" name="teacher_course" readonly
-                                    value="<?= htmlspecialchars($courseInfos['teacher_course'] ?? $_SESSION['user']['username'] ?? '') ?>">
+                                    value="<?= htmlspecialchars($_SESSION['user']['username'] ?? '') ?>">
                                 <div class="error-message" id="error-teacher_course"></div>
                             </div>
                         </div>
@@ -173,10 +149,14 @@
                                     <i class="fas fa-cloud-upload-alt"></i>
                                     <p>Cliquez ou glissez-déposez</p>
                                     <span>JPG, PNG • Max 5 Mo</span>
-                                    <input type="file" name="profile_picture" id="profile_picture" accept="image/*" required hidden>
+                                    <input type="file" name="profile_picture" id="profile_picture" accept="image/*" hidden>
                                 </div>
-                                <div id="preview-container" class="preview-hidden">
-                                    <img id="image-preview" src="" alt="Prévisualisation">
+                                <div id="preview-container" class="<?= $profilePicture ? '' : 'preview-hidden' ?>">
+                                    <?php if ($profilePicture): ?>
+                                        <img id="image-preview" src="../<?= htmlspecialchars($profilePicture) ?>" alt="Prévisualisation">
+                                    <?php else: ?>
+                                        <img id="image-preview" src="" alt="Prévisualisation">
+                                    <?php endif; ?>
                                     <button type="button" id="remove-image"><i class="fas fa-times"></i></button>
                                 </div>
                                 <div class="error-message" id="error-profile_picture"></div>
@@ -185,35 +165,39 @@
                             <!-- Radios Gratuit / Payant -->
                             <div class="price-type-radio">
                                 <label class="radio-label">
-                                    <input type="radio" name="is_free" value="1" checked="<?= ($courseInfos['is_free'] ?? 0) == 1 ? 'checked' : '' ?>">
+                                    <input type="radio" name="is_free" value="1" <?= $is_free == 1 ? 'checked' : '' ?>>
                                     <span class="radio-custom"></span> Gratuit
                                 </label>
                                 <label class="radio-label">
-                                    <input type="radio" name="is_free" value="0" checked="<?= ($courseInfos['is_free'] ?? 0) == 0 ? 'checked' : '' ?>">
+                                    <input type="radio" name="is_free" value="0" <?= $is_free == 0 ? 'checked' : '' ?>>
                                     <span class="radio-custom"></span> Payant
                                 </label>
                             </div>
-
-                            <!-- Checkbox Publier immédiatement -->
-                            <!-- <div class="form-group checkbox-group" style="justify-content: center; margin-top: 30px;">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" name="publish_now" value="1"
-                                           <?= ($courseInfos['publish_now'] ?? 0) == 1 ? 'checked' : '' ?>>
-                                    <span class="checkmark"></span>
-                                    Publier immédiatement le cours
-                                </label>
-                            </div> -->
                         </div>
                     </div>
 
                     <div class="form-actions step-actions">
-                        <a href="../myCourses" class="btn-cancel">Annuler</a>
+                        <a href="../courses" class="btn-cancel">Retour</a>
                         <button type="button" id="next-step" class="btn-submit">
                             Suivant <i class="fas fa-arrow-right"></i>
                         </button>
                     </div>
                 </div>
             </section>
+            <!-- Initialisation JavaScript pour prévisualiser l'image existante si brouillon -->
+            <?php if ($profilePicture): ?>
+                <script>
+                    document.addEventListener('DOMContentLoaded', () => {
+                        const previewContainer = document.getElementById('preview-container');
+                        const uploadArea = document.getElementById('upload-area');
+                        const fileInput = document.getElementById('profile_picture');
+
+                        previewContainer.classList.remove('preview-hidden');
+                        uploadArea.style.display = 'none';
+                        fileInput.removeAttribute('required'); // L'image existe déjà
+                    });
+                </script>
+            <?php endif; ?>
 
             <!-- ====================== ÉTAPE 2 : Contenu du cours ====================== -->
             <section id="step-2" class="step-section">
@@ -226,66 +210,120 @@
                     </div>
 
                     <div id="modules-container">
-                        <?php if (!empty($modules)): ?>
-                            <?php foreach ($modules as $moduleIndex => $module): ?>
-                                <div class="module-card" data-module="<?= $moduleIndex + 1 ?>">
+                        <?php
+                        // Récupération et décodage du contenu pédagogique du brouillon
+                        $contentData = [];
+                        if (!empty($draft['content_data'])) {
+                            $decoded = json_decode($draft['content_data'], true);
+                            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded) && !empty($decoded['modules'])) {
+                                $contentData = $decoded['modules'];
+                            }
+                        }
+
+                        // Si aucun module dans le brouillon, on initialise un compteur à 0
+                        $moduleCounter = 0;
+                        ?>
+
+                        <?php if (!empty($contentData)): ?>
+                            <?php foreach ($contentData as $moduleIndex => $module): ?>
+                                <?php $moduleCounter = $moduleIndex + 1; // Commence à 1 
+                                ?>
+                                <div class="module-card" data-module="<?= $moduleCounter ?>">
                                     <div class="module-header">
-                                        <h3>Module <?= $moduleIndex + 1 ?> <span class="module-title-preview">: <?= htmlspecialchars($module['title'] ?? '(sans titre)') ?></span></h3>
-                                        <div>
-                                            <button type="button" class="btn-collapse"><i class="fas fa-chevron-down"></i></button>
-                                            <button type="button" class="btn-remove-module"><i class="fas fa-trash"></i></button>
+                                        <h3>
+                                            Module <?= $moduleCounter ?>
+                                            <span class="module-title-preview">
+                                                : <?= htmlspecialchars($module['title'] ?? '(sans titre)') ?>
+                                            </span>
+                                        </h3>
+                                        <div class="module-actions">
+                                            <button type="button" class="btn-collapse" title="Réduire/Développer">
+                                                <i class="fas fa-chevron-down"></i>
+                                            </button>
+                                            <button type="button" class="btn-remove-module" title="Supprimer le module">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
                                         </div>
                                     </div>
 
                                     <div class="module-content">
                                         <div class="form-group">
                                             <label>Titre du module <span class="required">*</span></label>
-                                            <input type="text" name="modules[<?= $moduleIndex + 1 ?>][title]" required value="<?= htmlspecialchars($module['title'] ?? '') ?>">
+                                            <input type="text"
+                                                name="modules[<?= $moduleCounter ?>][title]"
+                                                required
+                                                value="<?= htmlspecialchars($module['title'] ?? '') ?>"
+                                                placeholder="Ex: Introduction à l'anglais professionnel">
+                                            <div class="error-message"></div>
                                         </div>
 
                                         <div class="form-group">
                                             <label>Description (facultatif)</label>
-                                            <textarea name="modules[<?= $moduleIndex + 1 ?>][description]" rows="3"><?= htmlspecialchars($module['description'] ?? '') ?></textarea>
+                                            <textarea name="modules[<?= $moduleCounter ?>][description]"
+                                                rows="3"
+                                                placeholder="Décrivez brièvement ce module..."><?= htmlspecialchars($module['description'] ?? '') ?></textarea>
                                         </div>
 
                                         <div class="lessons-list">
                                             <h4>Leçons du module</h4>
-                                            <button type="button" class="btn-add-lesson" data-module="<?= $moduleIndex + 1 ?>">
+                                            <button type="button" class="btn-add-lesson btn-add" data-module="<?= $moduleCounter ?>">
                                                 <i class="fas fa-plus"></i> Ajouter une leçon
                                             </button>
-                                            <div class="lessons-container" data-module="<?= $moduleIndex + 1 ?>">
+
+                                            <div class="lessons-container" data-module="<?= $moduleCounter ?>">
                                                 <?php if (!empty($module['lessons'])): ?>
                                                     <?php foreach ($module['lessons'] as $lessonIndex => $lesson): ?>
+                                                        <?php $lessonCounter = $lessonIndex + 1; ?>
                                                         <div class="lesson-item">
                                                             <div class="lesson-header">
-                                                                <h5>Leçon <?= $lessonIndex + 1 ?></h5>
-                                                                <button type="button" class="btn-remove-lesson"><i class="fas fa-trash"></i></button>
+                                                                <h5>Leçon <?= $lessonCounter ?></h5>
+                                                                <button type="button" class="btn-remove-lesson" title="Supprimer la leçon">
+                                                                    <i class="fas fa-trash"></i>
+                                                                </button>
                                                             </div>
 
                                                             <div class="form-group">
                                                                 <label>Titre de la leçon <span class="required">*</span></label>
-                                                                <input type="text" name="modules[<?= $moduleIndex + 1 ?>][lessons][<?= $lessonIndex + 1 ?>][title]" required value="<?= htmlspecialchars($lesson['title'] ?? '') ?>">
+                                                                <input type="text"
+                                                                    name="modules[<?= $moduleCounter ?>][lessons][<?= $lessonCounter ?>][title]"
+                                                                    required
+                                                                    value="<?= htmlspecialchars($lesson['title'] ?? '') ?>">
+                                                                <div class="error-message"></div>
                                                             </div>
 
                                                             <div class="form-group">
                                                                 <label>Contenu de la leçon <span class="required">*</span></label>
-                                                                <div class="quill-editor" style="height: 320px;"><?= $lesson['content'] ?? '' ?></div>
-                                                                <input type="hidden" name="modules[<?= $moduleIndex + 1 ?>][lessons][<?= $lessonIndex + 1 ?>][content]" class="lesson-content-hidden" value="<?= htmlspecialchars($lesson['content'] ?? '') ?>">
+                                                                <div class="quill-editor" style="height: 320px;">
+                                                                    <?= $lesson['content'] ?? '' ?>
+                                                                </div>
+                                                                <input type="hidden"
+                                                                    name="modules[<?= $moduleCounter ?>][lessons][<?= $lessonCounter ?>][content]"
+                                                                    class="lesson-content-hidden"
+                                                                    value="<?= htmlspecialchars($lesson['content'] ?? '') ?>">
+                                                                <div class="error-message"></div>
                                                             </div>
 
                                                             <div class="form-group">
                                                                 <label>URL de la vidéo (facultatif)</label>
-                                                                <input type="url" name="modules[<?= $moduleIndex + 1 ?>][lessons][<?= $lessonIndex + 1 ?>][video_url]" value="<?= htmlspecialchars($lesson['video_url'] ?? '') ?>">
+                                                                <input type="url"
+                                                                    name="modules[<?= $moduleCounter ?>][lessons][<?= $lessonCounter ?>][video_url]"
+                                                                    value="<?= htmlspecialchars($lesson['video_url'] ?? '') ?>"
+                                                                    placeholder="https://youtube.com/...">
                                                             </div>
 
                                                             <div class="form-row">
                                                                 <div class="form-group">
                                                                     <label>Durée (minutes)</label>
-                                                                    <input type="number" name="modules[<?= $moduleIndex + 1 ?>][lessons][<?= $lessonIndex + 1 ?>][duration]" min="1" value="<?= htmlspecialchars($lesson['duration'] ?? '') ?>">
+                                                                    <input type="number"
+                                                                        name="modules[<?= $moduleCounter ?>][lessons][<?= $lessonCounter ?>][duration]"
+                                                                        min="1"
+                                                                        value="<?= htmlspecialchars($lesson['duration'] ?? '') ?>">
                                                                 </div>
                                                                 <div class="form-group checkbox-group">
                                                                     <label class="checkbox-label">
-                                                                        <input type="checkbox" name="modules[<?= $moduleIndex + 1 ?>][lessons][<?= $lessonIndex + 1 ?>][is_free]" <?= ($lesson['is_free'] ?? 0) == 1 ? 'checked' : '' ?>>
+                                                                        <input type="checkbox"
+                                                                            name="modules[<?= $moduleCounter ?>][lessons][<?= $lessonCounter ?>][is_free]"
+                                                                            <?= (!empty($lesson['is_free']) && $lesson['is_free']) ? 'checked' : '' ?>>
                                                                         <span class="checkmark"></span> Leçon gratuite (aperçu)
                                                                     </label>
                                                                 </div>
@@ -298,10 +336,21 @@
                                     </div>
                                 </div>
                             <?php endforeach; ?>
+                        <?php else: ?>
+                            <!-- Aucun module dans le brouillon → conteneur vide, prêt pour l'ajout dynamique -->
+                            <p class="info-text text-center text-muted">Aucun module pour le moment. Cliquez sur "Ajouter un module" pour commencer.</p>
                         <?php endif; ?>
                     </div>
 
+                    <!-- Le compteur global pour les nouveaux modules ajoutés dynamiquement -->
+                    <script>
+                        // Initialisation du compteur pour les nouveaux modules (doit correspondre au nombre existants)
+                        window.moduleCounter = <?= $moduleCounter ?>;
+                    </script>
+
                     <p class="info-text">Ajoutez les modules et leçons qui composent votre formation.</p>
+
+                    <div class="error-messages" id="global-errors"></div>
 
                     <div class="form-actions step-actions">
                         <button type="button" id="prev-step" class="btn-cancel">
@@ -339,39 +388,7 @@
     <!-- Initialisation de Quill pour les leçons existantes -->
     <?php if (!empty($modules)): ?>
         <script>
-            document.addEventListener('DOMContentLoaded', () => {
-                document.querySelectorAll('.quill-editor').forEach((editorEl, index) => {
-                    const hiddenInput = editorEl.nextElementSibling;
 
-                    const quill = new Quill(editorEl, {
-                        theme: 'snow',
-                        modules: {
-                            toolbar: [
-                                ['bold', 'italic'],
-                                [{
-                                    'header': 1
-                                }, {
-                                    'header': 2
-                                }],
-                                [{
-                                    'list': 'ordered'
-                                }, {
-                                    'list': 'bullet'
-                                }],
-                                ['link', 'image'],
-                                ['clean']
-                            ]
-                        }
-                    });
-
-                    // Charger le contenu existant
-                    quill.root.innerHTML = hiddenInput.value;
-
-                    quill.on('text-change', () => {
-                        hiddenInput.value = quill.root.innerHTML;
-                    });
-                });
-            });
         </script>
     <?php endif; ?>
 
