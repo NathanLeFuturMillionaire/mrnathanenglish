@@ -1,3 +1,4 @@
+
 RewriteEngine On
 
 # Si la requête correspond à un fichier existant ou un dossier, on laisse passer

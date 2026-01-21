@@ -8,6 +8,7 @@ use App\Controllers\AuthController;
 use App\Controllers\ResetPasswordController;
 use App\controllers\UserController;
 use App\Models\DraftRepository;
+use App\Models\CourseRepository;
 
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
@@ -166,29 +167,24 @@ class Router
                     exit;
                 }
 
-                // Dépendances
                 $draftRepository = new DraftRepository();
-
-                // Injection dans le contrôleur
                 $adminController = new AdminController($draftRepository);
 
-                // Détection AJAX
-                $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
-                    strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
-
                 // ======================
-                // AUTOSAVE AJAX
+                // POST = AJAX AUTOSAVE
                 // ======================
-                if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAjax) {
+                if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $adminController->ajaxCreateCourse();
                     exit;
                 }
 
                 // ======================
-                // AFFICHAGE DE LA VUE
+                // GET = création initiale du draft
                 // ======================
                 $adminController->createCourse();
                 break;
+
+
 
             case 'courses/auto-save-content':
                 session_start();
@@ -214,6 +210,31 @@ class Router
                 exit;
                 break;
 
+            case 'courses/update-content':
+                session_start();
+
+                if (!isset($_SESSION['user']) || !($_SESSION['user']['is_admin'] ?? false)) {
+                    http_response_code(403);
+                    echo json_encode(['success' => false, 'message' => 'Accès refusé.']);
+                    exit;
+                }
+
+                $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+                    strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !$isAjax) {
+                    http_response_code(403);
+                    echo json_encode(['success' => false, 'message' => 'Requête invalide.']);
+                    exit;
+                }
+
+                $courseRepository = new CourseRepository();
+                $adminController  = new AdminController(null, $courseRepository);
+                $adminController->autoSaveCourseContent();
+                exit;
+                break;
+
+
             case 'courses/delete-draft':
                 session_start();
 
@@ -221,6 +242,60 @@ class Router
                 $adminController = new AdminController($draftRepository);
 
                 $adminController->deleteDraft();
+                break;
+
+            case 'courses/publish':
+                session_start();
+
+                $draftRepository  = new DraftRepository();
+                $courseRepository = new CourseRepository();
+
+                $adminController = new AdminController(
+                    $draftRepository,
+                    $courseRepository
+                );
+
+                $adminController->publishCourse();
+                break;
+
+            case 'courses/edit':
+                session_start();
+
+                // Sécurité utilisateur connecté
+                if (!isset($_SESSION['user']['id'])) {
+                    header('Location: ./login');
+                    exit;
+                }
+
+                // Sécurité rôle (admin / formateur)
+                if (
+                    empty($_SESSION['user']['is_admin']) &&
+                    empty($_SESSION['user']['is_trainer'])
+                ) {
+                    http_response_code(403);
+                    exit('Accès interdit');
+                }
+
+                $courseRepository = new CourseRepository();
+                $draftRepository  = new DraftRepository();
+                $adminController  = new AdminController($draftRepository, $courseRepository);
+
+                // Détection AJAX
+                $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+                    strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+
+                // ======================
+                // MISE À JOUR AJAX
+                // ======================
+                if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAjax) {
+                    $adminController->ajaxUpdateCourse();
+                    exit;
+                }
+
+                // ======================
+                // AFFICHAGE PAGE ÉDITION
+                // ======================
+                $adminController->editCourse();
                 break;
 
 

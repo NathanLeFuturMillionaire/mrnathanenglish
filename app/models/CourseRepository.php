@@ -3,14 +3,17 @@
 namespace App\Models;
 
 use PDO;
+use PDOException;
+use App\Core\Database;
 
 class CourseRepository
 {
     private PDO $db;
 
-    public function __construct(PDO $db)
+    public function __construct()
     {
-        $this->db = $db;
+        $database = new Database();
+        $this->db = $database->connect();
     }
 
     /**
@@ -209,11 +212,11 @@ class CourseRepository
             language_taught,
             learner_level,
             status_course,
-            course_date
+            created_at
         FROM courses
         WHERE id_trainer = :trainer_id
           AND status_course = 'published'
-        ORDER BY course_date DESC
+        ORDER BY created_at DESC
     ";
 
         $stmt = $this->db->prepare($query);
@@ -221,5 +224,172 @@ class CourseRepository
         $stmt->execute();
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function createFromDraft(array $draft): int|false
+    {
+        $query = "
+            INSERT INTO courses (
+                id_trainer,
+                title_course,
+                description_course,
+                profile_picture,
+                time_course,
+                validation_period,
+                price_course,
+                language_taught,
+                learner_level,
+                is_free,
+                status_course,
+                course_rate,
+                created_at,
+                content_data
+            ) VALUES (
+                :id_trainer,
+                :title_course,
+                :description_course,
+                :profile_picture,
+                :time_course,
+                :validation_period,
+                :price_course,
+                :language_taught,
+                :learner_level,
+                :is_free,
+                'published',
+                0,
+                NOW(),
+                :content_data
+            )
+        ";
+
+        try {
+            $stmt = $this->db->prepare($query);
+
+            $stmt->execute([
+                ':id_trainer'        => $draft['id_trainer'],
+                ':title_course'      => $draft['title_course'],
+                ':description_course' => $draft['description_course'],
+                ':profile_picture'   => $draft['profile_picture'],
+                ':time_course'       => $draft['time_course'],
+                ':validation_period' => $draft['validation_period'],
+                ':price_course'      => $draft['price_course'],
+                ':language_taught'   => $draft['language_taught'],
+                ':learner_level'     => $draft['learner_level'],
+                ':is_free'           => $draft['is_free'],
+                ':content_data'      => $draft['content_data']
+            ]);
+
+            return (int) $this->db->lastInsertId();
+        } catch (PDOException $e) {
+            error_log('Erreur createFromDraft : ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function findByIdAndTrainer(int $courseId, int $trainerId): array|false
+    {
+        $sql = "
+            SELECT *
+            FROM courses
+            WHERE id = :id
+              AND id_trainer = :id_trainer
+            LIMIT 1
+        ";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(':id', $courseId, PDO::PARAM_INT);
+        $stmt->bindValue(':id_trainer', $trainerId, PDO::PARAM_INT);
+        $stmt->execute();
+
+        $course = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $course ?: false;
+    }
+
+
+    public function updateCourseGeneral(int $courseId, int $trainerId, array $data): bool
+    {
+        $stmt = $this->db->prepare("
+            UPDATE courses SET
+                title_course       = :title,
+                description_course = :description,
+                profile_picture    = :picture,
+                time_course        = :time_course,
+                validation_period  = :validation_period,
+                price_course       = :price,
+                is_free            = :is_free,
+                language_taught    = :language,
+                learner_level      = :level,
+                updated_at         = NOW()
+            WHERE id = :id
+            AND id_trainer = :trainer
+        ");
+
+        return $stmt->execute([
+            ':title'             => $data['title_course'],
+            ':description'       => $data['description_course'],
+            ':picture'           => $data['profile_picture'],
+            ':time_course'       => $data['time_course'],
+            ':validation_period' => $data['validation_period'],
+            ':price'             => $data['price_course'],
+            ':is_free'           => $data['is_free'],
+            ':language'          => $data['language_taught'],
+            ':level'             => $data['learner_level'],
+            ':id'                => $courseId,
+            ':trainer'           => $trainerId
+        ]);
+    }
+
+    /**
+     * Met à jour un cours publié (informations générales + contenu pédagogique JSON)
+     */
+    public function updateCourse(int $courseId, array $data): bool
+    {
+        $fields = [];
+        $params = [':id' => $courseId];
+
+        foreach ($data as $key => $value) {
+            // Sécurité : on ignore tout champ vide ou interdit
+            if ($key === 'id' || $key === 'id_trainer') {
+                continue;
+            }
+
+            $fields[] = "`$key` = :$key";
+            $params[":$key"] = $value;
+        }
+
+        if (empty($fields)) {
+            return false;
+        }
+
+        $sql = "
+            UPDATE courses
+            SET " . implode(', ', $fields) . "
+            WHERE id = :id
+        ";
+
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute($params);
+    }
+
+    /**
+     * Met à jour uniquement le content_data d’un cours publié
+     */
+    public function updateCourseContent(int $courseId, string $contentData): bool
+    {
+        $sql = "
+        UPDATE courses
+        SET content_data = :content_data,
+            updated_at = :updated_at
+        WHERE id = :id
+    ";
+
+        $stmt = $this->db->prepare($sql);
+
+        return $stmt->execute([
+            ':content_data' => $contentData,
+            ':updated_at'   => date('Y-m-d H:i:s'),
+            ':id'           => $courseId
+        ]);
     }
 }
