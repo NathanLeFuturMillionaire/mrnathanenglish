@@ -1,0 +1,868 @@
+/* Import des polices Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat&family=Roboto&display=swap');
+
+/* Reset minimaliste pour supprimer marges et paddings par défaut */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Styles de base pour le corps */
+body {
+  font-family: 'Roboto', sans-serif;
+  background-color: #f9f9f9;
+  color: #222;
+  line-height: 1.4;
+  font-size: 16px;
+}
+
+/* Styles pour les titres */
+h1,
+h2,
+h3 {
+  font-family: 'Montserrat', sans-serif;
+  margin-bottom: 15px;
+  color: #111;
+}
+
+/* Header fixe */
+.main-header {
+  margin-bottom: -100px;
+  width: 92%;
+  color: #000;
+  font-family: 'Montserrat', sans-serif;
+  /* position: fixed;
+    top: 0;
+    left: 0; */
+  margin-bottom: -100px;
+  transition: box-shadow 0.3s ease, background-color 0.3s ease;
+}
+
+/* Container pour aligner contenu */
+.main-header .container {
+  padding: 25px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
+}
+
+/* Logo */
+.main-header .logo a {
+  color: #000;
+  text-decoration: none;
+  font-size: 1.3rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  transition: color 0.3s ease;
+}
+
+.main-header .logo a:hover {
+  color: #f39c12;
+  /* Orange vif au survol */
+}
+
+header.scrolled {
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+.main-header .username-on-dropdown {
+  display: flex;
+}
+
+/* Navigation menu */
+.nav-menu ul {
+  list-style: none;
+  display: flex;
+  gap: 30px;
+  margin-right: -100px;
+  align-items: center;
+}
+
+.nav-menu ul li {
+  position: relative;
+  cursor: pointer;
+}
+
+.nav-menu ul li a {
+  color: #000;
+  text-decoration: none;
+  font-size: 1rem;
+  padding: 10px 5px;
+  transition: color 0.3s ease;
+  cursor: pointer;
+}
+
+.nav-menu ul li a:hover {
+  color: #423fee;
+}
+
+/* Dropdown caché par défaut */
+.dropdown-content {
+  visibility: hidden;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: #fff;
+  /* Fond blanc */
+  min-width: 180px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  /* Ombre douce */
+  border-radius: 6px;
+  overflow: hidden;
+
+  /* Animation */
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s ease;
+
+  /* Organisation verticale */
+  display: flex;
+  flex-direction: column;
+  z-index: 55;
+}
+
+/* Liens rapprochés dans le dropdown */
+.dropdown-content li {
+  list-style: none;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.dropdown-content li a {
+  padding: 8px 16px;
+  display: block;
+  width: 100%;
+  font-size: 0.9rem;
+  color: #333;
+  /* Texte foncé sur fond blanc */
+  text-decoration: none;
+  line-height: 1.3;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.dropdown-content li:last-child a {
+  border-bottom: none;
+}
+
+.dropdown-content li a:hover {
+  background-color: #f5f5f5;
+  /* Gris clair au survol */
+  color: #1e2a78;
+  /* Accent bleu au survol */
+}
+
+/* Affiché uniquement quand le dropdown a la classe .open */
+.dropdown.open .dropdown-content {
+  visibility: visible;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Conteneur principal du dropdown */
+.dropdown-menu {
+  position: absolute;
+  top: 50px;
+  right: 100px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  width: 200px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  opacity: 0;
+  transform: translateY(-10px);
+  pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  z-index: 100;
+}
+
+/* Quand le menu est actif */
+.dropdown-menu.show {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* Contenu interne */
+.dropdown-content-now {
+  display: flex;
+  flex-direction: column; /* ✅ Aligne verticalement */
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Items */
+.dropdown-content-now li {
+  list-style: none;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Liens */
+.dropdown-content-now li a {
+  position: relative;
+  overflow: hidden; /* cache l’onde qui dépasse */
+  display: block;
+  width: 100%;
+  padding: 12px 16px;
+  text-decoration: none;
+  color: #333;
+  font-size: 14px;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+/* Hover */
+.dropdown-content-now li a:hover {
+  background: #bdb3b342;
+  color: #000;
+  border-radius: 4px;
+}
+
+/* Optionnel : séparateur entre les liens */
+.dropdown-content-now li:not(:last-child) a {
+  border-bottom: 1px solid #eee;
+}
+
+/* Effet ripple */
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.2);
+  transform: scale(0);
+  animation: ripple-effect 0.6s linear;
+  pointer-events: none;
+  width: 100px;
+  height: 100px;
+  opacity: 0.75;
+}
+
+/* Animation de l’onde */
+@keyframes ripple-effect {
+  to {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+/* For mobile - dropdown toggle handled by JS */
+
+/* Assure que la bannière est sous le header fixe */
+.banner {
+  padding: 80px 30px 60px;
+  background-color: rgba(169, 138, 204, 0.836);
+  font-family: 'Montserrat', sans-serif;
+  color: #1e2a78;
+  /* z-index: 1; */
+  margin-top: 100px;
+  /* Pour décaler sous un header fixe d'environ 80px */
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.banner-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 40px;
+  flex-wrap: wrap;
+}
+
+/* Partie gauche */
+.banner-left {
+  flex: 1 1 450px;
+  max-width: 600px;
+  z-index: 1;
+}
+
+.banner-left h1 {
+  font-size: 2.8rem;
+  line-height: 1.2;
+  margin-bottom: 20px;
+  font-weight: 700;
+}
+
+.banner-left p {
+  font-size: 1.1rem;
+  line-height: 1.5;
+  margin-bottom: 30px;
+  color: #333;
+}
+
+.btn-primary {
+  display: inline-block;
+  background: linear-gradient(135deg, #1e2a78, #2747a0);
+  color: white;
+  padding: 14px 32px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  text-decoration: none;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(30, 42, 120, 0.4);
+  transition: background 0.4s ease, box-shadow 0.4s ease, transform 0.3s ease;
+  cursor: pointer;
+  user-select: none;
+  border: none;
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+  background: linear-gradient(135deg, #2747a0, #1e2a78);
+  box-shadow: 0 6px 20px rgba(39, 71, 160, 0.6);
+  transform: translateY(-3px);
+  outline: none;
+}
+
+.btn-primary:active {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(30, 42, 120, 0.5);
+}
+
+
+/* Partie droite */
+.banner-right {
+  flex: 1 1 350px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.flag-america {
+  max-width: 350px;
+  width: 100%;
+  height: auto;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .banner-content {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .banner-left,
+  .banner-right {
+    max-width: 100%;
+    flex: none;
+  }
+
+  .banner-left h1 {
+    font-size: 2.2rem;
+  }
+
+  .banner-left p {
+    font-size: 1rem;
+  }
+
+  .btn-primary {
+    padding: 12px 24px;
+    font-size: 0.95rem;
+  }
+
+  .flag-america {
+    max-width: 250px;
+  }
+}
+
+/* Cacher hamburger sur desktop */
+.hamburger {
+  display: none;
+  flex-direction: column;
+  justify-content: space-around;
+  width: 28px;
+  height: 24px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  z-index: 2001;
+}
+
+.hamburger .bar {
+  width: 100%;
+  height: 3px;
+  background-color: #1e2a78;
+  border-radius: 2px;
+  transition: all 0.3s ease;
+}
+
+/* Menu mobile */
+.nav-mobile {
+  position: fixed;
+  top: 0;
+  right: -100%;
+  width: 280px;
+  height: 100vh;
+  background-color: #fff;
+  box-shadow: -4px 0 15px rgba(0, 0, 0, 0.15);
+  transition: right 0.3s ease;
+  z-index: 2000;
+  padding-top: 80px;
+  overflow-y: auto;
+}
+
+.nav-mobile.open {
+  right: 0;
+}
+
+/* Overlay sombre */
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  z-index: 1999;
+}
+
+.overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Menu mobile - liens */
+.mobile-nav-links {
+  list-style: none;
+  padding: 0 20px;
+  margin: 0;
+}
+
+.mobile-nav-links li {
+  margin-bottom: 20px;
+}
+
+.mobile-nav-links a {
+  color: #1e2a78;
+  font-size: 1.2rem;
+  text-decoration: none;
+  display: block;
+  padding: 10px 0;
+}
+
+/* Dropdown mobile */
+.dropdown-content-mobile {
+  display: none;
+  list-style: none;
+  padding-left: 15px;
+  margin-top: 10px;
+}
+
+.dropdown-mobile.open>.dropdown-content-mobile {
+  display: block;
+}
+
+/* Cacher le menu desktop sous 1024px */
+@media (max-width: 1024px) {
+  .nav-menu {
+    display: none;
+  }
+
+  /* Afficher le hamburger sous 1024px */
+  .hamburger {
+    display: flex;
+  }
+}
+
+/* Le hamburger reste visible sur tous les petits écrans */
+@media (max-width: 768px) {
+  .hamburger {
+    display: flex;
+  }
+}
+
+/* ===================== PAGE ===================== */
+.course-page {
+  max-width: 1600px;
+  margin: 2rem auto;
+  padding: 0 1.5rem;
+}
+
+/* ===================== BANNIÈRE ===================== */
+.course-banner {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  background: #f8f9fa;
+  border-radius: 16px;
+  padding: 2rem;
+  margin-bottom: 2.5rem;
+  border: 1px solid #ebebeb;
+  background-color: #6365f14b;
+}
+
+.course-banner__info { flex: 1; min-width: 0; }
+
+.course-banner__title {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 26px;
+  font-weight: 800;
+  margin: 0 0 0.75rem;
+  line-height: 1.2;
+  color: #1a1a2e;
+}
+
+.course-banner__description {
+  font-family: 'Roboto', sans-serif;
+  font-size: 14px;
+  color: #555;
+  margin: 0 0 1.5rem;
+  line-height: 1.7;
+}
+
+.course-banner__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.course-banner__meta span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #555;
+  font-family: 'Roboto', sans-serif;
+}
+
+.course-banner__meta i { color: #4a90d9; }
+
+.course-banner__image {
+  width: 280px;
+  height: 180px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #e9ecef;
+}
+
+.course-banner__image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.course-banner__image--placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  color: #bbb;
+}
+
+/* ===================== MODULES ===================== */
+.course-modules__title {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0 0 0.25rem;
+  color: #1a1a2e;
+}
+
+.course-modules__summary {
+  font-size: 13px;
+  color: #888;
+  margin: 0 0 1.5rem;
+}
+
+.course-modules__empty {
+  color: #aaa;
+  font-size: 14px;
+  font-style: italic;
+}
+
+.course-modules__list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* ===================== MODULE CARD ===================== */
+.module-card {
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.module-card__header {
+  background: #f4f6fb;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.module-card__number {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #4a90d9;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.module-card__title {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0 0 4px;
+}
+
+.module-card__description {
+  font-size: 13px;
+  color: #777;
+  margin: 0 0 6px;
+}
+
+.module-card__count {
+  font-size: 12px;
+  color: #999;
+}
+
+/* ===================== LEÇONS ===================== */
+.module-card__lessons {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.lesson-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid #f0f0f0;
+  gap: 1rem;
+}
+
+.lesson-item:last-child { border-bottom: none; }
+
+.lesson-item__left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.lesson-item__index {
+  font-size: 12px;
+  color: #aaa;
+  flex-shrink: 0;
+}
+
+.lesson-item__title {
+  font-size: 14px;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lesson-item__badge {
+  flex-shrink: 0;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-weight: 600;
+}
+
+.lesson-item__badge--free {
+  background: #e6f4ea;
+  color: #2e7d32;
+}
+
+.lesson-item__badge--locked {
+  background: #f0f0f0;
+  color: #aaa;
+}
+
+.lesson-item__right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.lesson-item__duration {
+  font-size: 12px;
+  color: #999;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.lesson-item__icon--video { color: #e74c3c; font-size: 16px; }
+
+/* ===================== RESPONSIVE ===================== */
+@media (max-width: 768px) {
+  .course-banner {
+    flex-direction: column;
+  }
+  .course-banner__image {
+    width: 100%;
+    height: 200px;
+  }
+}
+
+/* ===================== STICKY PAYMENT ===================== */
+.payment-sticky {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border-top: 1px solid #e0e0e0;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+  z-index: 999;
+  padding: 0.85rem 1.5rem;
+}
+
+.payment-sticky__inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.payment-sticky__info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.payment-sticky__price {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  color: #1a1a2e;
+}
+
+.payment-sticky__price small {
+  font-size: 13px;
+  font-weight: 500;
+  color: #888;
+}
+
+.payment-sticky__label {
+  font-size: 12px;
+  color: #888;
+}
+
+.payment-sticky__btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #ef0000;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 0.75rem 1.5rem;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+  white-space: nowrap;
+}
+
+.payment-sticky__btn:hover  { background: #c40000; }
+.payment-sticky__btn:active { transform: scale(0.98); }
+
+.payment-sticky__logo {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+/* Évite que le sticky masque le bas de la page */
+.course-page { padding-bottom: 6rem; }
+
+/* ===================== RESPONSIVE ===================== */
+@media (max-width: 600px) {
+  .payment-sticky__inner {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+  .payment-sticky__btn {
+    justify-content: center;
+  }
+}
+
+.lesson-item__link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.75rem 1.25rem;
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.15s;
+}
+
+.lesson-item__link:hover {
+  background: #f4f6fb;
+}
+
+.lesson-item {
+  border-bottom: 1px solid #f0f0f0;
+  padding: 0; /* Le padding est maintenant sur le <a> */
+}
+
+.module-card__header {
+  cursor: pointer;
+  user-select: none;
+}
+
+.module-card__header-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.module-card__chevron {
+  font-size: 14px;
+  color: #888;
+  margin-top: 4px;
+  flex-shrink: 0;
+  transition: transform 0.3s ease;
+}
+
+/* Corps du module — fermé par défaut */
+.module-card__body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s ease;
+}
+
+/* Corps ouvert */
+.module-card__body.is-open {
+  max-height: 2000px;
+}
+
+/* Chevron retourné quand ouvert */
+.module-card__header.is-open .module-card__chevron {
+  transform: rotate(180deg);
+}

@@ -43,6 +43,30 @@ class DraftRepository
         }
     }
 
+    public function findByIdAndTrainer(int $draftId, int $trainerId): array|false
+    {
+        $query = "
+            SELECT *
+            FROM draft
+            WHERE id = :id
+            AND id_trainer = :id_trainer
+            LIMIT 1
+        ";
+
+        try {
+            $stmt = $this->db->prepare($query);
+            $stmt->bindValue(':id', $draftId, PDO::PARAM_INT);
+            $stmt->bindValue(':id_trainer', $trainerId, PDO::PARAM_INT);
+            $stmt->execute();
+
+            return $stmt->fetch(PDO::FETCH_ASSOC) ?: false;
+        } catch (PDOException $e) {
+            error_log('Erreur findByIdAndTrainer : ' . $e->getMessage());
+            return false;
+        }
+    }
+
+
 
     public function createDraft(int $trainerId)
     {
@@ -324,4 +348,27 @@ class DraftRepository
             return [];
         }
     }
+
+    public function deleteDraft(int $draftId, int $trainerId): bool
+    {
+        $query = "
+            DELETE FROM draft
+            WHERE id = :id AND id_trainer = :id_trainer
+            LIMIT 1
+        ";
+
+        try {
+            $stmt = $this->db->prepare($query);
+            $stmt->execute([
+                ':id' => $draftId,
+                ':id_trainer' => $trainerId
+            ]);
+
+            return $stmt->rowCount() === 1;
+        } catch (PDOException $e) {
+            error_log('Erreur deleteDraft : ' . $e->getMessage());
+            return false;
+        }
+    }
+
 }

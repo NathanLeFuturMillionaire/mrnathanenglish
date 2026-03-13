@@ -8,6 +8,8 @@ use App\Controllers\AuthController;
 use App\Controllers\ResetPasswordController;
 use App\controllers\UserController;
 use App\Models\DraftRepository;
+use App\Models\CourseRepository;
+use App\Controllers\CourseController;
 
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
@@ -17,7 +19,23 @@ class Router
 {
     public function direct($url, $method)
     {
-        switch ($url) {
+        $urlParts = explode('/', trim($url, '/'));
+
+        // Reconstruction propre de la route (1 ou 2 segments)
+        $segment0 = $urlParts[0] ?? '';
+        $segment1 = $urlParts[1] ?? '';
+        $segment2 = $urlParts[2] ?? null;
+        $segment3 = $urlParts[3] ?? null;
+        $segment4 = $urlParts[4] ?? null;
+
+        // Route = "courses/view" ou juste "courses"
+        $route = $segment1 !== '' ? $segment0 . '/' . $segment1 : $segment0;
+
+        // ID dans l'URL (3ème segment)
+        if ($segment2 !== null && $segment2 !== '') {
+            $_GET['id'] = (int) $segment2;
+        }
+        switch ($route) {
             case '':
                 // Page d'accueil
                 $controller = new HomeController();
@@ -27,9 +45,9 @@ class Router
             case 'register':
                 $controller = new AuthController();
                 if ($method === 'POST') {
-                    $controller->registerPost();
-                } else {
                     $controller->register();
+                } else {
+                    $controller->registerPage();
                 }
                 break;
 
@@ -87,7 +105,7 @@ class Router
                 if ($method === "POST") {
                     $controller->loginPost();
                 } else {
-                    $controller->login();
+                    $controller->showLogin();
                 }
                 break;
 
@@ -166,29 +184,24 @@ class Router
                     exit;
                 }
 
-                // Dépendances
                 $draftRepository = new DraftRepository();
-
-                // Injection dans le contrôleur
                 $adminController = new AdminController($draftRepository);
 
-                // Détection AJAX
-                $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
-                    strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
-
                 // ======================
-                // AUTOSAVE AJAX
+                // POST = AJAX AUTOSAVE
                 // ======================
-                if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAjax) {
+                if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $adminController->ajaxCreateCourse();
                     exit;
                 }
 
                 // ======================
-                // AFFICHAGE DE LA VUE
+                // GET = création initiale du draft
                 // ======================
                 $adminController->createCourse();
                 break;
+
+
 
             case 'courses/auto-save-content':
                 session_start();
@@ -214,6 +227,31 @@ class Router
                 exit;
                 break;
 
+            case 'courses/update-content':
+                session_start();
+
+                if (!isset($_SESSION['user']) || !($_SESSION['user']['is_admin'] ?? false)) {
+                    http_response_code(403);
+                    echo json_encode(['success' => false, 'message' => 'Accès refusé.']);
+                    exit;
+                }
+
+                $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+                    strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !$isAjax) {
+                    http_response_code(403);
+                    echo json_encode(['success' => false, 'message' => 'Requête invalide.']);
+                    exit;
+                }
+
+                $courseRepository = new CourseRepository();
+                $adminController  = new AdminController(null, $courseRepository);
+                $adminController->autoSaveCourseContent();
+                exit;
+                break;
+
+
             case 'courses/delete-draft':
                 session_start();
 
@@ -223,12 +261,94 @@ class Router
                 $adminController->deleteDraft();
                 break;
 
+            case 'courses/publish':
+                session_start();
+
+                $draftRepository  = new DraftRepository();
+                $courseRepository = new CourseRepository();
+
+                $adminController = new AdminController(
+                    $draftRepository,
+                    $courseRepository
+                );
+
+                $adminController->publishCourse();
+                break;
+
+            case 'courses/edit':
+                session_start();
+
+                // Sécurité utilisateur connecté
+                if (!isset($_SESSION['user']['id'])) {
+                    header('Location: ./login');
+                    exit;
+                }
+
+                // Sécurité rôle (admin / formateur)
+                if (
+                    empty($_SESSION['user']['is_admin']) &&
+                    empty($_SESSION['user']['is_trainer'])
+                ) {
+                    http_response_code(403);
+                    exit('Accès interdit');
+                }
+
+                $courseRepository = new CourseRepository();
+                $draftRepository  = new DraftRepository();
+                $adminController  = new AdminController($draftRepository, $courseRepository);
+
+                // Détection AJAX
+                $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+                    strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+
+                // ======================
+                // MISE À JOUR AJAX
+                // ======================
+                if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAjax) {
+                    $adminController->ajaxUpdateCourse();
+                    exit;
+                }
+
+                // ======================
+                // AFFICHAGE PAGE ÉDITION
+                // ======================
+                $adminController->editCourse();
+                break;
 
 
-                // default:
-                //     http_response_code(404);
-                //     require __DIR__ . '/../views/errors/404.php';
-                //     break;
+            case 'courses/view':
+                session_start();
+
+                // Sécurité : utilisateur connecté
+                if (!isset($_SESSION['user']['id'])) {
+                    header('Location: ./login');
+                    exit;
+                }
+
+                $courseController = new CourseController();
+                $courseController->viewCourse();
+                break;
+            // default:
+            //     http_response_code(404);
+            //     require __DIR__ . '/../views/errors/404.php';
+            //     break;
+
+            case 'courses/lesson':
+                session_start();
+
+                if (!isset($_SESSION['user']['id'])) {
+                    header('Location: ./login');
+                    exit;
+                }
+
+                // $urlParts[2] = id_course, [3] = moduleIndex, [4] = lessonIndex
+                $_GET['id']            = isset($urlParts[2]) ? (int) $urlParts[2] : null;
+                $_GET['module_index']  = isset($urlParts[3]) ? (int) $urlParts[3] : 0;
+                $_GET['lesson_index']  = isset($urlParts[4]) ? (int) $urlParts[4] : 0;
+
+                $courseController = new CourseController();
+                $courseController->viewLesson();
+                break;
         }
     }
 }

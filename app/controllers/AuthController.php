@@ -5,12 +5,12 @@ namespace App\controllers;
 use App\Core\Database;
 use App\Services\MailService;
 use App\Models\AdminRepository;
-
+use App\Models\AuthRepository;
 use DateTime;
 use Exception;
 use PDO;
 
-class AuthController
+class AuthController extends Controller
 {
     protected $db;
     protected $errors = [];
@@ -22,7 +22,7 @@ class AuthController
     }
 
     // Affiche le formulaire d'inscription
-    public function register()
+    public function registerPage()
     {
         $errors = [];
         $old = [];  // Valeurs précédentes
@@ -31,166 +31,90 @@ class AuthController
 
     public function loginAsUser()
     {
-        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login_as_user_id'])) {
-            $userId = (int) $_POST['login_as_user_id'];
-
-            // On récupère l'utilisateur dans la base
-            $sql = "SELECT u.id, u.fullname, u.username AS username, u.email, u.password, u.confirmation_code, u.is_confirmed AS is_confirmed, u.reset_link, u.reset_token, u.reset_expires_at, u.created_at AS user_created_at, p.id AS profile_id, p.user_id, p.profile_picture, p.birth_date, p.country, p.english_level, p.phone_number, p.bio, p.updated_at AS profile_updated_at FROM users u INNER JOIN user_profiles p ON u.id = p.user_id WHERE u.id = ?";
-
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute([$userId]);
-            $user = $stmt->fetch(PDO::FETCH_ASSOC);
-
-            if ($user) {
-                session_start();
-                // Création de la session
-                $_SESSION['user'] = [
-                    'id'            => $user['id'],
-                    'is_confirmed'  => $user['is_confirmed'],
-                    'username'      => $user['username'],
-                    'english_level' => $user['english_level'],
-                    'role'          => 'admin',
-                    'fullname'      => $user['fullname'],
-                    'email'         => $user['email'],
-                    'created_at'    => $user['user_created_at'],
-                    'profile'       => [
-                        'profile_picture' => $user['profile_picture'],
-                        'birth_date'      => $user['birth_date'],
-                        'phone_number'    => $user['phone_number'],
-                        'bio'             => $user['bio'],
-                        'country'         => $user['country'],
-                    ],
-                ];
-
-                // Redirection vers le tableau de bord
-                header("Location: ./");
-                exit;
-            } else {
-                // Utilisateur non trouvé
-                $_SESSION['error'] = "Utilisateur introuvable.";
-                header("Location: ./login");
-                exit;
-            }
-        } else {
-            // Si pas de POST, retour au login
-            header("Location: ./login");
-            exit;
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST' || empty($_POST['login_as_user_id'])) {
+            $this->redirect('./login');
         }
+
+        $userId = (int) $_POST['login_as_user_id'];
+
+        $userModel = new AuthRepository($this->db);
+        $user = $userModel->findUserWithProfileById($userId);
+
+        if (!$user) {
+            $_SESSION['error'] = "Utilisateur introuvable.";
+            $this->redirect('./login');
+        }
+
+        // Session propre
+        session_start();
+
+        $_SESSION['user'] = [
+            'id'            => $user['id'],
+            'is_confirmed'  => $user['is_confirmed'],
+            'username'      => $user['username'],
+            'english_level' => $user['english_level'],
+            'role'          => 'admin',
+            'fullname'      => $user['fullname'],
+            'email'         => $user['email'],
+            'created_at'    => $user['user_created_at'],
+            'profile'       => [
+                'profile_picture' => $user['profile_picture'],
+                'birth_date'      => $user['birth_date'],
+                'phone_number'    => $user['phone_number'],
+                'bio'             => $user['bio'],
+                'country'         => $user['country'],
+            ],
+        ];
+
+        $this->redirect('./');
     }
 
 
-    /**
-     * Récupère toutes les informations d’un utilisateur (user, profile, tokens)
-     *
-     * @param int $userId
-     * @return array|null
-     */
-    public function getUserWithDetails(string $token): ?array
+    public function rememberLogin()
     {
-        $sql = "
-            SELECT 
-                u.id AS user_id,
-                u.fullname,
-                u.username,
-                u.email,
-                u.password,
-                u.confirmation_code,
-                u.is_confirmed AS is_confirmed,
-                u.reset_link,
-                u.reset_token,
-                u.reset_expires_at,
-                u.created_at AS user_created_at,
-
-                p.id AS profile_id,
-                p.profile_picture,
-                p.birth_date,
-                p.country,
-                p.english_level,
-                p.phone_number,
-                p.bio,
-                p.updated_at AS profile_updated_at,
-
-                t.id AS token_id,
-                t.token,
-                t.expires_at AS token_expires_at,
-                t.created_at AS token_created_at,
-                t.ip_address,
-                t.device,
-                t.browser
-
-            FROM users u
-            INNER JOIN user_profiles p ON u.id = p.user_id
-            INNER JOIN user_remember_tokens t ON u.id = t.user_id
-            WHERE t.token = :token
-        ";
-
-        $stmt = $this->db->prepare($sql);
-        $stmt->bindValue(':token', $token, PDO::PARAM_INT);
-        $stmt->execute();
-        $rows = $stmt->fetchAll();
-
-        if (!$rows) {
-            return null; // aucun utilisateur trouvé
+        if (empty($_COOKIE['remember_token'])) {
+            return;
         }
 
-        // --- Structuration du résultat ---
-        $user = [
-            'id' => $rows[0]['user_id'],
-            'fullname' => $rows[0]['fullname'],
-            'username' => $rows[0]['username'],
-            'email' => $rows[0]['email'],
-            'password' => $rows[0]['password'],
-            'confirmation_code' => $rows[0]['confirmation_code'],
-            'is_confirmed' => $rows[0]['is_confirmed'],
-            'reset_link' => $rows[0]['reset_link'],
-            'reset_token' => $rows[0]['reset_token'],
-            'reset_expires_at' => $rows[0]['reset_expires_at'],
-            'created_at' => $rows[0]['user_created_at'],
-            'profile' => null,
-            'tokens' => []
+        $token = $_COOKIE['remember_token'];
+
+        $userModel = new AuthRepository($this->db);
+        $user = $userModel->findByRememberToken($token);
+
+        if (!$user) {
+            return;
+        }
+
+        session_start();
+
+        $_SESSION['user'] = [
+            'id'            => $user['id'],
+            'username'      => $user['username'],
+            'fullname'      => $user['fullname'],
+            'email'         => $user['email'],
+            'english_level' => $user['profile']['english_level'] ?? null,
+            'role'          => 'user',
+            'is_confirmed'  => $user['is_confirmed'],
+            'profile'       => $user['profile']
         ];
-
-        // Profil (s’il existe)
-        if ($rows[0]['profile_id']) {
-            $user['profile'] = [
-                'id' => $rows[0]['profile_id'],
-                'profile_picture' => $rows[0]['profile_picture'],
-                'birth_date' => $rows[0]['birth_date'],
-                'country' => $rows[0]['country'],
-                'english_level' => $rows[0]['english_level'],
-                'phone_number' => $rows[0]['phone_number'],
-                'bio' => $rows[0]['bio'],
-                'updated_at' => $rows[0]['profile_updated_at']
-            ];
-        }
-
-        // Tokens (il peut y en avoir plusieurs)
-        foreach ($rows as $row) {
-            if ($row['token_id']) {
-                $user['token'][] = [
-                    'id' => $row['token_id'],
-                    'tokens' => $row['token'],
-                    'expires_at' => $row['token_expires_at'],
-                    'created_at' => $row['token_created_at'],
-                    'ip_address' => $row['ip_address'],
-                    'device' => $row['device'],
-                    'browser' => $row['browser'],
-                ];
-            }
-        }
-
-        return $user;
-        require __DIR__ . './../views/login.php';
     }
 
     // Affiche le formulaire de connexion
-    public function login()
+    public function showLogin()
     {
-        $errors = [];
-        $old = [];  // Valeurs précédentes
-        require_once __DIR__ . '/../views/auth/login.php';
-    }
+        session_start();
 
+        $userFromCookie = null;
+
+        if (!empty($_COOKIE['remember_me_token'])) {
+            $token = $_COOKIE['remember_me_token'];
+
+            $userModel = new AuthRepository($this->db);
+            $userFromCookie = $userModel->findByRememberToken($token);
+        }
+
+        require __DIR__ . '/../views/auth/login.php';
+    }
 
     public function confirm()
     {
@@ -199,7 +123,7 @@ class AuthController
     }
 
     // Traite la soumission du formulaire
-    public function registerPost()
+    public function register()
     {
         $errors = [];
         $old = [];

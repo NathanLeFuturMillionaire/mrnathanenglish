@@ -45,7 +45,12 @@
 
     <main class="main-content">
         <header class="page-header">
-            <h1>Concevoir un nouveau cours chez OpenDoorsClass</h1>
+            <h1>Rédiger un cours chez OpenDoorsClass</h1>
+            <!-- <pre>
+                entityType = <?= $entityType ?> <br>
+                entityId   = <?= $entityId ?>
+            </pre> -->
+
             <p class="subtitle">Assistant de création en 2 étapes</p>
         </header>
 
@@ -62,10 +67,7 @@
         </div>
 
         <form id="create-course-form" class="course-builder" method="POST" enctype="multipart/form-data">
-            <input type="hidden"
-                name="draft_id"
-                id="course_id_hidden"
-                value="<?= htmlspecialchars($draft['id'] ?? '') ?>">
+            <input type="hidden" id="course_id_hidden" name="<?= $entityType === 'draft' ? 'draft_id' : 'course_id' ?>" value="<?= (int) $entityId ?>">
 
             <!-- ====================== ÉTAPE 1 : Informations générales ====================== -->
             <section id="step-1" class="step-section active">
@@ -78,14 +80,16 @@
                                 <label>Titre du cours <span class="required">*</span></label>
                                 <input type="text" name="title_course" required
                                     placeholder="Ex: Anglais des affaires avancé"
-                                    value="<?= $title ?>">
+                                    value="<?= !empty($title) ? htmlspecialchars($title) : '' ?>">
+
                                 <div class="error-message" id="error-title_course"></div>
                             </div>
 
                             <div class="form-group" id="group-description_course">
                                 <label>Description <span class="required">*</span></label>
                                 <textarea name="description_course" rows="5" required
-                                    placeholder="Présentez votre cours..."><?= $description ?></textarea>
+                                    placeholder="Présentez votre cours..."><?= !empty($description) ? htmlspecialchars($description) : '' ?>
+                                </textarea>
                                 <div class="error-message" id="error-description_course"></div>
                             </div>
 
@@ -94,8 +98,8 @@
                                     <label>Langue enseignée <span class="required">*</span></label>
                                     <select name="language_taught" required>
                                         <option value="">Choisir</option>
-                                        <option value="anglais" <?= $language === 'anglais' ? 'selected' : '' ?>>Anglais</option>
-                                        <option value="espagnol" <?= $language === 'espagnol' ? 'selected' : '' ?>>Espagnol</option>
+                                        <option value="anglais" <?= (!empty($language) && $language === 'anglais') ? 'selected' : '' ?>>Anglais</option>
+                                        <option value="espagnol" <?= (!empty($language) && $language === 'espagnol') ? 'selected' : '' ?>>Espagnol</option>
                                     </select>
                                     <div class="error-message" id="error-language_taught"></div>
                                 </div>
@@ -115,21 +119,23 @@
                                 <div class="form-group">
                                     <label>Durée estimée (heures)</label>
                                     <input type="number" name="time_course" min="1"
-                                        placeholder="Ex: 20" value="<?= $duration ?>">
+                                        placeholder="Ex: 20"
+                                        value="<?= !empty($duration) ? (int)$duration : '' ?>">
                                     <div class="error-message" id="error-time_course"></div>
                                 </div>
 
                                 <div class="form-group" id="group-validation_period">
                                     <label>Sur une période de (jours) <span class="required">*</span></label>
                                     <input type="number" name="validation_period" min="1" required
-                                        placeholder="Ex: 90" value="<?= $validationPeriod ?>">
+                                        placeholder="Ex: 90" value="<?= !empty($validationPeriod) ? (int)$validationPeriod : '' ?>">
                                     <div class="error-message" id="error-validation_period"></div>
                                 </div>
 
                                 <div class="form-group" id="group-price_course">
                                     <label>Prix (F CFA) <span class="required">*</span></label>
                                     <input type="number" name="price_course" step="100" min="0" required
-                                        placeholder="0 = gratuit" value="<?= $price ?>">
+                                        placeholder="0 = gratuit"
+                                        value="<?= isset($price) && $price !== null ? (float)$price : '' ?>">
                                     <div class="error-message" id="error-price_course"></div>
                                 </div>
                             </div>
@@ -137,7 +143,7 @@
                             <div class="form-group">
                                 <label>Professeur responsable <span class="required">*</span></label>
                                 <input type="text" name="teacher_course" readonly
-                                    value="<?= htmlspecialchars($_SESSION['user']['username'] ?? '') ?>">
+                                    value="<?= !empty($_SESSION['user']['username']) ? htmlspecialchars($_SESSION['user']['username']) : '' ?>">
                                 <div class="error-message" id="error-teacher_course"></div>
                             </div>
                         </div>
@@ -145,31 +151,45 @@
                         <div class="form-column">
                             <div class="form-group" id="group-profile_picture">
                                 <label>Image de couverture <span class="required">*</span></label>
-                                <div class="upload-area" id="upload-area">
+
+                                <!-- ZONE CLIQUABLE -->
+                                <label class="upload-area" id="upload-area" for="profile_picture">
                                     <i class="fas fa-cloud-upload-alt"></i>
                                     <p>Cliquez ou glissez-déposez</p>
                                     <span>JPG, PNG • Max 5 Mo</span>
-                                    <input type="file" name="profile_picture" id="profile_picture" accept="image/*" hidden>
+                                </label>
+
+                                <!-- INPUT FILE (PAS hidden !) -->
+                                <input
+                                    type="file"
+                                    name="profile_picture"
+                                    id="profile_picture"
+                                    accept="image/*"
+                                    class="file-input">
+
+                                <!-- PRÉVISUALISATION -->
+                                <div id="preview-container" class="<?= !empty($profilePicture) ? '' : 'preview-hidden' ?>">
+                                    <img
+                                        id="image-preview"
+                                        src="<?= !empty($profilePicture) ? '../' . htmlspecialchars($profilePicture) : '' ?>"
+                                        alt="Prévisualisation">
+                                    <button type="button" id="remove-image">
+                                        <i class="fas fa-times"></i>
+                                    </button>
                                 </div>
-                                <div id="preview-container" class="<?= $profilePicture ? '' : 'preview-hidden' ?>">
-                                    <?php if ($profilePicture): ?>
-                                        <img id="image-preview" src="../<?= htmlspecialchars($profilePicture) ?>" alt="Prévisualisation">
-                                    <?php else: ?>
-                                        <img id="image-preview" src="" alt="Prévisualisation">
-                                    <?php endif; ?>
-                                    <button type="button" id="remove-image"><i class="fas fa-times"></i></button>
-                                </div>
+
                                 <div class="error-message" id="error-profile_picture"></div>
                             </div>
+
 
                             <!-- Radios Gratuit / Payant -->
                             <div class="price-type-radio">
                                 <label class="radio-label">
-                                    <input type="radio" name="is_free" value="1" <?= $is_free == 1 ? 'checked' : '' ?>>
+                                    <input type="radio" name="is_free" value="1" <?= isset($is_free) && (int)$is_free === 1 ? 'checked' : '' ?>>
                                     <span class="radio-custom"></span> Gratuit
                                 </label>
                                 <label class="radio-label">
-                                    <input type="radio" name="is_free" value="0" <?= $is_free == 0 ? 'checked' : '' ?>>
+                                    <input type="radio" name="is_free" value="0" <?= isset($is_free) && (int)$is_free === 0 ? 'checked' : '' ?>>
                                     <span class="radio-custom"></span> Payant
                                 </label>
                             </div>
@@ -185,7 +205,7 @@
                 </div>
             </section>
             <!-- Initialisation JavaScript pour prévisualiser l'image existante si brouillon -->
-            <?php if ($profilePicture): ?>
+            <?php if (isset($profilePicture)): ?>
                 <script>
                     document.addEventListener('DOMContentLoaded', () => {
                         const previewContainer = document.getElementById('preview-container');
@@ -211,18 +231,29 @@
 
                     <div id="modules-container">
                         <?php
-                        // Récupération et décodage du contenu pédagogique du brouillon
+                        $contentSource = null;
+
+                        if ($entityType === 'course' && !empty($courseData['content_data'])) {
+                            $contentSource = $courseData['content_data'];
+                        } elseif ($entityType === 'draft' && !empty($draft['content_data'])) {
+                            $contentSource = $draft['content_data'];
+                        }
+
                         $contentData = [];
-                        if (!empty($draft['content_data'])) {
-                            $decoded = json_decode($draft['content_data'], true);
-                            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded) && !empty($decoded['modules'])) {
+
+                        if ($contentSource) {
+                            $decoded = json_decode($contentSource, true);
+                            if (
+                                json_last_error() === JSON_ERROR_NONE &&
+                                !empty($decoded['modules'])
+                            ) {
                                 $contentData = $decoded['modules'];
                             }
                         }
-
-                        // Si aucun module dans le brouillon, on initialise un compteur à 0
-                        $moduleCounter = 0;
                         ?>
+
+
+
 
                         <?php if (!empty($contentData)): ?>
                             <?php foreach ($contentData as $moduleIndex => $module): ?>
@@ -299,7 +330,7 @@
                                                                 <input type="hidden"
                                                                     name="modules[<?= $moduleCounter ?>][lessons][<?= $lessonCounter ?>][content]"
                                                                     class="lesson-content-hidden"
-                                                                    value="<?= htmlspecialchars($lesson['content'] ?? '') ?>">
+                                                                    value="<?= htmlspecialchars($lesson["content"]) ?? '' ?>">
                                                                 <div class="error-message"></div>
                                                             </div>
 
@@ -317,14 +348,18 @@
                                                                     <input type="number"
                                                                         name="modules[<?= $moduleCounter ?>][lessons][<?= $lessonCounter ?>][duration]"
                                                                         min="1"
-                                                                        value="<?= htmlspecialchars($lesson['duration'] ?? '') ?>">
+                                                                        value="<?php if (isset($lesson["duration"])) {
+                                                                                    echo htmlspecialchars($lesson["duration"]);
+                                                                                } else {
+                                                                                    echo "";
+                                                                                } ?>">
                                                                 </div>
                                                                 <div class="form-group checkbox-group">
                                                                     <label class="checkbox-label">
                                                                         <input type="checkbox"
                                                                             name="modules[<?= $moduleCounter ?>][lessons][<?= $lessonCounter ?>][is_free]"
                                                                             <?= (!empty($lesson['is_free']) && $lesson['is_free']) ? 'checked' : '' ?>>
-                                                                        <span class="checkmark"></span> Leçon gratuite (aperçu)
+                                                                        <span class="checkmark"></span> Cette leçon est gratuite
                                                                     </label>
                                                                 </div>
                                                             </div>
@@ -356,10 +391,15 @@
                         <button type="button" id="prev-step" class="btn-cancel">
                             <i class="fas fa-arrow-left"></i> Précédent
                         </button>
-                        <button type="submit" class="btn-submit">
-                            <span class="btn-text">Créer le cours complet</span>
-                            <span class="spinner"><i class="fas fa-spinner fa-spin"></i></span>
-                        </button>
+                        <?php if (!$isEditMode): ?>
+                            <button type="submit" class="btn-submit">
+                                <span class="btn-text">Créer le cours complet</span>
+                                <span class="spinner">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                </span>
+                            </button>
+                        <?php endif; ?>
+
                     </div>
                 </div>
             </section>

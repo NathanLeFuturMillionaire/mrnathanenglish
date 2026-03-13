@@ -2,10 +2,13 @@
 
 // Active l'autoload de Composer
 require_once __DIR__ . '/../vendor/autoload.php';
+// Appel le helper de date
+require_once __DIR__ . '/../app/helpers/date.php';
+
 
 use App\Core\Database; // On appelle la classe avec son namespace
 use App\Core\Router;
- 
+
 $db = new Database();
 $conn = $db->connect();
 
