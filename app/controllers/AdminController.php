@@ -104,9 +104,6 @@ class AdminController
         require __DIR__ . '/../views/admins/courses/createCourse.php';
     }
 
-
-
-
     /**
      * AJAX : Étape 1 du wizard – Sauvegarde auto dans la table draft
      * Le brouillon DOIT déjà exister (draft_id obligatoire)
@@ -799,5 +796,30 @@ class AdminController
             ]);
             exit;
         }
+    }
+
+    public function viewCourse(): void
+    {
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            session_start();
+        }
+
+        // Récupération de l'ID depuis l'URL
+        $courseId = isset($_GET['id']) ? (int) $_GET['id'] : null;
+
+        if (!$courseId) {
+            http_response_code(400);
+            exit('ID du cours manquant');
+        }
+
+        // Récupération du cours
+        $course = $this->courseRepository->getCourseById($courseId);
+
+        if (!$course) {
+            http_response_code(404);
+            exit('Cours introuvable');
+        }
+
+        require __DIR__ . '/../views/courses/viewCourse.php';
     }
 }

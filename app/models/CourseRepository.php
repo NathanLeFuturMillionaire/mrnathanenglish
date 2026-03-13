@@ -115,7 +115,7 @@ class CourseRepository
     public function update(int $id, array $data, ?string $newImagePath = null): bool
     {
         // Récupérer l'ancien cours pour supprimer l'ancienne image si nécessaire
-        $oldCourse = $this->findById($id);
+        $oldCourse = $this->getCourseById($id);
         if (!$oldCourse) {
             return false;
         }
@@ -173,16 +173,29 @@ class CourseRepository
     }
 
     /**
-     * Récupère un cours par ID
+     * Récupère un cours en fonction d'un ID donnée
      */
-    public function findById(int $id)
+    public function getCourseById(int $id): array|false
     {
         $query = "SELECT * FROM courses WHERE id = :id";
-        $stmt = $this->db->prepare($query);
+        $stmt  = $this->db->prepare($query);
         $stmt->bindParam(':id', $id, PDO::PARAM_INT);
         $stmt->execute();
 
-        return $stmt->fetch(PDO::FETCH_ASSOC) ?: false;
+        $course = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$course) {
+            return false;
+        }
+
+        // Décodage du JSON
+        if (!empty($course['content_data'])) {
+            $course['content_data'] = json_decode($course['content_data'], true) ?? [];
+        } else {
+            $course['content_data'] = [];
+        }
+
+        return $course;
     }
 
     /**

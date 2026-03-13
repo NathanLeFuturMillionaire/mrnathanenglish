@@ -127,7 +127,7 @@
                                     <a href="../public/courses/edit?id=<?= (int) $courseId ?>" class="btn-primary">
                                         <i class="fas fa-edit"></i> Modifier
                                     </a>
-                                    <a href="/courses/view/<?= (int) $courseId ?>" class="btn-secondary">
+                                    <a href="./courses/view/<?= (int) $courseId ?>" class="btn-secondary">
                                         <i class="fas fa-eye"></i> Voir
                                     </a>
                                 <?php endif; ?>

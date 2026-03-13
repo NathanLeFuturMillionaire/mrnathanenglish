@@ -18,7 +18,7 @@ class MailService
         $this->mailer->Host       = 'smtp.gmail.com';
         $this->mailer->SMTPAuth   = true;
         $this->mailer->Username   = 'misterntkofficiel2.0@gmail.com';
-        $this->mailer->Password   = 'tqlrzdeuawbjuhkm';
+        $this->mailer->Password   = 'vdqzewccgpvfswgj';
         $this->mailer->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
         $this->mailer->Port       = 587;
 

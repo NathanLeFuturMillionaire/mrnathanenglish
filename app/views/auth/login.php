@@ -1,38 +1,3 @@
-<?php
-session_start();
-require_once '../app/controllers/AuthController.php';
-
-use App\controllers\AuthController;
-
-$auth = new AuthController();
-$userFromCookie = null;
-
-// Vérifier si un cookie existe
-if (!empty($_COOKIE['remember_me_token'])) {
-    $token = $_COOKIE['remember_me_token'];
-    $userFromCookie = $auth->getUserWithDetails($token);
-}
-
-function formatDateFr($date)
-{
-    if (empty($date)) return '';
-
-    $formatter = new \IntlDateFormatter(
-        'fr_FR',                        // Locale français
-        \IntlDateFormatter::LONG,       // Format complet (ex: 5 septembre 2025)
-        \IntlDateFormatter::NONE,       // Pas d'heure
-        'Europe/Paris',                 // Fuseau horaire
-        \IntlDateFormatter::GREGORIAN,  // Calendrier
-        "'le' d MMMM yyyy"              // Pattern personnalisé
-    );
-
-    return $formatter->format(new \DateTime($date));
-}
-
-if(isset($_POST["userLoginSubmit"])) {
-    // $loginAsUser = $auth->loginAsUser();
-}
-?>
 <!DOCTYPE html>
 <html lang="fr">
 
@@ -41,7 +6,7 @@ if(isset($_POST["userLoginSubmit"])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="../public/css/style.css">
     <link rel="stylesheet" href="../public/css/auth/login.css">
-    <title>Connexion - Mr Nathan English</title>
+    <title>Connexion - OpenDoorsClass</title>
 </head>
 
 <body>
