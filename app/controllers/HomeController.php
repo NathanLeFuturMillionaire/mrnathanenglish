@@ -3,6 +3,10 @@
 namespace App\Controllers;
 
 use App\Core\Database;
+use MatthiasMullie\Minify;
+
+$minifier = new Minify\CSS('/public/css/users/courses/viewCourses.css');
+$minifier->minify('/public/css/users/courses/viewCourses.min.css');
 
 class HomeController
 {

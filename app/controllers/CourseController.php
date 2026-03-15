@@ -46,6 +46,14 @@ class CourseController
       exit('Cours introuvable');
     }
 
+    $lastUpdate = $this->courseRepository->timeAgo(
+      $course['updated_at'] !== $course['created_at']
+        ? $course['updated_at']
+        : $course['created_at']
+    );
+
+    $updateLabel = $course['updated_at'] !== $course['created_at'] ? 'Mise à jour' : 'Publié';
+
     require __DIR__ . '/../views/courses/viewCourse.php';
   }
 

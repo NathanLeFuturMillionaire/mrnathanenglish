@@ -229,6 +229,63 @@
                         </button>
                     </div>
 
+                    <!-- ===== OBJECTIFS PÉDAGOGIQUES ===== -->
+                    <div class="section-block">
+                        <div class="section-block__header">
+                            <h3><i class="fas fa-circle-check"></i> Ce que l'étudiant va apprendre</h3>
+                            <p class="section-block__sub">Ces points apparaîtront dans la section "Ce que vous allez apprendre" sur la page du cours.</p>
+                        </div>
+
+                        <div id="outcomes-container">
+                            <?php
+                            // En mode édition, $outcomes est déjà injecté par le contrôleur
+                            // En mode création (draft), on le récupère depuis content_data du brouillon
+                            if (!isset($outcomes)) {
+                                $outcomes = [];
+                                if (!empty($contentSource)) {
+                                    $decoded  = json_decode($contentSource, true);
+                                    $outcomes = $decoded['outcomes'] ?? [];
+                                }
+                            }
+                            ?>
+
+                            <!-- ===== CE QUE L'ÉTUDIANT VA APPRENDRE ===== -->
+                            <?php if (!empty($outcomes)): ?>
+                                <?php foreach ($outcomes as $i => $outcome): ?>
+                                    <div class="outcome-item">
+                                        <i class="fas fa-circle-check outcome-item__icon"></i>
+                                        <input
+                                            type="text"
+                                            name="outcomes[]"
+                                            value="<?= htmlspecialchars($outcome) ?>"
+                                            placeholder="Ex : Maîtriser le Present Simple et ses usages"
+                                            maxlength="120">
+                                        <button type="button" class="btn-remove-outcome" title="Supprimer">
+                                            <i class="fas fa-xmark"></i>
+                                        </button>
+                                    </div>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <!-- Ligne vide par défaut -->
+                                <div class="outcome-item">
+                                    <i class="fas fa-circle-check outcome-item__icon"></i>
+                                    <input
+                                        type="text"
+                                        name="outcomes[]"
+                                        placeholder="Ex : Maîtriser le Present Simple et ses usages"
+                                        maxlength="120">
+                                    <button type="button" class="btn-remove-outcome" title="Supprimer">
+                                        <i class="fas fa-xmark"></i>
+                                    </button>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+
+                        <button type="button" id="add-outcome" class="btn-add" style="margin-top: 0.75rem;">
+                            <i class="fas fa-plus"></i> Ajouter un objectif
+                        </button>
+                    </div>
+
                     <div id="modules-container">
                         <?php
                         $contentSource = null;

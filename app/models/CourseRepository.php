@@ -5,6 +5,7 @@ namespace App\Models;
 use PDO;
 use PDOException;
 use App\Core\Database;
+use DateTime;
 
 class CourseRepository
 {
@@ -404,5 +405,31 @@ class CourseRepository
             ':updated_at'   => date('Y-m-d H:i:s'),
             ':id'           => $courseId
         ]);
+    }
+    /**
+     * Retourne la dernière mise à jour d'un cours
+     */
+    public function timeAgo(string $datetime): string
+    {
+        $diff = (new DateTime())->getTimestamp() - (new DateTime($datetime))->getTimestamp();
+
+        $intervals = [
+            31536000 => ['an',      'ans'],
+            2592000  => ['mois',    'mois'],
+            604800   => ['semaine', 'semaines'],
+            86400    => ['jour',    'jours'],
+            3600     => ['heure',   'heures'],
+            60       => ['minute',  'minutes'],
+            1        => ['seconde', 'secondes'],
+        ];
+
+        foreach ($intervals as $seconds => [$singular, $plural]) {
+            if ($diff >= $seconds) {
+                $value = (int) ($diff / $seconds);
+                return 'il y a ' . $value . ' ' . ($value > 1 ? $plural : $singular);
+            }
+        }
+
+        return 'à l\'instant';
     }
 }

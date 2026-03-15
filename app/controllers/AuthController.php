@@ -678,6 +678,13 @@ class AuthController extends Controller
                     // Renvoie JSON succès
                     echo json_encode(['success' => true]);
                     exit;
+
+                    // Après avoir déplacé le fichier uploadé
+                    $webpPath = preg_replace('/\.(jpg|jpeg|png)$/i', '.webp', $filePath);
+                    imagecreatefromstring(file_get_contents($filePath));
+                    imagewebp(imagecreatefromstring(file_get_contents($filePath)), $webpPath, 82);
+                    unlink($filePath); // supprime l'original
+
                 } else {
                     echo json_encode(['success' => false, 'message' => 'Impossible de déplacer le fichier.']);
                     exit;
