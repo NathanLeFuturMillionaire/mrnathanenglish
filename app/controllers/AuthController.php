@@ -509,11 +509,11 @@ class AuthController extends Controller
             $mail->Host = 'smtp.gmail.com';
             $mail->SMTPAuth = true;
             $mail->Username = 'misterntkofficiel2.0@gmail.com'; // ton email
-            $mail->Password = 'tqlrzdeuawbjuhkm'; // mot de passe app
+            $mail->Password = 'vdqzewccgpvfswgj'; // mot de passe app
             $mail->SMTPSecure = 'tls';
             $mail->Port = 587;
 
-            $mail->setFrom('misterntkofficiel2.0@gmail.com', 'Mr Nathan English');
+            $mail->setFrom('misterntkofficiel2.0@gmail.com', 'OpenDoorsClass');
             $mail->addAddress($email, $user['fullname']);
             $mail->isHTML(true);
             $mail->Subject = 'Votre nouveau code de confirmation';

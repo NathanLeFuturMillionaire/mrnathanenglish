@@ -2,6 +2,8 @@
 // Détection automatique du chemin de base
 $basePath = '/mrnathanenglish/public';
 ?>
+<!-- Relis le fichier css du header -->
+<link rel="stylesheet" href="../public/css/layouts/header.min.css">
 
 <header class="main-header">
     <div class="container">
@@ -186,3 +188,5 @@ $basePath = '/mrnathanenglish/public';
 
     <div class="overlay"></div>
 </header>
+
+<script src="js/header.min.js" defer></script>

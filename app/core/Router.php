@@ -349,6 +349,19 @@ class Router
                 $courseController = new CourseController();
                 $courseController->viewLesson();
                 break;
+
+            case 'profile/update':
+                session_start();
+
+                if (!isset($_SESSION['user']['id'])) {
+                    http_response_code(401);
+                    echo json_encode(['success' => false, 'message' => 'Non authentifié']);
+                    exit;
+                }
+
+                $userController = new UserController();
+                $userController->updateProfile();
+                break;
         }
     }
 }

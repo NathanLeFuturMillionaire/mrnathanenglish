@@ -10,7 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-  <link rel="stylesheet" href="../../../public/css/users/courses/viewCourses.css">
+  <link rel="stylesheet" href="../../../public/css/users/courses/viewCourses.min.css">
 </head>
 
 <body>
@@ -393,7 +393,7 @@
 
   </main>
 
-  <script src="../../js/main.js"></script>
+  <script src="../../js/header.min.js"></script>
   <script src="../../js/viewCourse.js"></script>
 
   <!-- Bouton Airtel Money pour effectuer le paiement -->

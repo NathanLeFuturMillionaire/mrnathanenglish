@@ -15,7 +15,7 @@
     <meta property="og:image" content="http://localhost/mrnathan-english/public/images/og-image.png" />
     <link rel="icon" href="/images/favicon.ico" type="image/x-icon" />
 
-    <link rel="stylesheet" href="../public/css/style.css">
+    <link rel="stylesheet" href="../public/css/style.min.css">
     <title>OpenDoorsClass - Accueil</title>
 </head>
 
@@ -24,7 +24,7 @@
 
     <main>
 
-    <!-- <?php var_dump($_SESSION); ?> -->
+        <!-- <?php var_dump($_SESSION); ?> -->
 
         <section class="banner">
             <div class="container banner-content">

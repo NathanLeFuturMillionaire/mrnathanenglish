@@ -1,108 +1,117 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const form = document.getElementById('confirmForm');
-    const codeInput = document.getElementById('confirmation_code');
-    const messageDiv = document.getElementById('message');
-    const resendLink = document.getElementById('resend-link');
-    const resendMessage = document.getElementById('resend-message');
+document.addEventListener("DOMContentLoaded", () => {
+  const form = document.getElementById("confirmForm");
+  const codeInput = document.getElementById("confirmation_code");
+  const messageDiv = document.getElementById("message");
+  const resendLink = document.getElementById("resend-link");
+  const resendMessage = document.getElementById("resend-message");
 
-    // --- Validation et envoi du formulaire de confirmation ---
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        messageDiv.textContent = '';
-        
-        const code = codeInput.value.trim();
-        const email = form.querySelector('input[name="email"]').value;
+  // --- Validation et envoi du formulaire de confirmation ---
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    messageDiv.textContent = "";
 
-        // Validation rapide côté client
-        if (code.length !== 6 || !/^\d{6}$/.test(code)) {
-            messageDiv.style.color = 'red';
-            messageDiv.textContent = 'Veuillez entrer un code valide à 6 chiffres.';
-            return;
+    const code = codeInput.value.trim();
+    const email = form.querySelector('input[name="email"]').value;
+
+    // Validation rapide côté client
+    if (code.length !== 6 || !/^\d{6}$/.test(code)) {
+      messageDiv.style.color = "red";
+      messageDiv.textContent = "Veuillez entrer un code valide à 6 chiffres.";
+      return;
+    }
+
+    const data = new FormData();
+    data.append("confirmation_code", code);
+    data.append("email", email);
+
+    try {
+      const response = await fetch("./confirm", {
+        method: "POST",
+        body: data,
+      });
+
+      if (!response.ok)
+        throw new Error(`HTTP error! Status: ${response.status}`);
+
+      const result = await response.json();
+
+      if (result.success) {
+        messageDiv.style.color = "green";
+        messageDiv.textContent =
+          result.message || "Compte confirmé avec succès !";
+
+        // --- Mise à jour dynamique du header ---
+        if (result.user && result.user.is_confirmed === 1) {
+          updateHeaderAfterConfirmation(result.user);
         }
 
-        const data = new FormData();
-        data.append('confirmation_code', code);
-        data.append('email', email);
+        // Redirection vers la page de bienvenue après un petit délai
+        setTimeout(() => (window.location.href = "./welcome"), 1500);
+      } else {
+        messageDiv.style.color = "red";
+        messageDiv.textContent =
+          result.message || "Code invalide, veuillez réessayer.";
+      }
+    } catch (error) {
+      console.error("Erreur JS/fetch:", error);
+      messageDiv.style.color = "red";
+      messageDiv.textContent = "Erreur serveur, veuillez réessayer plus tard.";
+    }
+  });
 
-        try {
-            const response = await fetch('./confirm', {
-                method: 'POST',
-                body: data
-            });
+  codeInput.addEventListener("input", () => {
+    messageDiv.textContent = "";
+  });
 
-            if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+  // --- Renvoyer un nouveau code ---
+  resendLink.addEventListener("click", async (e) => {
+    e.preventDefault();
+    resendMessage.style.display = "block";
+    resendMessage.style.color = "black";
+    resendMessage.textContent = "Envoi en cours...";
 
-            const result = await response.json();
+    const email = form.querySelector('input[name="email"]').value;
 
-            if (result.success) {
-                messageDiv.style.color = 'green';
-                messageDiv.textContent = result.message || 'Compte confirmé avec succès !';
+    try {
+      const response = await fetch(
+        `./resend-code?email=${encodeURIComponent(email)}`,
+        {
+          method: "GET",
+        },
+      );
 
-                // --- Mise à jour dynamique du header ---
-                if (result.user && result.user.is_confirmed === 1) {
-                    updateHeaderAfterConfirmation(result.user);
-                }
+      if (!response.ok)
+        throw new Error(`HTTP error! Status: ${response.status}`);
 
-                // Redirection vers la page de bienvenue après un petit délai
-                setTimeout(() => window.location.href = './welcome', 1500);
+      const result = await response.json();
 
-            } else {
-                messageDiv.style.color = 'red';
-                messageDiv.textContent = result.message || 'Code invalide, veuillez réessayer.';
-            }
-        } catch (error) {
-            console.error('Erreur JS/fetch:', error);
-            messageDiv.style.color = 'red';
-            messageDiv.textContent = 'Erreur serveur, veuillez réessayer plus tard.';
-        }
-    });
+      if (result.success) {
+        resendMessage.style.color = "green";
+        resendMessage.textContent =
+          "Un nouveau code a été envoyé à votre adresse e-mail.";
+        setTimeout(() => (resendMessage.style.display = "none"), 5000);
+      } else {
+        resendMessage.style.color = "red";
+        resendMessage.textContent =
+          result.error || "Erreur lors de l’envoi du code.";
+      }
+    } catch (error) {
+      console.error("Erreur JS/fetch (resend):", error);
+      resendMessage.style.color = "red";
+      resendMessage.textContent =
+        "Erreur serveur, veuillez réessayer plus tard.";
+    }
+  });
 
-    codeInput.addEventListener('input', () => {
-        messageDiv.textContent = '';
-    });
+  /**
+   * Met à jour le header pour un utilisateur confirmé
+   */
+  function updateHeaderAfterConfirmation(user) {
+    const navMenu = document.querySelector(".nav-menu ul");
+    if (!navMenu) return;
 
-    // --- Renvoyer un nouveau code ---
-    resendLink.addEventListener('click', async (e) => {
-        e.preventDefault();
-        resendMessage.style.display = 'block';
-        resendMessage.style.color = 'black';
-        resendMessage.textContent = 'Envoi en cours...';
-
-        const email = form.querySelector('input[name="email"]').value;
-
-        try {
-            const response = await fetch(`./resend-code?email=${encodeURIComponent(email)}`, {
-                method: 'GET'
-            });
-
-            if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-
-            const result = await response.json();
-
-            if (result.success) {
-                resendMessage.style.color = 'green';
-                resendMessage.textContent = 'Un nouveau code a été envoyé à votre adresse e-mail.';
-                setTimeout(() => resendMessage.style.display = 'none', 5000);
-            } else {
-                resendMessage.style.color = 'red';
-                resendMessage.textContent = result.error || 'Erreur lors de l’envoi du code.';
-            }
-        } catch (error) {
-            console.error('Erreur JS/fetch (resend):', error);
-            resendMessage.style.color = 'red';
-            resendMessage.textContent = 'Erreur serveur, veuillez réessayer plus tard.';
-        }
-    });
-
-    /**
-     * Met à jour le header pour un utilisateur confirmé
-     */
-    function updateHeaderAfterConfirmation(user) {
-        const navMenu = document.querySelector('.nav-menu ul');
-        if (!navMenu) return;
-
-        // Nettoyer le menu actuel
-        navMenu.innerHTML = `
+    // Nettoyer le menu actuel
+    navMenu.innerHTML = `
             <li><a href="./">Accueil</a></li>
             <li class="dropdown">
                 <a href="#" class="dropdown-toggle">Examens ▾</a>
@@ -124,5 +133,215 @@ document.addEventListener('DOMContentLoaded', () => {
                 </a>
             </li>
         `;
+  }
+
+  // ===== OTP =====
+  const otpInputs = document.querySelectorAll(".otp-input");
+  const hiddenInput = document.getElementById("confirmation_code");
+  const errorCode = document.getElementById("error-code");
+  const submitBtn = document.querySelector(".btn-confirm");
+
+  // ===== INITIALISATION =====
+  submitBtn.setAttribute("disabled", true);
+  submitBtn.style.opacity = "0.5";
+  submitBtn.style.cursor = "not-allowed";
+
+  otpInputs.forEach((input, index) => {
+    if (index !== 0) {
+      input.setAttribute("disabled", true);
+      input.style.opacity = "0.4";
+      input.style.cursor = "not-allowed";
     }
+  });
+
+  // ===== HELPERS =====
+  function enableInput(index) {
+    const input = otpInputs[index];
+    input.removeAttribute("disabled");
+    input.style.opacity = "1";
+    input.style.cursor = "text";
+    input.focus();
+  }
+
+  function disableInput(index) {
+    const input = otpInputs[index];
+    input.setAttribute("disabled", true);
+    input.value = "";
+    input.style.opacity = "0.4";
+    input.style.cursor = "not-allowed";
+    input.classList.remove("is-filled", "is-error", "is-valid");
+  }
+
+  function syncHiddenInput() {
+    hiddenInput.value = [...otpInputs].map((i) => i.value).join("");
+  }
+
+  function isComplete() {
+    return [...otpInputs].every((i) => i.value !== "");
+  }
+
+  function updateSubmitBtn() {
+    if (isComplete()) {
+      submitBtn.removeAttribute("disabled");
+      submitBtn.style.opacity = "1";
+      submitBtn.style.cursor = "pointer";
+      // Légère animation pour signaler que le bouton est actif
+      submitBtn.style.transform = "scale(1.02)";
+      setTimeout(() => {
+        submitBtn.style.transform = "";
+      }, 200);
+    } else {
+      submitBtn.setAttribute("disabled", true);
+      submitBtn.style.opacity = "0.5";
+      submitBtn.style.cursor = "not-allowed";
+    }
+  }
+
+  function showError(message) {
+    errorCode.textContent = message;
+    otpInputs.forEach((inp) => {
+      if (!inp.disabled) inp.classList.add("is-error");
+    });
+    setTimeout(() => {
+      otpInputs.forEach((inp) => inp.classList.remove("is-error"));
+    }, 600);
+  }
+
+  function clearError() {
+    errorCode.textContent = "";
+    otpInputs.forEach((inp) => inp.classList.remove("is-error"));
+  }
+
+  function resetAllInputs() {
+    otpInputs.forEach((inp, i) => {
+      inp.value = "";
+      inp.classList.remove("is-filled", "is-error", "is-valid");
+      if (i !== 0) disableInput(i);
+      else {
+        inp.removeAttribute("disabled");
+        inp.style.opacity = "1";
+        inp.style.cursor = "text";
+      }
+    });
+    syncHiddenInput();
+    updateSubmitBtn();
+    otpInputs[0].focus();
+  }
+
+  // ===== ÉCOUTEURS =====
+  otpInputs.forEach((input, index) => {
+    input.addEventListener("input", (e) => {
+      const val = e.target.value.replace(/\D/g, "");
+      input.value = val ? val[val.length - 1] : "";
+
+      if (input.value) {
+        input.classList.add("is-filled");
+        if (index < otpInputs.length - 1) {
+          enableInput(index + 1);
+        }
+      } else {
+        input.classList.remove("is-filled");
+      }
+
+      syncHiddenInput();
+      updateSubmitBtn();
+      clearError();
+    });
+
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Backspace") {
+        if (input.value) {
+          input.value = "";
+          input.classList.remove("is-filled");
+          syncHiddenInput();
+          updateSubmitBtn();
+        } else if (index > 0) {
+          disableInput(index);
+          enableInput(index - 1);
+          otpInputs[index - 1].value = "";
+          otpInputs[index - 1].classList.remove("is-filled");
+          syncHiddenInput();
+          updateSubmitBtn();
+        }
+      }
+    });
+
+    input.addEventListener("paste", (e) => {
+      e.preventDefault();
+      const pasted = e.clipboardData
+        .getData("text")
+        .replace(/\D/g, "")
+        .slice(0, 6);
+      if (!pasted) return;
+
+      otpInputs.forEach((inp, i) => {
+        if (i !== 0) disableInput(i);
+        inp.value = "";
+        inp.classList.remove("is-filled");
+      });
+
+      [...pasted].forEach((char, i) => {
+        if (i < otpInputs.length) {
+          if (i !== 0) enableInput(i);
+          otpInputs[i].value = char;
+          otpInputs[i].classList.add("is-filled");
+        }
+      });
+
+      if (pasted.length < otpInputs.length) {
+        enableInput(pasted.length);
+      } else {
+        otpInputs[otpInputs.length - 1].focus();
+      }
+
+      syncHiddenInput();
+      updateSubmitBtn();
+      clearError();
+    });
+
+    input.addEventListener("focus", () => {
+      if (!input.disabled) input.select();
+    });
+  });
+
+  // ===== SOUMISSION =====
+  document.getElementById("confirmForm")?.addEventListener("submit", (e) => {
+    syncHiddenInput();
+
+    if (!isComplete()) {
+      e.preventDefault();
+      showError("Veuillez saisir les 6 chiffres du code.");
+      const firstEmpty = [...otpInputs].findIndex(
+        (i) => !i.value && !i.disabled,
+      );
+      if (firstEmpty !== -1) otpInputs[firstEmpty].focus();
+    }
+  });
+
+  // ===== RENVOI DU CODE =====
+  document.getElementById("resend-link")?.addEventListener("click", (e) => {
+    e.preventDefault();
+
+    const email = e.currentTarget.dataset.email;
+    const resendMsg = document.getElementById("resend-message");
+
+    fetch(`./resend-code?email=${encodeURIComponent(email)}`, {
+      headers: { "X-Requested-With": "XMLHttpRequest" },
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          resendMsg.hidden = false;
+          resendMsg.style.color = "#1dbf73";
+          resendMsg.textContent = "Un nouveau code vient d'être envoyé.";
+          resetAllInputs();
+          setTimeout(() => {
+            resendMsg.hidden = true;
+          }, 4000);
+        } else {
+          showError(data.message ?? "Erreur lors du renvoi du code.");
+        }
+      })
+      .catch(() => showError("Erreur réseau. Veuillez réessayer."));
+  });
 });
