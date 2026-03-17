@@ -175,6 +175,7 @@ class AdminController
         $description      = trim($_POST['description_course'] ?? '');
         $language         = trim($_POST['language_taught'] ?? '');
         $level            = trim($_POST['learner_level'] ?? '');
+        $outcomes            = trim($_POST['outcomes[]'] ?? '');
         $duration         = !empty($_POST['time_course']) ? (int) $_POST['time_course'] : null;
         $validationPeriod = !empty($_POST['validation_period']) ? (int) $_POST['validation_period'] : null;
         $price            = isset($_POST['price_course']) ? (float) $_POST['price_course'] : 0;
@@ -351,15 +352,35 @@ class AdminController
             exit;
         }
 
-        $trainerId = $_SESSION['user']['id'];
-        $contentData = $_POST['content_data'] ?? null;
+        $trainerId   = (int) $_SESSION['user']['id'];
+        $contentRaw  = $_POST['content_data'] ?? null;
 
-        if (!$contentData) {
+        if (!$contentRaw) {
             echo json_encode(['success' => false, 'message' => 'Aucun contenu reçu.']);
             exit;
         }
 
-        // Récupérer ou créer le draft
+        // Décodage et validation du JSON
+        $contentArray = json_decode($contentRaw, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE || empty($contentArray['modules'])) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Contenu pédagogique invalide.']);
+            exit;
+        }
+
+        // Nettoyage des outcomes
+        $contentArray['outcomes'] = array_values(
+            array_filter(
+                array_map('trim', $contentArray['outcomes'] ?? []),
+                fn($o) => $o !== ''
+            )
+        );
+
+        // Réencodage propre
+        $contentData = json_encode($contentArray, JSON_UNESCAPED_UNICODE);
+
+        // Récupération du brouillon
         $draft = $this->draftRepository->findByTrainer($trainerId);
 
         if (!$draft) {
@@ -370,17 +391,18 @@ class AdminController
         try {
             $this->draftRepository->updateDraft($draft['id'], [
                 'content_data' => $contentData,
-                'updated_at' => date('Y-m-d H:i:s')
+                'updated_at'   => date('Y-m-d H:i:s')
             ]);
 
             echo json_encode([
-                'success' => true,
-                'message' => 'Contenu du cours sauvegardé automatiquement.',
+                'success'  => true,
+                'message'  => 'Contenu sauvegardé automatiquement.',
                 'draft_id' => $draft['id']
             ]);
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
+            error_log('[autoSaveContent] ' . $e->getMessage());
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Erreur serveur : ' . $e->getMessage()]);
+            echo json_encode(['success' => false, 'message' => 'Erreur serveur lors de la sauvegarde.']);
         }
     }
 
@@ -439,16 +461,26 @@ class AdminController
     {
         header('Content-Type: application/json');
 
+        /* ======================
+           Sécurité
+        ====================== */
         if (
             $_SERVER['REQUEST_METHOD'] !== 'POST' ||
-            empty($_SERVER['HTTP_X_REQUESTED_WITH'])
+            empty($_SERVER['HTTP_X_REQUESTED_WITH']) ||
+            strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) !== 'xmlhttprequest'
         ) {
             http_response_code(403);
             echo json_encode(['success' => false, 'message' => 'Accès refusé']);
             exit;
         }
 
-        $trainerId = (int) ($_SESSION['user']['id'] ?? 0);
+        if (empty($_SESSION['user']['id'])) {
+            http_response_code(401);
+            echo json_encode(['success' => false, 'message' => 'Utilisateur non authentifié']);
+            exit;
+        }
+
+        $trainerId = (int) $_SESSION['user']['id'];
         $draftId   = (int) ($_POST['draft_id'] ?? 0);
 
         if ($trainerId <= 0 || $draftId <= 0) {
@@ -457,7 +489,9 @@ class AdminController
             exit;
         }
 
-        // 1️⃣ Récupération du brouillon
+        /* ======================
+           1. Récupération du brouillon
+        ====================== */
         $draft = $this->draftRepository->findByIdAndTrainer($draftId, $trainerId);
 
         if (!$draft) {
@@ -466,61 +500,135 @@ class AdminController
             exit;
         }
 
-        // 2️⃣ Vérification du contenu pédagogique
-        $content = json_decode($draft['content_data'], true);
+        /* ======================
+           2. Validation des champs obligatoires
+        ====================== */
+        $requiredFields = [
+            'title_course'      => 'Le titre du cours est obligatoire',
+            'description_course' => 'La description est obligatoire',
+            'language_taught'   => 'La langue enseignée est obligatoire',
+            'learner_level'     => 'Le niveau requis est obligatoire',
+            'time_course'       => 'La durée est obligatoire',
+            'validation_period' => 'La période de validation est obligatoire',
+            'profile_picture'   => 'L\'image de couverture est obligatoire',
+        ];
 
-        if (
-            json_last_error() !== JSON_ERROR_NONE ||
-            empty($content['modules'])
-        ) {
+        foreach ($requiredFields as $field => $message) {
+            if (empty($draft[$field])) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => $message]);
+                exit;
+            }
+        }
+
+        // Validation du prix si le cours n'est pas gratuit
+        if (empty($draft['is_free']) && (float) ($draft['price_course'] ?? 0) <= 0) {
             http_response_code(400);
-            echo json_encode([
-                'success' => false,
-                'message' => 'Le contenu pédagogique est incomplet'
-            ]);
+            echo json_encode(['success' => false, 'message' => 'Le prix est obligatoire pour un cours payant']);
             exit;
         }
 
-        // Vérification fine modules / leçons
-        foreach ($content['modules'] as $module) {
-            if (empty($module['title']) || empty($module['lessons'])) {
+        /* ======================
+           3. Validation du contenu pédagogique
+        ====================== */
+        $content = json_decode($draft['content_data'] ?? '', true);
+
+        if (json_last_error() !== JSON_ERROR_NONE || empty($content['modules'])) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Le contenu pédagogique est incomplet']);
+            exit;
+        }
+
+        // Validation fine des modules et leçons
+        foreach ($content['modules'] as $moduleIndex => $module) {
+            $moduleNum = $moduleIndex + 1;
+
+            if (empty($module['title'])) {
                 http_response_code(400);
                 echo json_encode([
                     'success' => false,
-                    'message' => 'Chaque module doit avoir un titre et au moins une leçon'
+                    'message' => "Le module {$moduleNum} n'a pas de titre"
                 ]);
                 exit;
             }
 
-            foreach ($module['lessons'] as $lesson) {
-                if (empty($lesson['title']) || empty($lesson['content'])) {
+            if (empty($module['lessons'])) {
+                http_response_code(400);
+                echo json_encode([
+                    'success' => false,
+                    'message' => "Le module {$moduleNum} doit contenir au moins une leçon"
+                ]);
+                exit;
+            }
+
+            foreach ($module['lessons'] as $lessonIndex => $lesson) {
+                $lessonNum = $lessonIndex + 1;
+
+                if (empty($lesson['title'])) {
                     http_response_code(400);
                     echo json_encode([
                         'success' => false,
-                        'message' => 'Chaque leçon doit avoir un titre et un contenu'
+                        'message' => "La leçon {$lessonNum} du module {$moduleNum} n'a pas de titre"
+                    ]);
+                    exit;
+                }
+
+                if (empty($lesson['content']) || in_array(trim($lesson['content']), ['', '<p><br></p>', '<p></p>'], true)) {
+                    http_response_code(400);
+                    echo json_encode([
+                        'success' => false,
+                        'message' => "La leçon {$lessonNum} du module {$moduleNum} n'a pas de contenu"
                     ]);
                     exit;
                 }
             }
         }
 
-        // 3️⃣ Création du cours officiel
-        $courseId = $this->courseRepository->createFromDraft($draft);
+        // Les outcomes sont optionnels mais on s'assure qu'ils sont propres
+        $content['outcomes'] = array_values(
+            array_filter(
+                array_map('trim', $content['outcomes'] ?? []),
+                fn($o) => $o !== ''
+            )
+        );
 
-        if (!$courseId) {
+        // On réinjecte le content_data nettoyé dans le draft
+        $draft['content_data'] = json_encode($content, JSON_UNESCAPED_UNICODE);
+
+        /* ======================
+           4. Création du cours officiel
+        ====================== */
+        try {
+            $courseId = $this->courseRepository->createFromDraft($draft);
+
+            if (!$courseId) {
+                throw new Exception('Échec de la création du cours');
+            }
+        } catch (Throwable $e) {
+            error_log('[publishCourse] ' . $e->getMessage());
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Création du cours échouée']);
+            echo json_encode(['success' => false, 'message' => 'Une erreur est survenue lors de la publication']);
             exit;
         }
 
-        // 4️⃣ Suppression du brouillon
-        $this->draftRepository->deleteDraft($draftId, $trainerId);
+        /* ======================
+           5. Suppression du brouillon
+        ====================== */
+        try {
+            $this->draftRepository->deleteDraft($draftId, $trainerId);
+        } catch (Throwable $e) {
+            // Non bloquant : le cours est publié, on logue juste l'erreur
+            error_log('[publishCourse] Erreur suppression brouillon : ' . $e->getMessage());
+        }
 
-        // 5️⃣ Succès
+        /* ======================
+           6. Succès
+        ====================== */
         echo json_encode([
             'success'   => true,
             'course_id' => $courseId,
-            'message'  => 'Cours publié avec succès'
+            'message'   => 'Cours publié avec succès',
+            'redirect'  => '/mrnathanenglish/public/courses/view/' . $courseId
         ]);
         exit;
     }
@@ -574,6 +682,8 @@ class AdminController
         /* ======================
            Données générales du formulaire
         ====================== */
+        $errors = [];
+
         $data = [
             'title_course'       => trim($_POST['title_course'] ?? ''),
             'description_course' => trim($_POST['description_course'] ?? ''),
@@ -583,70 +693,57 @@ class AdminController
             'validation_period'  => !empty($_POST['validation_period']) ? (int) $_POST['validation_period'] : null,
             'price_course'       => (float) ($_POST['price_course'] ?? 0),
             'is_free'            => isset($_POST['is_free']) && (int) $_POST['is_free'] === 1 ? 1 : 0,
-            'profile_picture'    => $course['profile_picture']
+            'profile_picture'    => $course['profile_picture'] // ✅ $course au lieu de $draft
         ];
 
         /* ======================
            Upload image (optionnel)
         ====================== */
         if (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] === UPLOAD_ERR_OK) {
-            // ======================
-            // Gestion image de couverture
-            // ======================
-            $oldImagePath = $draft['profile_picture'] ?? null;
+
+            $oldImagePath = $course['profile_picture'] ?? null; // ✅ $course au lieu de $draft
             $newImagePath = $oldImagePath;
 
-            if (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] === UPLOAD_ERR_OK) {
-
-                $uploadDir = __DIR__ . '/../../public/uploads/courses/';
-                if (!is_dir($uploadDir)) {
-                    mkdir($uploadDir, 0755, true);
-                }
-
-                $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
-                $originalName = $_FILES['profile_picture']['name'];
-                $tmpName = $_FILES['profile_picture']['tmp_name'];
-                $size = $_FILES['profile_picture']['size'];
-
-                $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
-
-                if (!in_array($extension, $allowedExtensions, true)) {
-                    $errors[] = 'Format d’image non autorisé (JPG, PNG, WEBP).';
-                } elseif ($size > 5 * 1024 * 1024) {
-                    $errors[] = 'Image trop lourde (max 5 Mo).';
-                } else {
-                    $fileName = uniqid('course_', true) . '.' . $extension;
-                    $filePath = $uploadDir . $fileName;
-
-                    if (move_uploaded_file($tmpName, $filePath)) {
-                        $newImagePath = '/uploads/courses/' . $fileName;
-
-                        // Suppression ancienne image si existante
-                        if ($oldImagePath) {
-                            $oldFullPath = __DIR__ . '/../../public' . $oldImagePath;
-                            if (file_exists($oldFullPath)) {
-                                @unlink($oldFullPath);
-                            }
-                        }
-                    } else {
-                        $errors[] = 'Échec de l’upload de l’image.';
-                    }
-                }
+            $uploadDir = __DIR__ . '/../../public/uploads/courses/';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
             }
 
-            // Image obligatoire si aucune image n’existe encore
-            if (!$newImagePath) {
-                $errors[] = 'L’image de couverture est obligatoire.';
+            $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
+            $originalName      = $_FILES['profile_picture']['name'];
+            $tmpName           = $_FILES['profile_picture']['tmp_name'];
+            $size              = $_FILES['profile_picture']['size'];
+            $extension         = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+
+            if (!in_array($extension, $allowedExtensions, true)) {
+                $errors[] = 'Format d\'image non autorisé (JPG, PNG, WEBP).';
+            } elseif ($size > 5 * 1024 * 1024) {
+                $errors[] = 'Image trop lourde (max 5 Mo).';
+            } else {
+                $fileName = uniqid('course_', true) . '.' . $extension;
+                $filePath = $uploadDir . $fileName;
+
+                if (move_uploaded_file($tmpName, $filePath)) {
+                    $newImagePath = '/uploads/courses/' . $fileName;
+
+                    if ($oldImagePath) {
+                        $oldFullPath = __DIR__ . '/../../public' . $oldImagePath;
+                        if (file_exists($oldFullPath)) {
+                            @unlink($oldFullPath);
+                        }
+                    }
+                } else {
+                    $errors[] = 'Échec de l\'upload de l\'image.';
+                }
             }
 
             if (!empty($errors)) {
                 http_response_code(400);
-                echo json_encode([
-                    'success' => false,
-                    'errors'  => $errors
-                ]);
+                echo json_encode(['success' => false, 'errors' => $errors]);
                 exit;
             }
+
+            $data['profile_picture'] = $newImagePath;
         }
 
         /* ======================
@@ -659,14 +756,25 @@ class AdminController
             exit;
         }
 
-        // Vérification JSON
         $contentArray = json_decode($contentRaw, true);
         if (json_last_error() !== JSON_ERROR_NONE || empty($contentArray['modules'])) {
             echo json_encode(['success' => false, 'message' => 'Contenu pédagogique invalide']);
             exit;
         }
 
-        // Encodage propre
+        /* ======================
+           Objectifs pédagogiques (outcomes)
+        ====================== */
+        $outcomes = array_values(
+            array_filter(
+                array_map('trim', $_POST['outcomes'] ?? []),
+                fn($o) => $o !== ''
+            )
+        );
+
+        // On fusionne outcomes dans le JSON content_data
+        $contentArray['outcomes'] = $outcomes;
+
         $data['content_data'] = json_encode($contentArray, JSON_UNESCAPED_UNICODE);
 
         /* ======================
@@ -681,15 +789,10 @@ class AdminController
             exit;
         } catch (Throwable $e) {
             error_log($e->getMessage());
-
-            echo json_encode([
-                'success' => false,
-                'message' => 'Échec de la mise à jour du cours'
-            ]);
+            echo json_encode(['success' => false, 'message' => 'Échec de la mise à jour du cours']);
             exit;
         }
     }
-
     public function editCourse(): void
     {
         if (session_status() !== PHP_SESSION_ACTIVE) {
@@ -712,13 +815,24 @@ class AdminController
         }
 
         // ======================
+        // DÉCODAGE content_data
+        // ======================
+        $contentData = [];
+        if (!empty($course['content_data'])) {
+            $decoded = json_decode($course['content_data'], true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $contentData = $decoded;
+            }
+        }
+
+        // ======================
         // CONTEXTE VUE
         // ======================
         $entityType = 'course';
         $entityId   = $courseId;
         $isEditMode = true;
 
-        // Champs
+        // Champs généraux
         $title            = $course['title_course'];
         $description      = $course['description_course'];
         $language         = $course['language_taught'];
@@ -729,8 +843,16 @@ class AdminController
         $is_free          = $course['is_free'];
         $profilePicture   = $course['profile_picture'];
 
+        // Contenu pédagogique
+        $outcomes = array_values(
+            array_filter(
+                array_map('trim', $contentData['outcomes'] ?? []),
+                fn($o) => $o !== ''
+            )
+        );
+
         $courseData = $course;
-        $draft = null;
+        $draft      = null;
 
         require __DIR__ . '/../views/admins/courses/createCourse.php';
     }
@@ -761,9 +883,9 @@ class AdminController
 
         $trainerId   = (int) $_SESSION['user']['id'];
         $courseId    = (int) ($_POST['course_id'] ?? 0);
-        $contentData = $_POST['content_data'] ?? null;
+        $contentRaw  = $_POST['content_data'] ?? null;
 
-        if ($courseId <= 0 || !$contentData) {
+        if ($courseId <= 0 || !$contentRaw) {
             echo json_encode(['success' => false, 'message' => 'Données manquantes.']);
             exit;
         }
@@ -777,23 +899,40 @@ class AdminController
             exit;
         }
 
+        // Décodage et validation du JSON
+        $contentArray = json_decode($contentRaw, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE || empty($contentArray['modules'])) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Contenu pédagogique invalide.']);
+            exit;
+        }
+
+        // Nettoyage des outcomes
+        $contentArray['outcomes'] = array_values(
+            array_filter(
+                array_map('trim', $contentArray['outcomes'] ?? []),
+                fn($o) => $o !== ''
+            )
+        );
+
+        // Réencodage propre
+        $contentData = json_encode($contentArray, JSON_UNESCAPED_UNICODE);
+
         try {
             $this->courseRepository->updateCourseContent($courseId, $contentData);
 
             echo json_encode([
                 'success'   => true,
-                'message'   => 'Contenu du cours sauvegardé automatiquement.',
+                'message'   => 'Contenu sauvegardé automatiquement.',
                 'course_id' => $courseId
             ]);
             exit;
         } catch (Throwable $e) {
-            error_log($e->getMessage());
+            error_log('[autoSaveCourseContent] ' . $e->getMessage());
 
             http_response_code(500);
-            echo json_encode([
-                'success' => false,
-                'message' => 'Erreur serveur lors de la sauvegarde.'
-            ]);
+            echo json_encode(['success' => false, 'message' => 'Erreur serveur lors de la sauvegarde.']);
             exit;
         }
     }

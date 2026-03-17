@@ -1,12 +1,14 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Réinitialisation du mot de passe - OpenDoorsClass</title>
-    <link rel="stylesheet" href="./css/style.css">
-    <link rel="stylesheet" href="./css/auth/resetPasswordPage.css">
+    <link rel="stylesheet" href="./css/style.min.css">
+    <link rel="stylesheet" href="./css/auth/resetPasswordPage.min.css">
 </head>
+
 <body>
 
     <?php require_once '../app/views/layouts/header.php'; ?>
@@ -44,23 +46,21 @@
 
                                 <div class="input-group">
                                     <label for="new-password">Nouveau mot de passe</label>
-                                    <input 
-                                        type="password" 
-                                        id="new-password" 
-                                        name="new-password" 
-                                        placeholder="Au moins 8 caractères"
-                                    >
+                                    <input
+                                        type="password"
+                                        id="new-password"
+                                        name="new-password"
+                                        placeholder="Au moins 8 caractères">
                                     <div class="error-message" data-for="new-password"></div>
                                 </div>
 
                                 <div class="input-group">
                                     <label for="confirm-password">Confirmer le mot de passe</label>
-                                    <input 
-                                        type="password" 
-                                        id="confirm-password" 
-                                        name="confirm-password" 
-                                        placeholder="Répétez le mot de passe"
-                                    >
+                                    <input
+                                        type="password"
+                                        id="confirm-password"
+                                        name="confirm-password"
+                                        placeholder="Répétez le mot de passe">
                                     <div class="error-message" data-for="confirm-password"></div>
                                 </div>
 
@@ -86,7 +86,8 @@
     <!-- Toast container -->
     <div id="toast-container"></div>
 
-    <script src="./js/main.js"></script>
-    <script src="./js/resetPassword.js"></script>
+    <script src="./js/header.min.js"></script>
+    <script src="./js/resetPassword.min.js"></script>
 </body>
+
 </html>

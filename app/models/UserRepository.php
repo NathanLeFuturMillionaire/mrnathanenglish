@@ -171,4 +171,82 @@ class UserRepository
             return null;
         }
     }
+
+    public function updateUser(int $userId, array $data): bool
+    {
+        // ===== TABLE users =====
+        $stmtUser = $this->db->prepare("
+            UPDATE users
+            SET
+                username   = :username,
+                fullname   = :fullname,
+                email      = :email
+            WHERE id = :id
+        ");
+
+        $stmtUser->bindValue(':username', $data['username']);
+        $stmtUser->bindValue(':fullname', $data['fullname']);
+        $stmtUser->bindValue(':email',    $data['email']);
+        $stmtUser->bindValue(':id',       $userId, \PDO::PARAM_INT);
+        $stmtUser->execute();
+
+        // ===== TABLE user_profiles =====
+        // Vérifie si le profil existe déjà
+        $stmtCheck = $this->db->prepare("
+            SELECT id FROM user_profiles WHERE user_id = :user_id LIMIT 1
+        ");
+        $stmtCheck->bindValue(':user_id', $userId, \PDO::PARAM_INT);
+        $stmtCheck->execute();
+        $profileExists = $stmtCheck->fetch(\PDO::FETCH_ASSOC);
+
+        if ($profileExists) {
+            // UPDATE
+            $stmtProfile = $this->db->prepare("
+                UPDATE user_profiles
+                SET
+                    phone_number    = :phone_number,
+                    country         = :country,
+                    bio             = :bio,
+                    profile_picture = :profile_picture,
+                    birth_date      = :birth_date,
+                    english_level   = :english_level,
+                    updated_at      = NOW()
+                WHERE user_id = :user_id
+            ");
+        } else {
+            // INSERT si le profil n'existe pas encore
+            $stmtProfile = $this->db->prepare("
+                INSERT INTO user_profiles
+                (user_id, phone_number, country, bio, profile_picture, birth_date, english_level, updated_at)
+                VALUES
+                (:user_id, :phone_number, :country, :bio, :profile_picture, :birth_date, :english_level, NOW())
+                ");
+        }
+
+        $stmtProfile->bindValue(':user_id',         $userId, \PDO::PARAM_INT);
+        $stmtProfile->bindValue(':phone_number',    $data['phone_number']);
+        $stmtProfile->bindValue(':country',         $data['country']);
+        $stmtProfile->bindValue(':bio',             $data['bio']);
+        $stmtProfile->bindValue(':profile_picture', $data['profile_picture']);
+        $stmtProfile->bindValue(':birth_date',    $data['birth_date']);
+        $stmtProfile->bindValue(':english_level', $data['english_level']);
+
+        return $stmtProfile->execute();
+    }
+
+    public function findByUsername(string $username): array|false
+    {
+        $stmt = $this->db->prepare("SELECT id, username FROM users WHERE username = :username LIMIT 1");
+        $stmt->bindValue(':username', $username);
+        $stmt->execute();
+        return $stmt->fetch(\PDO::FETCH_ASSOC) ?: false;
+    }
+
+    public function findByEmail(string $email): array|false
+    {
+        $stmt = $this->db->prepare("SELECT id, email FROM users WHERE email = :email LIMIT 1");
+        $stmt->bindValue(':email', $email);
+        $stmt->execute();
+        return $stmt->fetch(\PDO::FETCH_ASSOC) ?: false;
+    }
 }

@@ -1,116 +1,223 @@
-document.addEventListener("DOMContentLoaded", function () {
-    const content = document.querySelector(".right-content h1");
+document.addEventListener("DOMContentLoaded", () => {
+  // ===== SALUTATION DYNAMIQUE =====
+  const greetingEl = document.querySelector(".section-greeting");
+  if (greetingEl) {
     const hours = new Date().getHours();
-    let greeting;
+    const greeting =
+      hours < 12 ? "Bonjour" : hours < 18 ? "Bonne après-midi" : "Bonsoir";
+    greetingEl.textContent = greeting;
+  }
 
-    if (hours >= 5 && hours < 12) {
-        greeting = "Bonjour";
-    } else if (hours >= 12 && hours < 18) {
-        greeting = "Bonne après-midi";
-    } else {
-        greeting = "Bonsoir";
-    }
+  // ===== NAVIGATION SIDEBAR =====
+  const menuLinks = document.querySelectorAll(".profile-menu .menu-links a");
+  const sections = document.querySelectorAll(
+    ".profile-content > .profile-section",
+  );
 
-    // Récupère le nom d'utilisateur existant
-    const username = content.textContent.match(/, (.+?) 👋/)?.[1] || "";
-
-    // Met à jour le texte complet
-    content.textContent = `${greeting}, ${username} 👋`;
-});
-
-document.addEventListener("DOMContentLoaded", () => {
-    
-    const menuItems = document.querySelectorAll(".menu-item");
-    const sections = document.querySelectorAll(".content-section");
-    const spinner = document.getElementById("loading-spinner");
-    const errorMessage = document.getElementById("error-message");
-    
-    menuItems.forEach(item => {
-        item.addEventListener("click", async e => {
-            e.preventDefault();
-            
-            // Réinitialiser état
-            menuItems.forEach(i => i.classList.remove("active"));
-            item.classList.add("active");
-            sections.forEach(s => s.classList.remove("active"));
-            errorMessage.classList.add("hidden");
-
-            // Afficher le spinner
-            spinner.classList.remove("hidden");
-
-            try {
-                // Simuler un chargement (connexion)
-                await simulateLoading();
-
-                // Cacher le spinner
-                spinner.classList.add("hidden");
-
-                // Afficher la section correspondante
-                const target = item.getAttribute("data-target");
-                const section = document.getElementById(target);
-                section.classList.add("active");
-
-            } catch (error) {
-                spinner.classList.add("hidden");
-                errorMessage.textContent = error; // Afficher le message d'erreur dynamique
-                errorMessage.classList.remove("hidden");
-            }
-        });
+  function showSection(targetId) {
+    sections.forEach((s) => {
+      s.classList.remove("active");
+      s.style.display = "none";
     });
-});
 
-/**
- * Fonction qui simule un chargement avec "connexion"
- * Elle résout toujours sans erreur pour assurer un fonctionnement à 100%
-*/
-function simulateLoading() {
-    return new Promise((resolve) => {
-        // Durée du chargement entre 0.8s et 2s
-        const duration = 800 + Math.random() * 1200;
+    const target = document.getElementById(targetId);
+    if (target) {
+      target.style.display = "block";
+      // Force le reflow pour que l'animation se déclenche
+      target.offsetHeight;
+      target.classList.add("active");
+    }
+  }
 
-        setTimeout(() => {
-            resolve();
-        }, duration);
+  function setActiveLink(link) {
+    menuLinks.forEach((l) => l.classList.remove("active"));
+    link.classList.add("active");
+  }
+
+  // Initialisation : affiche la section active par défaut
+  const defaultSection = document.querySelector(".profile-section.active");
+  if (defaultSection) {
+    sections.forEach((s) => {
+      if (s !== defaultSection) s.style.display = "none";
     });
-}
+  }
 
-// lucide.createIcons();
-document.addEventListener("DOMContentLoaded", () => {
-    const menuLinks = document.querySelectorAll(".profile-menu .menu-links a");
-    const sections = document.querySelectorAll(".profile-content > .profile-section");
+  menuLinks.forEach((link) => {
+    link.addEventListener("click", (e) => {
+      e.preventDefault();
+      const targetId = link.getAttribute("data-section");
+      if (!targetId) return;
+      showSection(targetId);
+      setActiveLink(link);
+    });
+  });
 
-    // Masque toutes les sections
-    function hideAllSections() {
-        sections.forEach(section => {
-            section.style.display = "none";
+  // ===== TOGGLE VUE / FORMULAIRE ÉDITION =====
+  const btnEditToggle = document.getElementById("btn-edit-toggle");
+  const btnCancelEdit = document.getElementById("btn-cancel-edit");
+  const btnCancelEdit2 = document.getElementById("btn-cancel-edit-2");
+  const profileView = document.getElementById("profile-view");
+  const profileEdit = document.getElementById("profile-edit");
+
+  function showEdit() {
+    if (!profileView || !profileEdit) return;
+    profileView.style.display = "none";
+    profileEdit.style.display = "block";
+    btnEditToggle.innerHTML = '<i class="fas fa-eye"></i> Voir';
+    profileEdit.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function showView() {
+    if (!profileView || !profileEdit) return;
+    profileEdit.style.display = "none";
+    profileView.style.display = "block";
+    btnEditToggle.innerHTML = '<i class="fas fa-pen"></i> Modifier';
+  }
+
+  btnEditToggle?.addEventListener("click", showEdit);
+  btnCancelEdit?.addEventListener("click", showView);
+  btnCancelEdit2?.addEventListener("click", showView);
+
+  // ===== PREVIEW AVATAR =====
+  document
+    .getElementById("profile_picture")
+    ?.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      if (file.size > 5 * 1024 * 1024) {
+        alert("L'image ne doit pas dépasser 5 Mo.");
+        e.target.value = "";
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        document.getElementById("avatar-preview").src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
+  // ===== SOUMISSION AJAX =====
+  document
+    .getElementById("profile-edit-form")
+    ?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const btn = document.getElementById("btn-save");
+      const msgBox = document.getElementById("edit-message");
+      const btnText = btn.querySelector(".btn-text");
+      const spinner = btn.querySelector(".btn-spinner");
+
+      // Reset erreurs
+      document
+        .querySelectorAll(".edit-error")
+        .forEach((el) => (el.textContent = ""));
+      msgBox.style.display = "none";
+      msgBox.className = "edit-message";
+
+      // Loading
+      btn.disabled = true;
+      btnText.style.display = "none";
+      spinner.style.display = "flex";
+
+      try {
+        const res = await fetch("./profile/update", {
+          method: "POST",
+          body: new FormData(e.target),
+          headers: { "X-Requested-With": "XMLHttpRequest" },
         });
-    }
 
-    // Active le lien du menu
-    function setActiveLink(clickedLink) {
-        menuLinks.forEach(link => link.classList.remove("active"));
-        clickedLink.classList.add("active");
-    }
+        const data = await res.json();
 
-    // Affiche la section par défaut (la première)
-    hideAllSections();
-    if (sections.length > 0) {
-        sections[0].style.display = "block";
-    }
+        if (data.success) {
+          msgBox.textContent = data.message ?? "Profil mis à jour avec succès.";
+          msgBox.classList.add("success");
+          msgBox.style.display = "block";
 
-    // Gestion du clic sur chaque lien du menu
-    menuLinks.forEach(link => {
-        link.addEventListener("click", (e) => {
-            e.preventDefault();
+          // Met à jour les champs en lecture sans recharger
+          if (data.user) {
+            const fieldMap = {
+              username: '[data-field="username"]',
+              fullname: '[data-field="fullname"]',
+              email: '[data-field="email"]',
+              phone_number: '[data-field="phone"]',
+              country: '[data-field="country"]',
+              bio: '[data-field="bio"]',
+              birth_date: '[data-field="birth_date"]',
+              english_level: '[data-field="english_level"]',
+            };
 
-            const targetId = link.getAttribute("href").replace("#", "");
-            const targetSection = document.getElementById(targetId);
+            Object.entries(fieldMap).forEach(([key, selector]) => {
+              const el = document.querySelector(selector);
+              if (el && data.user[key] !== undefined) {
+                el.textContent = data.user[key] || "Non renseigné";
+              }
+            });
 
-            if (targetSection) {
-                hideAllSections();          // Masque toutes les sections
-                targetSection.style.display = "block"; // Affiche la section sélectionnée
-                setActiveLink(link);        // Active le lien
+            // Met à jour l'avatar partout si changé
+            if (data.user.profile_picture) {
+              const newSrc =
+                "../public/uploads/profiles/" +
+                data.user.profile_picture +
+                "?t=" +
+                Date.now();
+              document
+                .querySelectorAll(".avatar, .edit-avatar-preview")
+                .forEach((img) => {
+                  img.src = newSrc;
+                });
             }
-        });
+
+            // Met à jour le badge de niveau dans la sidebar
+            if (data.user.english_level) {
+              const levelLabels = {
+                beginner: "Débutant",
+                intermediate: "Intermédiaire",
+                advanced: "Avancé",
+              };
+
+              const levelBadge = document.querySelector(".level-badge");
+              if (levelBadge) {
+                levelBadge.innerHTML = `<i class="fas fa-graduation-cap"></i> ${levelLabels[data.user.english_level] ?? data.user.english_level}`;
+              }
+            }
+
+            // Met à jour le username dans la sidebar
+            const sidebarUsername = document.querySelector(".menu-header h2");
+            if (sidebarUsername && data.user.username) {
+              sidebarUsername.textContent = data.user.username;
+            }
+          }
+
+          setTimeout(() => showView(), 1500);
+        } else {
+          if (data.errors) {
+            Object.entries(data.errors).forEach(([field, msg]) => {
+              const el = document.getElementById("err-" + field);
+              if (el) el.textContent = msg;
+            });
+          }
+
+          msgBox.textContent = data.message ?? "Une erreur est survenue.";
+          msgBox.classList.add("error");
+          msgBox.style.display = "block";
+        }
+      } catch (err) {
+        msgBox.textContent = "Erreur réseau. Veuillez réessayer.";
+        msgBox.classList.add("error");
+        msgBox.style.display = "block";
+      } finally {
+        btn.disabled = false;
+        btnText.style.display = "flex";
+        spinner.style.display = "none";
+      }
+    });
+
+  // ===== DÉCONNEXION =====
+  document
+    .querySelector(".btn-setting.logout")
+    ?.addEventListener("click", () => {
+      window.location.href = "./logout";
     });
 });

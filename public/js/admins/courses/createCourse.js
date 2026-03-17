@@ -454,7 +454,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Fonction pour ajouter une nouvelle leçon dans un module spécifique
   function addNewLesson(moduleId) {
     const lessonsContainer = document.querySelector(
-      `.lessons-container[data-module="${moduleId}"]`
+      `.lessons-container[data-module="${moduleId}"]`,
     );
     const lessonCount =
       lessonsContainer.querySelectorAll(".lesson-item").length + 1;
@@ -508,7 +508,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const newEditor =
       lessonsContainer.lastElementChild.querySelector(".quill-editor");
     const hiddenInput = lessonsContainer.lastElementChild.querySelector(
-      ".lesson-content-hidden"
+      ".lesson-content-hidden",
     );
 
     const quill = new Quill(newEditor, {
@@ -546,7 +546,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (target.classList.contains("btn-remove-module")) {
         if (
           confirm(
-            "Supprimer ce module et toutes ses leçons ? Cette action est irréversible."
+            "Supprimer ce module et toutes ses leçons ? Cette action est irréversible.",
           )
         ) {
           moduleCard.remove();
@@ -613,8 +613,6 @@ document.addEventListener("DOMContentLoaded", () => {
     document
       .querySelectorAll(".module-card")
       .forEach((moduleCard, moduleIndex) => {
-        const moduleId = moduleCard.dataset.module; // Utile pour le mapping, mais on utilise l'index réel
-
         const module = {
           title: moduleCard
             .querySelector('input[name*="[title]"]')
@@ -643,7 +641,6 @@ document.addEventListener("DOMContentLoaded", () => {
               .checked,
           };
 
-          // Nettoyage du contenu Quill vide
           if (
             lesson.content === "" ||
             lesson.content === "<p><br></p>" ||
@@ -658,8 +655,18 @@ document.addEventListener("DOMContentLoaded", () => {
         modules.push(module);
       });
 
+    // ===== OUTCOMES =====
+    const outcomes = [];
+    document
+      .querySelectorAll('#outcomes-container input[name="outcomes[]"]')
+      .forEach((input) => {
+        const val = input.value.trim();
+        if (val !== "") outcomes.push(val);
+      });
+
     return {
-      modules: modules,
+      modules,
+      outcomes,
     };
   }
 
@@ -675,17 +682,16 @@ document.addEventListener("DOMContentLoaded", () => {
   function performAutoSave() {
     const contentData = buildContentData();
 
-    // Si aucun module n'existe encore, on n'envoie rien (évite les auto-saves inutiles)
-    if (contentData.modules.length === 0) {
-      console.log("Auto-save ignoré : aucun module présent.");
+    // On envoie dès qu'il y a au moins un module OU un outcome
+    if (contentData.modules.length === 0 && contentData.outcomes.length === 0) {
+      console.log("Auto-save ignoré : aucun contenu présent.");
       return;
     }
 
     const formData = new FormData();
     formData.append("content_data", JSON.stringify(contentData));
-    formData.append("auto_save_content", "1"); // Flag pour identifier cet appel côté PHP
+    formData.append("auto_save_content", "1");
 
-    // Si tu as déjà un draft_id (de l'étape 1), on l'ajoute
     const entityInput = document.getElementById("course_id_hidden");
 
     if (entityInput && entityInput.name && Number(entityInput.value) > 0) {
@@ -714,10 +720,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
           const entityInput = document.getElementById("course_id_hidden");
 
-          // ⚠️ ON NE MET À JOUR L'INPUT QUE SI ON EST EN MODE DRAFT
           if (entityInput && entityInput.name === "draft_id" && data.draft_id) {
             entityInput.value = data.draft_id;
           }
+        } else {
+          showAutoSaveFeedback(
+            data.message ?? "Erreur lors de la sauvegarde",
+            "error",
+          );
         }
       })
       .catch((err) => {
@@ -763,7 +773,14 @@ document.addEventListener("DOMContentLoaded", () => {
     // Tout changement de texte, checkbox, etc.
     modulesContainer.addEventListener("input", debounceAutoSave);
     modulesContainer.addEventListener("change", debounceAutoSave); // Pour les checkboxes et selects
-
+    // ===== AUTOSAVE SUR LES OUTCOMES =====
+    document
+      .getElementById("outcomes-container")
+      ?.addEventListener("input", (e) => {
+        if (e.target.matches('input[name="outcomes[]"]')) {
+          debounceAutoSave();
+        }
+      });
     // Contenu Quill des leçons
     modulesContainer.addEventListener("text-change", debounceAutoSave); // Événement Quill
 
@@ -792,7 +809,7 @@ document.addEventListener("DOMContentLoaded", () => {
 ============================================================ */
   const timeCourseInput = document.querySelector('input[name="time_course"]');
   const validationPeriodInput = document.querySelector(
-    'input[name="validation_period"]'
+    'input[name="validation_period"]',
   );
 
   if (timeCourseInput && validationPeriodInput) {
@@ -857,4 +874,42 @@ document.addEventListener("DOMContentLoaded", () => {
       }, 0);
     });
   }
+  // Ajouter un objectif
+  document.getElementById("add-outcome")?.addEventListener("click", () => {
+    const container = document.getElementById("outcomes-container");
+
+    const item = document.createElement("div");
+    item.className = "outcome-item";
+    item.innerHTML = `
+    <i class="fas fa-circle-check outcome-item__icon"></i>
+    <input
+      type="text"
+      name="outcomes[]"
+      placeholder="Ex : Maîtriser le Present Simple et ses usages"
+      maxlength="120">
+    <button type="button" class="btn-remove-outcome" title="Supprimer">
+      <i class="fas fa-xmark"></i>
+    </button>
+  `;
+
+    container.appendChild(item);
+    item.querySelector("input").focus();
+  });
+
+  // Supprimer un objectif (délégation d'événement)
+  document
+    .getElementById("outcomes-container")
+    ?.addEventListener("click", (e) => {
+      const btn = e.target.closest(".btn-remove-outcome");
+      if (!btn) return;
+
+      const container = document.getElementById("outcomes-container");
+
+      // On garde toujours au minimum 1 ligne
+      if (container.querySelectorAll(".outcome-item").length > 1) {
+        btn.closest(".outcome-item").remove();
+      } else {
+        btn.closest(".outcome-item").querySelector("input").value = "";
+      }
+    });
 });
