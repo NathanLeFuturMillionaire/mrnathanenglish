@@ -128,6 +128,7 @@ class UserRepository
             p.bio,
             p.country,
             p.english_level,
+            p.native_language,
 
             s.id AS subscription_id,
             s.type AS subscription_type,
@@ -210,6 +211,7 @@ class UserRepository
                     profile_picture = :profile_picture,
                     birth_date      = :birth_date,
                     english_level   = :english_level,
+                    native_language = :native_language,
                     updated_at      = NOW()
                 WHERE user_id = :user_id
             ");
@@ -217,9 +219,9 @@ class UserRepository
             // INSERT si le profil n'existe pas encore
             $stmtProfile = $this->db->prepare("
                 INSERT INTO user_profiles
-                (user_id, phone_number, country, bio, profile_picture, birth_date, english_level, updated_at)
+                (user_id, phone_number, country, bio, profile_picture, birth_date, english_level, native_language, updated_at)
                 VALUES
-                (:user_id, :phone_number, :country, :bio, :profile_picture, :birth_date, :english_level, NOW())
+                (:user_id, :phone_number, :country, :bio, :profile_picture, :birth_date, :english_level, :native_language, NOW())
                 ");
         }
 
@@ -230,6 +232,7 @@ class UserRepository
         $stmtProfile->bindValue(':profile_picture', $data['profile_picture']);
         $stmtProfile->bindValue(':birth_date',    $data['birth_date']);
         $stmtProfile->bindValue(':english_level', $data['english_level']);
+        $stmtProfile->bindValue(':native_language', $data['native_language'] ?: null);
 
         return $stmtProfile->execute();
     }
@@ -248,5 +251,65 @@ class UserRepository
         $stmt->bindValue(':email', $email);
         $stmt->execute();
         return $stmt->fetch(\PDO::FETCH_ASSOC) ?: false;
+    }
+
+    public function logLogin(int $userId): bool
+    {
+        $stmt = $this->db->prepare("
+        INSERT INTO user_login_history (user_id, ip_address, user_agent)
+        VALUES (:user_id, :ip_address, :user_agent)
+    ");
+
+        $stmt->bindValue(':user_id',    $userId, \PDO::PARAM_INT);
+        $stmt->bindValue(':ip_address', $this->getIpAddress());
+        $stmt->bindValue(':user_agent', $_SERVER['HTTP_USER_AGENT'] ?? null);
+
+        return $stmt->execute();
+    }
+
+    public function getLoginHistory(int $userId, int $limit = 10): array
+    {
+        $stmt = $this->db->prepare("
+        SELECT
+            id,
+            ip_address,
+            user_agent,
+            created_at
+        FROM user_login_history
+        WHERE user_id = :user_id
+        ORDER BY created_at DESC
+        LIMIT :limit
+    ");
+
+        $stmt->bindValue(':user_id', $userId, \PDO::PARAM_INT);
+        $stmt->bindValue(':limit',   $limit,  \PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+    private function getIpAddress(): string
+    {
+        // Gère les proxys et load balancers
+        foreach (['HTTP_CLIENT_IP', 'HTTP_X_FORWARDED_FOR', 'REMOTE_ADDR'] as $key) {
+            if (!empty($_SERVER[$key])) {
+                $ip = trim(explode(',', $_SERVER[$key])[0]);
+                if (filter_var($ip, FILTER_VALIDATE_IP)) {
+                    return $ip;
+                }
+            }
+        }
+        return '0.0.0.0';
+    }
+
+    public function deleteLoginEntry(int $id, int $userId): bool
+    {
+        $stmt = $this->db->prepare("
+        DELETE FROM user_login_history
+        WHERE id = :id AND user_id = :user_id
+    ");
+        $stmt->bindValue(':id',      $id,     \PDO::PARAM_INT);
+        $stmt->bindValue(':user_id', $userId, \PDO::PARAM_INT);
+        return $stmt->execute();
     }
 }

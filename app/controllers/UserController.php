@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Core\Database;
+use App\Helpers\LanguageHelper;
 use App\Models\UserRepository;
 use Throwable;
 
@@ -38,6 +39,13 @@ class UserController
 
         $user = $this->buildUser($rows[0]);
         $subscriptions = $this->buildSubscriptions($rows);
+        $languages     = LanguageHelper::getAllLanguages();
+
+
+        $_SESSION['user'] = array_merge($_SESSION['user'], $user);
+
+        $loginHistory  = $this->userRepository->getLoginHistory($userId, 10);
+        $loginHistory  = $this->buildLoginHistory($loginHistory);
 
         require __DIR__ . '/../views/users/profile.php';
     }
@@ -81,6 +89,7 @@ class UserController
         $bio         = trim($_POST['bio']         ?? '');
         $birthDate    = trim($_POST['birth_date']     ?? '');
         $englishLevel = trim($_POST['english_level']  ?? '');
+        $nativeLanguage = trim($_POST['native_language'] ?? '');
 
         if (empty($username)) {
             $errors['username'] = 'Le nom d\'utilisateur est obligatoire.';
@@ -108,6 +117,10 @@ class UserController
             if ($existingEmail && (int) $existingEmail['id'] !== $userId) {
                 $errors['email'] = 'Cette adresse e-mail est déjà utilisée.';
             }
+        }
+
+        if (!empty($nativeLanguage) && !array_key_exists($nativeLanguage, LanguageHelper::getFlatList())) {
+            $errors['native_language'] = 'Langue non reconnue.';
         }
 
         if (!empty($errors)) {
@@ -175,6 +188,7 @@ class UserController
             'profile_picture' => $profilePicture,
             'birth_date'      => $birthDate    ?: null,
             'english_level'   => $englishLevel ?: null,
+            'native_language' => $nativeLanguage,
         ];
 
         try {
@@ -194,6 +208,7 @@ class UserController
             $_SESSION['user']['profile_picture'] = $profilePicture;
             $_SESSION['user']['profile']['birth_date']    = $birthDate;
             $_SESSION['user']['profile']['english_level'] = $englishLevel;
+            $_SESSION['user']['profile']['native_language'] = $nativeLanguage;
 
             echo json_encode([
                 'success' => true,
@@ -208,21 +223,12 @@ class UserController
                     'profile_picture' => $profilePicture,
                     'birth_date'      => $birthDate,
                     'english_level'   => $englishLevel,
+                    'native_language'   => $nativeLanguage,
                 ]
             ]);
             exit;
         } catch (Throwable $e) {
             error_log('[updateProfile] ' . $e->getMessage());
-
-            // Débogage
-            echo json_encode([
-                'success' => false,
-                'message' => $e->getMessage(), // ← affiche l'erreur réelle
-                'file'    => $e->getFile(),
-                'line'    => $e->getLine()
-            ]);
-            exit;
-
             http_response_code(500);
             echo json_encode(['success' => false, 'message' => 'Une erreur est survenue. Veuillez réessayer.']);
             exit;
@@ -286,6 +292,9 @@ class UserController
         // Niveau d'anglais
         $englishLevel      = $row['english_level'] ?? '';
         $englishLevelLabel = $levelLabels[$englishLevel] ?? 'Non renseigné';
+        // Affichage du label de la langue maternelle
+        $nativeLanguage      = $row['native_language'] ?? '';
+        $nativeLanguageLabel = $nativeLanguage ? LanguageHelper::getLabel($nativeLanguage) : 'Non renseigné';
 
         return [
             'id'                    => $row['id'],
@@ -312,6 +321,8 @@ class UserController
                 'country'          => $row['country']         ?? '',
                 'english_level'    => $englishLevel,
                 'english_level_label' => $englishLevelLabel,
+                'native_language'       => $nativeLanguage,
+                'native_language_label' => $nativeLanguageLabel,
             ]
         ];
     }
@@ -379,5 +390,99 @@ class UserController
         }
 
         return $subscriptions;
+    }
+
+    private function buildLoginHistory(array $rows): array
+    {
+        $monthsFr = [
+            'January' => 'Jan',
+            'February' => 'Fév',
+            'March' => 'Mar',
+            'April' => 'Avr',
+            'May' => 'Mai',
+            'June' => 'Jun',
+            'July' => 'Jul',
+            'August' => 'Aoû',
+            'September' => 'Sep',
+            'October' => 'Oct',
+            'November' => 'Nov',
+            'December' => 'Déc'
+        ];
+
+        return array_map(function (array $row) use ($monthsFr) {
+            $date      = new \DateTime($row['created_at']);
+            $day       = $date->format('j');
+            $monthFr   = $monthsFr[$date->format('F')] ?? $date->format('F');
+            $formatted = ($day == 1 ? '1er' : $day) . ' ' . $monthFr . ' ' . $date->format('Y') . ' à ' . $date->format('H\hi');
+
+            // Parse le user agent simplement
+            $ua      = $row['user_agent'] ?? '';
+            $browser = match (true) {
+                str_contains($ua, 'Edg')     => 'Edge',
+                str_contains($ua, 'Chrome')  => 'Chrome',
+                str_contains($ua, 'Firefox') => 'Firefox',
+                str_contains($ua, 'Safari')  => 'Safari',
+                str_contains($ua, 'Opera')   => 'Opera',
+                default                      => 'Navigateur inconnu',
+            };
+
+            $os = match (true) {
+                str_contains($ua, 'Windows') => 'Windows',
+                str_contains($ua, 'iPhone')  => 'iPhone',
+                str_contains($ua, 'iPad')    => 'iPad',
+                str_contains($ua, 'Android') => 'Android',
+                str_contains($ua, 'Mac')     => 'macOS',
+                str_contains($ua, 'Linux')   => 'Linux',
+                default                      => 'OS inconnu',
+            };
+
+            $device = match (true) {
+                str_contains($ua, 'Mobile') || str_contains($ua, 'iPhone') || str_contains($ua, 'Android') => 'mobile',
+                str_contains($ua, 'iPad')   => 'tablette',
+                default                     => 'desktop',
+            };
+
+            return [
+                'id'         => $row['id'],
+                'ip_address' => $row['ip_address'],
+                'browser'    => $browser,
+                'os'         => $os,
+                'device'     => $device,
+                'created_at' => $formatted,
+                'is_current' => false, // on marquera la dernière plus tard si besoin
+            ];
+        }, $rows);
+    }
+    public function deleteLogin(): void
+    {
+        header('Content-Type: application/json');
+
+        if (
+            $_SERVER['REQUEST_METHOD'] !== 'POST' ||
+            empty($_SERVER['HTTP_X_REQUESTED_WITH'])
+        ) {
+            http_response_code(403);
+            echo json_encode(['success' => false]);
+            exit;
+        }
+
+        if (empty($_SESSION['user']['id'])) {
+            http_response_code(401);
+            echo json_encode(['success' => false]);
+            exit;
+        }
+
+        $id     = (int) ($_POST['id'] ?? 0);
+        $userId = (int) $_SESSION['user']['id'];
+
+        if ($id <= 0) {
+            echo json_encode(['success' => false, 'message' => 'ID invalide']);
+            exit;
+        }
+
+        $deleted = $this->userRepository->deleteLoginEntry($id, $userId);
+
+        echo json_encode(['success' => $deleted]);
+        exit;
     }
 }

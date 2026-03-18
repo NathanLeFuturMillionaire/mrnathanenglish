@@ -6,6 +6,7 @@ use App\Core\Database;
 use App\Services\MailService;
 use App\Models\AdminRepository;
 use App\Models\AuthRepository;
+use App\Models\UserRepository;
 use DateTime;
 use Exception;
 use PDO;
@@ -48,23 +49,34 @@ class AuthController extends Controller
         // Session propre
         session_start();
 
+        // Dans loginAsUser() — ajoute les champs manquants dans $_SESSION['user']
         $_SESSION['user'] = [
-            'id'            => $user['id'],
-            'is_confirmed'  => $user['is_confirmed'],
-            'username'      => $user['username'],
-            'english_level' => $user['english_level'],
-            'role'          => 'admin',
-            'fullname'      => $user['fullname'],
-            'email'         => $user['email'],
-            'created_at'    => $user['user_created_at'],
-            'profile'       => [
-                'profile_picture' => $user['profile_picture'],
-                'birth_date'      => $user['birth_date'],
-                'phone_number'    => $user['phone_number'],
-                'bio'             => $user['bio'],
-                'country'         => $user['country'],
+            'id'              => $user['id'],
+            'is_confirmed'    => $user['is_confirmed'],
+            'username'        => $user['username'],
+            'english_level'   => $user['english_level'],
+            'role'            => 'admin',
+            'fullname'        => $user['fullname'],
+            'email'           => $user['email'],
+            'created_at'      => $user['user_created_at'],
+            'phone_number'    => $user['phone_number']    ?? '',
+            'country'         => $user['country']         ?? '',
+            'bio'             => $user['bio']             ?? '',
+            'profile_picture' => $user['profile_picture'] ?? 'default.png',
+            'profile'         => [
+                'profile_picture'  => $user['profile_picture'] ?? 'default.png',
+                'birth_date'       => $user['birth_date']      ?? null,
+                'phone_number'     => $user['phone_number']    ?? '',
+                'bio'              => $user['bio']             ?? '',
+                'country'          => $user['country']         ?? '',
+                'english_level'    => $user['english_level']   ?? null,
+                'native_language'  => $user['native_language'] ?? null,
             ],
         ];
+
+        // Enregistre la connexion
+        $userRepository = new UserRepository($this->db);
+        $userRepository->logLogin((int) $user['id']);
 
         $this->redirect('./');
     }
@@ -322,17 +334,34 @@ class AuthController extends Controller
 
 
             // Enregistrer les données de l'utilisateur dans la session
+            // Remplace le bloc de session existant par celui-ci
             $_SESSION['user'] = [
-                'id' => $user['id'],
-                'email' => $user['email'],
-                'is_confirmed' => $user['is_confirmed'],
-                'username' => $user['username'],
-                'fullname' => $user['fullname'],
-                'phone_number' => $user["phone_number"],
-                'country' => $user["country"],
-                'bio' => $user["bio"],
-                'created_at' => $user["created_at"],
+                'id'              => $user['id'],
+                'email'           => $user['email'],
+                'is_confirmed'    => $user['is_confirmed'],
+                'username'        => $user['username'],
+                'fullname'        => $user['fullname'],
+                'phone_number'    => $user['phone_number']    ?? '',
+                'country'         => $user['country']         ?? '',
+                'bio'             => $user['bio']             ?? '',
+                'created_at'      => $user['created_at'],
+                'is_admin'        => false,
+                'profile_picture' => 'default.png',
+                'english_level'   => null,
+                'profile'         => [
+                    'profile_picture' => 'default.png',
+                    'birth_date'      => null,
+                    'phone_number'    => $user['phone_number'] ?? '',
+                    'bio'             => $user['bio']          ?? '',
+                    'country'         => $user['country']      ?? '',
+                    'english_level'   => null,
+                    'native_language' => null,
+                ],
             ];
+
+            // Enregistre la connexion
+            $userRepository = new UserRepository($this->db);
+            $userRepository->logLogin((int) $user['id']);
 
             // Par défaut
             $_SESSION['user']['is_admin'] = false;
@@ -347,12 +376,24 @@ class AuthController extends Controller
 
 
             // 7) Récupérer le profil de l'utilisateur
-            $profileStmt = $this->db->prepare("SELECT profile_picture, english_level FROM user_profiles WHERE user_id = ?");
+            $profileStmt = $this->db->prepare("
+            SELECT profile_picture, english_level, native_language,
+                   birth_date, phone_number, country, bio
+            FROM user_profiles
+            WHERE user_id = ?
+        ");
             $profileStmt->execute([$user['id']]);
             $profile = $profileStmt->fetch(\PDO::FETCH_ASSOC);
 
-            $_SESSION['user']['profile_picture'] = $profile['profile_picture'] ?? 'default.png';
-            $_SESSION['user']['english_level'] = $profile['english_level'] ?? null;
+            $_SESSION['user']['profile_picture']          = $profile['profile_picture']  ?? 'default.png';
+            $_SESSION['user']['english_level']            = $profile['english_level']    ?? null;
+            $_SESSION['user']['profile']['profile_picture'] = $profile['profile_picture'] ?? 'default.png';
+            $_SESSION['user']['profile']['birth_date']    = $profile['birth_date']       ?? null;
+            $_SESSION['user']['profile']['phone_number']  = $profile['phone_number']     ?? '';
+            $_SESSION['user']['profile']['country']       = $profile['country']          ?? '';
+            $_SESSION['user']['profile']['bio']           = $profile['bio']              ?? '';
+            $_SESSION['user']['profile']['english_level'] = $profile['english_level']    ?? null;
+            $_SESSION['user']['profile']['native_language'] = $profile['native_language'] ?? null;
 
             // 8) Répondre avec une réponse JSON réussie
             echo json_encode([
@@ -444,14 +485,32 @@ class AuthController extends Controller
 
             // Mettre à jour la session
             $_SESSION['user'] = [
-                'id' => $fullUser['id'],
-                'email' => $fullUser['email'],
-                'username' => $fullUser['username'],
-                'fullname' => $fullUser['fullname'],
-                'is_confirmed' => (int)$fullUser['is_confirmed'],
-                'profile_picture' => $fullUser['profile_picture'] ?? 'default.png'
+                'id'              => $user['id'],
+                'is_confirmed'    => $user['is_confirmed'],
+                'username'        => $user['username'],
+                'english_level'   => $user['english_level'],
+                'role'            => 'admin',
+                'fullname'        => $user['fullname'],
+                'email'           => $user['email'],
+                'created_at'      => $user['user_created_at'],
+                'phone_number'    => $user['phone_number']    ?? '',
+                'country'         => $user['country']         ?? '',
+                'bio'             => $user['bio']             ?? '',
+                'profile_picture' => $user['profile_picture'] ?? 'default.png',
+                'profile'         => [
+                    'profile_picture'  => $user['profile_picture'] ?? 'default.png',
+                    'birth_date'       => $user['birth_date']      ?? null,
+                    'phone_number'     => $user['phone_number']    ?? '',
+                    'bio'              => $user['bio']             ?? '',
+                    'country'          => $user['country']         ?? '',
+                    'english_level'    => $user['english_level']   ?? null,
+                    'native_language'  => $user['native_language'] ?? null,
+                ],
             ];
 
+            // Enregistre la connexion
+            $userRepository = new UserRepository($this->db);
+            $userRepository->logLogin((int) $user['id']);
             // Valider la transaction
             $this->db->commit();
 
@@ -642,8 +701,7 @@ class AuthController extends Controller
         $user = $_SESSION['user'];
 
         // --- Détection du pays de l'utilisateur ---
-        $authController = new AuthController;
-        $userIP = $authController->getPublicIP();  // Récupère l'IP publique de l'utilisateur (même en local)
+        $userIP = $this->getPublicIP();  // Récupère l'IP publique de l'utilisateur (même en local)
 
         // Appel à l'API de géolocalisation ipinfo.io
         $geoUrl = "http://ipinfo.io/{$userIP}/json";

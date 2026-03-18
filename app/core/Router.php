@@ -362,6 +362,19 @@ class Router
                 $userController = new UserController();
                 $userController->updateProfile();
                 break;
+
+            case 'profile/delete-login':
+                session_start();
+
+                if (!isset($_SESSION['user']['id'])) {
+                    http_response_code(401);
+                    echo json_encode(['success' => false]);
+                    exit;
+                }
+
+                $userController = new UserController();
+                $userController->deleteLogin();
+                break;
         }
     }
 }

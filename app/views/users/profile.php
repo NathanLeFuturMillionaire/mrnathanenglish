@@ -110,6 +110,9 @@ if ($_SESSION['user']['is_confirmed'] != 1) {
                     </a>
                 </div>
             </nav>
+            <div class="profile-menu__footer">
+                &copy; <?= date('Y') ?> OpenDoorsClass
+            </div>
         </aside>
 
         <!-- ===== CONTENU ===== -->
@@ -140,7 +143,6 @@ if ($_SESSION['user']['is_confirmed'] != 1) {
                         </div>
                         <div class="info-list">
                             <!-- Informations personnelles -->
-                            <!-- Informations personnelles -->
                             <div class="info-item">
                                 <label>Nom d'utilisateur</label>
                                 <p data-field="username"><?= htmlspecialchars($user['username'] ?? 'Non renseigné') ?></p>
@@ -170,11 +172,14 @@ if ($_SESSION['user']['is_confirmed'] != 1) {
                                 <p data-field="english_level"><?= htmlspecialchars($user['english_level_label']) ?></p>
                             </div>
                             <div class="info-item">
+                                <label>Langue maternelle</label>
+                                <p data-field="native_language"><?= htmlspecialchars($user['profile']['native_language_label'] ?? 'Non renseigné') ?></p>
+                            </div>
+                            <div class="info-item">
                                 <label>Biographie</label>
                                 <p data-field="bio"><?= nl2br(htmlspecialchars($user['bio'] ?? 'Aucune biographie.')) ?></p>
                             </div>
 
-                            <!-- Informations du compte -->
                             <div class="info-item">
                                 <label>État du compte</label>
                                 <p>
@@ -187,28 +192,68 @@ if ($_SESSION['user']['is_confirmed'] != 1) {
                                 <label>Membre depuis</label>
                                 <p><?= htmlspecialchars($user['created_at_formatted']) ?></p>
                             </div>
-                            <div class="info-item">
-                                <label>Type d'abonnement</label>
-                                <p><?= (!empty($subscriptions[0]["type"]) && $subscriptions[0]["type"] === "premium") ? 'Premium' : 'Accès libre' ?></p>
-                            </div>
-                            <div class="info-item">
-                                <label>Prochain renouvellement</label>
-                                <p><?= htmlspecialchars($subscriptions[0]['next_billing_formatted'] ?? 'Aucun abonnement actif') ?></p>
-                            </div>
-
-                            <!-- Section abonnement -->
-                            <?php foreach ($subscriptions as $sub): ?>
-                                <div class="subscription">
-                                    <p><strong>Type :</strong> <?= htmlspecialchars($sub['type'] ?? 'Inconnu') ?></p>
-                                    <p><strong>Prix :</strong> <?= number_format($sub['amount'] ?? 0, 0, ',', ' ') ?> <?= htmlspecialchars($sub['currency'] ?? 'FCFA') ?></p>
-                                    <p>
-                                        <strong>Statut :</strong>
-                                        <span class="<?= $sub['status_class'] ?>"><?= htmlspecialchars($sub['status'] ?? '') ?></span>
-                                        (<?= htmlspecialchars($sub['days_message']) ?>)
-                                    </p>
-                                </div>
-                            <?php endforeach; ?>
                         </div>
+                    </div>
+                    <!-- ===== HISTORIQUE DES CONNEXIONS ===== -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">
+                                <i class="fas fa-clock-rotate-left"></i>
+                                Historique des connexions
+                            </h2>
+                        </div>
+
+                        <?php if (empty($loginHistory)): ?>
+                            <p style="color:var(--text-muted);font-size:0.88rem;">
+                                Aucune connexion enregistrée.
+                            </p>
+                        <?php else: ?>
+                            <ul class="login-history">
+                                <?php foreach ($loginHistory as $index => $login): ?>
+                                    <li class="login-history__item <?= $index === 0 ? 'login-history__item--current' : '' ?>">
+
+                                        <div class="login-history__icon">
+                                            <?php if ($login['device'] === 'mobile'): ?>
+                                                <i class="fas fa-mobile-screen"></i>
+                                            <?php elseif ($login['device'] === 'tablette'): ?>
+                                                <i class="fas fa-tablet-screen-button"></i>
+                                            <?php else: ?>
+                                                <i class="fas fa-display"></i>
+                                            <?php endif; ?>
+                                        </div>
+
+                                        <div class="login-history__info">
+                                            <span class="login-history__device">
+                                                <?= htmlspecialchars($login['browser']) ?>
+                                                sur
+                                                <?= htmlspecialchars($login['os']) ?>
+                                                <?php if ($index === 0): ?>
+                                                    <span class="login-history__badge">Session actuelle</span>
+                                                <?php endif; ?>
+                                            </span>
+                                            <span class="login-history__meta">
+                                                <i class="fas fa-location-dot"></i>
+                                                <?= htmlspecialchars($login['ip_address']) ?>
+                                                <span class="sep">·</span>
+                                                <i class="fas fa-clock"></i>
+                                                <?= htmlspecialchars($login['created_at']) ?>
+                                            </span>
+                                        </div>
+
+                                        <?php if ($index !== 0): ?>
+                                            <button
+                                                class="login-history__delete"
+                                                data-id="<?= (int) $login['id'] ?>"
+                                                title="Supprimer cette session">
+                                                <i class="fas fa-trash-can"></i>
+                                            </button>
+                                        <?php endif; ?>
+
+                                    </li>
+                                <?php endforeach; ?>
+                            </ul>
+                        <?php endif; ?>
+
                     </div>
 
                 </div>
@@ -255,15 +300,15 @@ if ($_SESSION['user']['is_confirmed'] != 1) {
                                 </div>
                             </div>
 
-                            <!-- Champs -->
                             <div class="edit-grid">
+
                                 <div class="edit-field">
                                     <label for="edit-username">Nom d'utilisateur</label>
                                     <input
                                         type="text"
                                         id="edit-username"
                                         name="username"
-                                        value="<?= htmlspecialchars($_SESSION["user"]["username"] ?? '') ?>"
+                                        value="<?= htmlspecialchars($user['username'] ?? '') ?>"
                                         placeholder="Votre nom d'utilisateur"
                                         autocomplete="username">
                                     <small class="edit-error" id="err-username"></small>
@@ -275,7 +320,7 @@ if ($_SESSION['user']['is_confirmed'] != 1) {
                                         type="text"
                                         id="edit-fullname"
                                         name="fullname"
-                                        value="<?= htmlspecialchars($_SESSION["user"]["fullname"] ?? '') ?>"
+                                        value="<?= htmlspecialchars($user['fullname'] ?? '') ?>"
                                         placeholder="Votre nom complet"
                                         autocomplete="name">
                                     <small class="edit-error" id="err-fullname"></small>
@@ -287,7 +332,7 @@ if ($_SESSION['user']['is_confirmed'] != 1) {
                                         type="email"
                                         id="edit-email"
                                         name="email"
-                                        value="<?= htmlspecialchars($_SESSION["user"]["email"] ?? '') ?>"
+                                        value="<?= htmlspecialchars($user['email'] ?? '') ?>"
                                         placeholder="votre@email.com"
                                         autocomplete="email">
                                     <small class="edit-error" id="err-email"></small>
@@ -299,7 +344,7 @@ if ($_SESSION['user']['is_confirmed'] != 1) {
                                         type="tel"
                                         id="edit-phone"
                                         name="phone_number"
-                                        value="<?= htmlspecialchars($_SESSION["user"]["phone_number"] ?? '') ?>"
+                                        value="<?= htmlspecialchars($user['phone_number'] ?? '') ?>"
                                         placeholder="+241 00 00 00 00"
                                         autocomplete="tel">
                                     <small class="edit-error" id="err-phone"></small>
@@ -311,51 +356,125 @@ if ($_SESSION['user']['is_confirmed'] != 1) {
                                         type="text"
                                         id="edit-country"
                                         name="country"
-                                        value="<?= htmlspecialchars($_SESSION["user"]["country"] ?? '') ?>"
+                                        value="<?= htmlspecialchars($user['country'] ?? '') ?>"
                                         placeholder="Votre pays"
                                         autocomplete="country-name">
                                     <small class="edit-error" id="err-country"></small>
                                 </div>
 
-                                <div class="edit-field edit-field--full">
-                                    <label for="edit-bio">Biographie</label>
-                                    <textarea
-                                        id="edit-bio"
-                                        name="bio"
-                                        rows="4"
-                                        placeholder="Parlez-nous de vous..."><?= htmlspecialchars($_SESSION["user"]["bio"] ?? '') ?></textarea>
-                                    <small class="edit-error" id="err-bio"></small>
-                                </div>
                                 <div class="edit-field">
                                     <label for="edit-birthdate">Date de naissance</label>
                                     <input
                                         type="date"
                                         id="edit-birthdate"
                                         name="birth_date"
-                                        value="<?= htmlspecialchars($_SESSION["user"]["profile"]["birth_date"] ?? '') ?>">
+                                        value="<?= htmlspecialchars($user['profile']['birth_date'] ?? '') ?>">
                                     <small class="edit-error" id="err-birth_date"></small>
                                 </div>
 
+                                <!-- ===== NIVEAU D'ANGLAIS ===== -->
                                 <div class="edit-field">
                                     <label for="edit-level">Niveau d'anglais</label>
                                     <select id="edit-level" name="english_level">
                                         <option value="">-- Choisir un niveau --</option>
                                         <option value="beginner"
-                                            <?= ($_SESSION["user"]["profile"]["english_level"] ?? '') === 'beginner'     ? 'selected' : '' ?>>
+                                            <?= ($user['profile']['english_level'] ?? '') === 'beginner'     ? 'selected' : '' ?>>
                                             Débutant
                                         </option>
                                         <option value="intermediate"
-                                            <?= ($_SESSION["user"]["profile"]["english_level"] ?? '') === 'intermediate' ? 'selected' : '' ?>>
+                                            <?= ($user['profile']['english_level'] ?? '') === 'intermediate' ? 'selected' : '' ?>>
                                             Intermédiaire
                                         </option>
                                         <option value="advanced"
-                                            <?= ($_SESSION["user"]["profile"]["english_level"] ?? '') === 'advanced'     ? 'selected' : '' ?>>
+                                            <?= ($user['profile']['english_level'] ?? '') === 'advanced'     ? 'selected' : '' ?>>
                                             Avancé
                                         </option>
                                     </select>
                                     <small class="edit-error" id="err-english_level"></small>
                                 </div>
-                                <small style="color: gray;">Actualisez la page si vous ne constatez aucun changement.</small>
+
+                                <!-- ===== LANGUE MATERNELLE ===== -->
+                                <div class="edit-field edit-field--full">
+                                    <label>Langue maternelle</label>
+                                    <div class="lang-dropdown" id="lang-dropdown">
+
+                                        <div class="lang-trigger" id="lang-trigger">
+                                            <span class="lang-trigger__flag" id="lang-selected-flag">🌐</span>
+                                            <span class="lang-trigger__text" id="lang-selected-text">
+                                                <?php
+                                                $nativeLang = $user['profile']['native_language'] ?? '';
+                                                if ($nativeLang) {
+                                                    $flat = [];
+                                                    foreach ($languages as $langs) {
+                                                        foreach ($langs as $k => $v) $flat[$k] = $v;
+                                                    }
+                                                    echo htmlspecialchars($flat[$nativeLang] ?? '-- Choisir une langue --');
+                                                } else {
+                                                    echo '-- Choisir une langue --';
+                                                }
+                                                ?>
+                                            </span>
+                                            <i class="fas fa-chevron-down lang-trigger__arrow"></i>
+                                        </div>
+
+                                        <input type="hidden" name="native_language" id="native_language_input"
+                                            value="<?= htmlspecialchars($user['profile']['native_language'] ?? '') ?>">
+
+                                        <div class="lang-panel" id="lang-panel">
+
+                                            <div class="lang-search">
+                                                <i class="fas fa-magnifying-glass"></i>
+                                                <input
+                                                    type="text"
+                                                    id="lang-search-input"
+                                                    placeholder="Rechercher une langue..."
+                                                    autocomplete="off">
+                                                <button type="button" class="lang-search__clear" id="lang-search-clear" style="display:none;">
+                                                    <i class="fas fa-xmark"></i>
+                                                </button>
+                                            </div>
+
+                                            <div class="lang-results" id="lang-results">
+                                                <?php foreach ($languages as $region => $langs): ?>
+                                                    <div class="lang-group" data-region="<?= htmlspecialchars($region) ?>">
+                                                        <div class="lang-group__title"><?= htmlspecialchars($region) ?></div>
+                                                        <?php foreach ($langs as $key => $label): ?>
+                                                            <div class="lang-option <?= ($user['profile']['native_language'] ?? '') === $key ? 'is-selected' : '' ?>"
+                                                                data-value="<?= htmlspecialchars($key) ?>"
+                                                                data-label="<?= htmlspecialchars($label) ?>">
+                                                                <span class="lang-option__dot"></span>
+                                                                <span class="lang-option__label"><?= htmlspecialchars($label) ?></span>
+                                                                <?php if (($user['profile']['native_language'] ?? '') === $key): ?>
+                                                                    <i class="fas fa-check lang-option__check"></i>
+                                                                <?php endif; ?>
+                                                            </div>
+                                                        <?php endforeach; ?>
+                                                    </div>
+                                                <?php endforeach; ?>
+
+                                                <div class="lang-no-results" id="lang-no-results" style="display:none;">
+                                                    <i class="fas fa-face-frown-open"></i>
+                                                    <p>OpenDoorsClass n'a trouvé aucune langue.</p>
+                                                </div>
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                    <small class="edit-error" id="err-native_language"></small>
+                                </div>
+
+                                <!-- ===== BIOGRAPHIE ===== -->
+                                <div class="edit-field edit-field--full">
+                                    <label for="edit-bio">Biographie</label>
+                                    <textarea
+                                        id="edit-bio"
+                                        name="bio"
+                                        rows="4"
+                                        placeholder="Parlez-nous de vous..."><?= htmlspecialchars($user['bio'] ?? '') ?></textarea>
+                                    <small class="edit-error" id="err-bio"></small>
+                                </div>
+
+                                <p style="color: gray; font-size: 0.9rem;">Pensez aussi à actualiser la page.</p>
                             </div>
 
                             <!-- Message global -->
