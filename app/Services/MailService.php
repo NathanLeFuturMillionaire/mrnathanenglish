@@ -72,4 +72,45 @@ class MailService
             return false;
         }
     }
+    public function sendTwoFactorCode(string $email, string $name, string $code): bool
+    {
+        try {
+            $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
+            $mail->isSMTP();
+            $mail->Host       = 'smtp.gmail.com';
+            $mail->SMTPAuth   = true;
+            $mail->Username   = 'misterntkofficiel2.0@gmail.com';
+            $mail->Password   = 'vdqzewccgpvfswgj';
+            $mail->SMTPSecure = 'tls';
+            $mail->Port       = 587;
+            $mail->CharSet    = 'UTF-8';
+
+            $mail->setFrom('misterntkofficiel2.0@gmail.com', 'OpenDoorsClass');
+            $mail->addAddress($email, $name);
+            $mail->isHTML(true);
+            $mail->Subject = 'Votre code de connexion — OpenDoorsClass';
+            $mail->Body    = "
+            <div style='font-family:Montserrat,sans-serif;max-width:480px;margin:0 auto;padding:32px;background:#fff;border-radius:12px;'>
+                <h2 style='color:#0d2b5e;margin-bottom:8px;'>Vérification de connexion</h2>
+                <p style='color:#555;'>Bonjour <strong>{$name}</strong>,</p>
+                <p style='color:#555;'>Voici votre code de connexion à usage unique :</p>
+                <div style='text-align:center;margin:28px 0;'>
+                    <span style='font-size:36px;font-weight:800;letter-spacing:12px;color:#0d2b5e;background:#e8f2fc;padding:16px 28px;border-radius:12px;'>
+                        {$code}
+                    </span>
+                </div>
+                <p style='color:#888;font-size:13px;'>Ce code expire dans <strong>10 minutes</strong>.</p>
+                <p style='color:#888;font-size:13px;'>Si vous n'êtes pas à l'origine de cette connexion, ignorez cet e-mail.</p>
+                <hr style='border:none;border-top:1px solid #eee;margin:24px 0;'>
+                <p style='color:#bbb;font-size:12px;text-align:center;'>OpenDoorsClass — Formation en ligne</p>
+            </div>
+        ";
+
+            $mail->send();
+            return true;
+        } catch (\Exception $e) {
+            error_log('[sendTwoFactorCode] ' . $e->getMessage());
+            return false;
+        }
+    }
 }

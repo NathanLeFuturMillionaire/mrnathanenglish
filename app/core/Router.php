@@ -375,6 +375,58 @@ class Router
                 $userController = new UserController();
                 $userController->deleteLogin();
                 break;
+
+            case 'profile/login-history':
+                session_start();
+
+                if (!isset($_SESSION['user']['id'])) {
+                    http_response_code(401);
+                    echo json_encode(['success' => false]);
+                    exit;
+                }
+
+                $userController = new UserController();
+                $userController->loginHistory();
+                break;
+
+            case 'profile/toggle-2fa':
+                session_start();
+                $userController = new UserController();
+                $userController->toggleTwoFactor();
+                break;
+
+            case 'auth/verify-2fa':
+                session_start();
+                $authController = new AuthController();
+                $authController->verifyTwoFactor();
+                break;
+
+            case 'verify-2fa':
+                session_start();
+                if ($method === 'POST') {
+                    $authController = new AuthController();
+                    $authController->verifyTwoFactor();
+                } else {
+                    require __DIR__ . '/../views/auth/verify2fa.php';
+                }
+                break;
+
+            case 'auth/resend-2fa':
+                session_start();
+                $authController = new AuthController();
+                $authController->resendTwoFactorCode();
+                break;
+
+            case 'auth/check-2fa-lock':
+                session_start();
+                $authController = new AuthController();
+                $authController->checkTwoFactorLock();
+                break;
+
+            case 'noconfirmed':
+                $authController = new AuthController();
+                $authController->noConfirmed();
+                break;
         }
     }
 }

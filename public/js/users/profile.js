@@ -191,6 +191,39 @@ document.addEventListener("DOMContentLoaded", () => {
             }
           }
 
+          // Met à jour la barre de complétion si retournée par le serveur
+          if (data.completion) {
+            const fill = document.getElementById("completion-fill");
+            const percent = document.getElementById("completion-percent");
+            const completion = document.querySelector(".profile-completion");
+
+            if (fill) {
+              fill.style.width = data.completion.percentage + "%";
+              fill.className =
+                "profile-completion__fill profile-completion__fill--" +
+                data.completion.color;
+            }
+
+            if (percent) {
+              percent.textContent = data.completion.percentage + "%";
+            }
+
+            // Disparition si 100%
+            if (data.completion.percentage === 100 && completion) {
+              setTimeout(() => {
+                completion.classList.add("is-complete");
+                // Supprime du DOM après l'animation
+                setTimeout(() => completion.remove(), 1500);
+              }, 800);
+            }
+
+            // Réapparition si on redescend sous 70% (cas d'un champ effacé)
+            if (data.completion.percentage < 70 && completion) {
+              completion.classList.remove("is-complete");
+              completion.style.opacity = "1";
+              completion.style.maxHeight = "";
+            }
+          }
           setTimeout(() => showView(), 1500);
         } else {
           if (data.errors) {
@@ -412,6 +445,141 @@ document.addEventListener("DOMContentLoaded", () => {
         item.style.opacity = "1";
         item.style.pointerEvents = "auto";
         btn.disabled = false;
+      }
+    });
+
+  // ===== VOIR TOUTES LES CONNEXIONS =====
+  document
+    .getElementById("btn-show-all-logins")
+    ?.addEventListener("click", async function () {
+      const btn = this;
+      const list = document.getElementById("login-history-list");
+      const isOpen = btn.classList.contains("is-open");
+
+      if (isOpen) {
+        // Refermer — ne garder que les 4 premiers
+        const items = list.querySelectorAll(".login-history__item");
+        items.forEach((item, i) => {
+          if (i >= 4) {
+            item.style.transition = "opacity 0.2s ease, transform 0.2s ease";
+            item.style.opacity = "0";
+            item.style.transform = "translateY(-6px)";
+            setTimeout(() => item.remove(), 200);
+          }
+        });
+
+        btn.classList.remove("is-open");
+        btn.querySelector(".fa-clock-rotate-left").style.display = "";
+        btn.childNodes[2].textContent = " Voir toutes les connexions ";
+        return;
+      }
+
+      // Loading
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Chargement...';
+
+      try {
+        const res = await fetch("./profile/login-history", {
+          headers: { "X-Requested-With": "XMLHttpRequest" },
+        });
+        const data = await res.json();
+
+        if (data.success && data.logins) {
+          // Ajoute les connexions supplémentaires (après la 4ème)
+          data.logins.slice(4).forEach((login, i) => {
+            const li = document.createElement("li");
+            li.className = "login-history__item";
+            li.style.opacity = "0";
+            li.style.transform = "translateY(8px)";
+            li.style.transition = `opacity 0.25s ease ${i * 0.04}s, transform 0.25s ease ${i * 0.04}s`;
+
+            li.innerHTML = `
+                    <div class="login-history__icon">
+                        <i class="fas fa-${login.device === "mobile" ? "mobile-screen" : login.device === "tablette" ? "tablet-screen-button" : "display"}"></i>
+                    </div>
+                    <div class="login-history__info">
+                        <span class="login-history__device">
+                            ${login.browser} sur ${login.os}
+                        </span>
+                        <span class="login-history__meta">
+                            <i class="fas fa-location-dot"></i> ${login.ip_address}
+                            <span class="sep">·</span>
+                            <i class="fas fa-clock"></i> ${login.created_at}
+                        </span>
+                    </div>
+                    <button class="login-history__delete" data-id="${login.id}" title="Supprimer cette session">
+                        <i class="fas fa-trash-can"></i>
+                    </button>
+                `;
+
+            list.appendChild(li);
+
+            // Déclenche l'animation
+            requestAnimationFrame(() => {
+              li.style.opacity = "1";
+              li.style.transform = "translateY(0)";
+            });
+          });
+
+          btn.disabled = false;
+          btn.classList.add("is-open");
+          btn.innerHTML = `
+                <i class="fas fa-clock-rotate-left"></i>
+                Réduire
+                <span class="login-history__more-count">${data.logins.length} au total</span>
+                <i class="fas fa-chevron-down login-history__more-arrow" style="transform:rotate(180deg)"></i>
+            `;
+        }
+      } catch {
+        btn.disabled = false;
+        btn.innerHTML = `
+            <i class="fas fa-clock-rotate-left"></i>
+            Voir toutes les connexions
+            <i class="fas fa-chevron-down login-history__more-arrow"></i>
+        `;
+      }
+    });
+
+  // ===== TOGGLE 2FA =====
+  document
+    .getElementById("toggle-2fa")
+    ?.addEventListener("change", async function () {
+      const enabled = this.checked;
+      const feedback = document.getElementById("2fa-feedback");
+
+      try {
+        const res = await fetch("./profile/toggle-2fa", {
+          method: "POST",
+          body: new URLSearchParams({ enabled: enabled ? "1" : "0" }),
+          headers: {
+            "X-Requested-With": "XMLHttpRequest",
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+        });
+
+        const data = await res.json();
+
+        feedback.textContent = data.message;
+        feedback.className =
+          "setting-item__feedback " + (data.success ? "success" : "error");
+        feedback.style.display = "block";
+
+        if (!data.success) {
+          // Revert le toggle si erreur
+          this.checked = !enabled;
+        }
+
+        setTimeout(() => {
+          feedback.style.display = "none";
+        }, 3500);
+      } catch {
+        this.checked = !enabled;
+        feedback.textContent = "Erreur réseau. Veuillez réessayer.";
+        feedback.className = "setting-item__feedback error";
+        feedback.style.display = "block";
+        setTimeout(() => {
+          feedback.style.display = "none";
+        }, 3500);
       }
     });
 

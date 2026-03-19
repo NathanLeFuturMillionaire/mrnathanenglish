@@ -44,11 +44,14 @@ class UserController
 
         $_SESSION['user'] = array_merge($_SESSION['user'], $user);
 
-        $loginHistory  = $this->userRepository->getLoginHistory($userId, 10);
+        $totalLogins  = $this->userRepository->countLoginHistory($userId);
+        $loginHistory  = $this->userRepository->getLoginHistory($userId, 4);
         $loginHistory  = $this->buildLoginHistory($loginHistory);
+        $completion = $this->buildProfileCompletion($user);
 
         require __DIR__ . '/../views/users/profile.php';
     }
+
 
     // ======================
     // MISE À JOUR DU PROFIL
@@ -210,20 +213,42 @@ class UserController
             $_SESSION['user']['profile']['english_level'] = $englishLevel;
             $_SESSION['user']['profile']['native_language'] = $nativeLanguage;
 
-            echo json_encode([
-                'success' => true,
-                'message' => 'Profil mis à jour avec succès.',
-                'user'    => [
-                    'username'        => $username,
-                    'fullname'        => $fullname,
-                    'email'           => $email,
-                    'phone_number'    => $phoneNumber,
-                    'country'         => $country,
-                    'bio'             => $bio,
-                    'profile_picture' => $profilePicture,
+            // Recalcule la complétion avec les nouvelles données
+            $updatedUser = [
+                'username'        => $username,
+                'fullname'        => $fullname,
+                'email'           => $email,
+                'phone_number'    => $phoneNumber,
+                'country'         => $country,
+                'bio'             => $bio,
+                'profile_picture' => $profilePicture,
+                'profile'         => [
                     'birth_date'      => $birthDate,
                     'english_level'   => $englishLevel,
-                    'native_language'   => $nativeLanguage,
+                    'native_language' => $nativeLanguage,
+                ]
+            ];
+
+            $completion = $this->buildProfileCompletion($updatedUser);
+
+            echo json_encode([
+                'success'    => true,
+                'message'    => 'Profil mis à jour avec succès.',
+                'completion' => $completion,
+                'user'       => [
+                    'username'             => $username,
+                    'fullname'             => $fullname,
+                    'email'                => $email,
+                    'phone_number'         => $phoneNumber,
+                    'country'              => $country,
+                    'bio'                  => $bio,
+                    'profile_picture'      => $profilePicture,
+                    'birth_date'           => $birthDate,
+                    'english_level'        => $englishLevel,
+                    'native_language'      => $nativeLanguage,
+                    'native_language_label' => $nativeLanguage
+                        ? LanguageHelper::getLabel($nativeLanguage)
+                        : 'Non renseigné',
                 ]
             ]);
             exit;
@@ -453,6 +478,64 @@ class UserController
             ];
         }, $rows);
     }
+    private function buildProfileCompletion(array $user): array
+    {
+        $fields = [
+            'username'        => ['label' => 'Nom d\'utilisateur',   'value' => $user['username']                          ?? ''],
+            'fullname'        => ['label' => 'Nom complet',          'value' => $user['fullname']                          ?? ''],
+            'email'           => ['label' => 'Adresse e-mail',       'value' => $user['email']                             ?? ''],
+            'phone_number'    => ['label' => 'Numéro de téléphone',  'value' => $user['phone_number']                      ?? ''],
+            'country'         => ['label' => 'Pays',                 'value' => $user['country']                           ?? ''],
+            'bio'             => ['label' => 'Biographie',           'value' => $user['bio']                               ?? ''],
+            'profile_picture' => ['label' => 'Photo de profil',      'value' => ($user['profile_picture'] ?? '') !== 'default.png' ? $user['profile_picture'] : ''],
+            'birth_date'      => ['label' => 'Date de naissance',    'value' => $user['profile']['birth_date']             ?? ''],
+            'english_level'   => ['label' => 'Niveau d\'anglais',    'value' => $user['profile']['english_level']          ?? ''],
+            'native_language' => ['label' => 'Langue maternelle',    'value' => $user['profile']['native_language']        ?? ''],
+        ];
+
+        $total     = count($fields);
+        $filled    = 0;
+        $missing   = [];
+
+        foreach ($fields as $key => $field) {
+            if (!empty($field['value'])) {
+                $filled++;
+            } else {
+                $missing[] = $field['label'];
+            }
+        }
+
+        $percentage = (int) round(($filled / $total) * 100);
+
+        return [
+            'percentage' => $percentage,
+            'filled'     => $filled,
+            'total'      => $total,
+            'missing'    => $missing,
+            'color'      => match (true) {
+                $percentage >= 80 => 'success',
+                $percentage >= 50 => 'warning',
+                default           => 'danger',
+            },
+        ];
+    }
+    public function loginHistory(): void
+    {
+        header('Content-Type: application/json');
+
+        if (empty($_SERVER['HTTP_X_REQUESTED_WITH']) || empty($_SESSION['user']['id'])) {
+            http_response_code(403);
+            echo json_encode(['success' => false]);
+            exit;
+        }
+
+        $userId  = (int) $_SESSION['user']['id'];
+        $history = $this->userRepository->getLoginHistory($userId, 100);
+        $history = $this->buildLoginHistory($history);
+
+        echo json_encode(['success' => true, 'logins' => $history]);
+        exit;
+    }
     public function deleteLogin(): void
     {
         header('Content-Type: application/json');
@@ -483,6 +566,42 @@ class UserController
         $deleted = $this->userRepository->deleteLoginEntry($id, $userId);
 
         echo json_encode(['success' => $deleted]);
+        exit;
+    }
+
+    public function toggleTwoFactor(): void
+    {
+        header('Content-Type: application/json');
+
+        if (
+            $_SERVER['REQUEST_METHOD'] !== 'POST' ||
+            empty($_SERVER['HTTP_X_REQUESTED_WITH'])
+        ) {
+            http_response_code(403);
+            echo json_encode(['success' => false]);
+            exit;
+        }
+
+        if (empty($_SESSION['user']['id'])) {
+            http_response_code(401);
+            echo json_encode(['success' => false]);
+            exit;
+        }
+
+        $userId  = (int) $_SESSION['user']['id'];
+        $enabled = filter_var($_POST['enabled'] ?? false, FILTER_VALIDATE_BOOLEAN);
+
+        $this->userRepository->toggleTwoFactor($userId, $enabled);
+
+        $_SESSION['user']['two_factor_enabled'] = $enabled;
+
+        echo json_encode([
+            'success' => true,
+            'enabled' => $enabled,
+            'message' => $enabled
+                ? 'Authentification à deux facteurs activée.'
+                : 'Authentification à deux facteurs désactivée.',
+        ]);
         exit;
     }
 }

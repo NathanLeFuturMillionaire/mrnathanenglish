@@ -56,6 +56,56 @@ if ($_SESSION['user']['is_confirmed'] != 1) {
                     <i class="fas fa-graduation-cap"></i>
                     <?= htmlspecialchars($user['profile']['english_level_label'] ?? $levelLabel) ?>
                 </span>
+                <!-- ===== COMPLÉTION PROFIL ===== -->
+                <?php if ($completion['percentage'] < 100): ?>
+
+                    <div class="profile-completion">
+                        <div class="profile-completion__header">
+                            <span class="profile-completion__label">Profil complété</span>
+                            <span class="profile-completion__percent" id="completion-percent">
+                                <?= $completion['percentage'] ?>%
+                            </span>
+                        </div>
+
+                        <div class="profile-completion__bar">
+                            <div
+                                class="profile-completion__fill profile-completion__fill--<?= $completion['color'] ?>"
+                                id="completion-fill"
+                                style="width: <?= $completion['percentage'] ?>%">
+                            </div>
+                        </div>
+
+                        <div class="profile-completion__details" id="completion-details">
+                            <?php if ($completion['percentage'] < 100): ?>
+                                <span class="profile-completion__hint">
+                                    <i class="fas fa-circle-info"></i>
+                                    <?= $completion['filled'] ?>/<?= $completion['total'] ?> champs remplis
+                                </span>
+                                <?php if (!empty($completion['missing'])): ?>
+                                    <div class="profile-completion__missing">
+                                        <?php foreach (array_slice($completion['missing'], 0, 3) as $missing): ?>
+                                            <span class="profile-completion__tag">
+                                                <i class="fas fa-plus"></i>
+                                                <?= htmlspecialchars($missing) ?>
+                                            </span>
+                                        <?php endforeach; ?>
+                                        <?php if (count($completion['missing']) > 3): ?>
+                                            <span class="profile-completion__tag profile-completion__tag--more">
+                                                +<?= count($completion['missing']) - 3 ?> autre(s)
+                                            </span>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php endif; ?>
+                            <?php else: ?>
+                                <span class="profile-completion__hint profile-completion__hint--done">
+                                    <i class="fas fa-circle-check"></i>
+                                    Profil complet
+                                </span>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                <?php endif; ?>
+
             </div>
 
             <!-- Stats rapides -->
@@ -208,7 +258,7 @@ if ($_SESSION['user']['is_confirmed'] != 1) {
                                 Aucune connexion enregistrée.
                             </p>
                         <?php else: ?>
-                            <ul class="login-history">
+                            <ul class="login-history" id="login-history-list">
                                 <?php foreach ($loginHistory as $index => $login): ?>
                                     <li class="login-history__item <?= $index === 0 ? 'login-history__item--current' : '' ?>">
 
@@ -252,6 +302,16 @@ if ($_SESSION['user']['is_confirmed'] != 1) {
                                     </li>
                                 <?php endforeach; ?>
                             </ul>
+                            <?php if ($totalLogins > 4): ?>
+                                <div class="login-history__more">
+                                    <button type="button" id="btn-show-all-logins">
+                                        <i class="fas fa-clock-rotate-left"></i>
+                                        Voir toutes les connexions
+                                        <span class="login-history__more-count"><?= $totalLogins ?> au total</span>
+                                        <i class="fas fa-chevron-down login-history__more-arrow"></i>
+                                    </button>
+                                </div>
+                            <?php endif; ?>
                         <?php endif; ?>
 
                     </div>
@@ -586,11 +646,41 @@ if ($_SESSION['user']['is_confirmed'] != 1) {
                 <div class="section-header">
                     <div>
                         <h1 class="section-title">Paramètres</h1>
-                        <p class="section-subtitle">Gérez votre compte</p>
+                        <p class="section-subtitle">Gérez la sécurité de votre compte</p>
                     </div>
                 </div>
+
                 <div class="card">
-                    <button class="btn-setting">
+                    <div class="card-header">
+                        <h2 class="card-title">
+                            <i class="fas fa-shield-halved"></i>
+                            Sécurité
+                        </h2>
+                    </div>
+
+                    <!-- Toggle 2FA -->
+                    <div class="setting-item">
+                        <div class="setting-item__info">
+                            <span class="setting-item__title">
+                                <i class="fas fa-shield"></i>
+                                Authentification à deux facteurs
+                            </span>
+                            <span class="setting-item__desc">
+                                Renforcez la protection de votre compte.
+                            </span>
+                        </div>
+                        <label class="toggle-switch">
+                            <input
+                                type="checkbox"
+                                id="toggle-2fa"
+                                <?= !empty($_SESSION['user']['two_factor_enabled']) ? 'checked' : '' ?>>
+                            <span class="toggle-switch__slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-item__feedback" id="2fa-feedback" style="display:none;"></div>
+
+                    <button class="btn-setting" style="margin-top:16px;">
                         <i class="fas fa-lock"></i> Changer le mot de passe
                     </button>
                     <button class="btn-setting logout">

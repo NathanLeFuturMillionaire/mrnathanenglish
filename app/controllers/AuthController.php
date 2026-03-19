@@ -36,47 +36,86 @@ class AuthController extends Controller
             $this->redirect('./login');
         }
 
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
         $userId = (int) $_POST['login_as_user_id'];
 
         $userModel = new AuthRepository($this->db);
-        $user = $userModel->findUserWithProfileById($userId);
+        $user      = $userModel->findUserWithProfileById($userId);
 
         if (!$user) {
             $_SESSION['error'] = "Utilisateur introuvable.";
             $this->redirect('./login');
         }
 
-        // Session propre
-        session_start();
+        // Récupère le statut 2FA
+        $stmt = $this->db->prepare("SELECT two_factor_enabled FROM users WHERE id = ?");
+        $stmt->execute([$userId]);
+        $twoFaRow = $stmt->fetch(\PDO::FETCH_ASSOC);
 
-        // Dans loginAsUser() — ajoute les champs manquants dans $_SESSION['user']
+        // ===== CHECK 2FA =====
+        if (!empty($twoFaRow['two_factor_enabled'])) {
+
+            $userRepository = new UserRepository($this->db);
+
+            // Vérifie si le navigateur est de confiance
+            $trustedToken = $_COOKIE['trusted_device_' . $userId] ?? null;
+
+            if ($trustedToken && $userRepository->isTrustedDevice($userId, $trustedToken)) {
+                // Navigateur de confiance → connexion directe
+            } else {
+                // Génère et envoie le code 2FA sur l'email de l'utilisateur cible
+                $code = $userRepository->saveTwoFactorCode($userId);
+
+                $mailService = new MailService();
+                $mailService->sendTwoFactorCode(
+                    $user['email'],
+                    $user['fullname'] ?? $user['username'],
+                    $code
+                );
+
+                // Stocke l'ID en attente
+                $_SESSION['2fa_pending_user_id'] = $userId;
+
+                // Redirige vers la page de vérification
+                $this->redirect('./verify-2fa');
+                exit;
+            }
+        }
+
+        // ===== SESSION COMPLÈTE =====
+        session_regenerate_id(true);
+
         $_SESSION['user'] = [
-            'id'              => $user['id'],
-            'is_confirmed'    => $user['is_confirmed'],
-            'username'        => $user['username'],
-            'english_level'   => $user['english_level'],
-            'role'            => 'admin',
-            'fullname'        => $user['fullname'],
-            'email'           => $user['email'],
-            'created_at'      => $user['user_created_at'],
-            'phone_number'    => $user['phone_number']    ?? '',
-            'country'         => $user['country']         ?? '',
-            'bio'             => $user['bio']             ?? '',
-            'profile_picture' => $user['profile_picture'] ?? 'default.png',
-            'profile'         => [
-                'profile_picture'  => $user['profile_picture'] ?? 'default.png',
-                'birth_date'       => $user['birth_date']      ?? null,
-                'phone_number'     => $user['phone_number']    ?? '',
-                'bio'              => $user['bio']             ?? '',
-                'country'          => $user['country']         ?? '',
-                'english_level'    => $user['english_level']   ?? null,
-                'native_language'  => $user['native_language'] ?? null,
+            'id'                 => $user['id'],
+            'is_confirmed'       => $user['is_confirmed'],
+            'username'           => $user['username'],
+            'english_level'      => $user['english_level']   ?? null,
+            'role'               => 'admin',
+            'fullname'           => $user['fullname'],
+            'email'              => $user['email'],
+            'created_at'         => $user['user_created_at'] ?? null,
+            'phone_number'       => $user['phone_number']    ?? '',
+            'country'            => $user['country']         ?? '',
+            'bio'                => $user['bio']             ?? '',
+            'is_admin'           => false,
+            'two_factor_enabled' => (bool) ($twoFaRow['two_factor_enabled'] ?? false),
+            'profile_picture'    => $user['profile_picture'] ?? 'default.png',
+            'profile'            => [
+                'profile_picture' => $user['profile_picture'] ?? 'default.png',
+                'birth_date'      => $user['birth_date']      ?? null,
+                'phone_number'    => $user['phone_number']    ?? '',
+                'bio'             => $user['bio']             ?? '',
+                'country'         => $user['country']         ?? '',
+                'english_level'   => $user['english_level']  ?? null,
+                'native_language' => $user['native_language'] ?? null,
             ],
         ];
 
-        // Enregistre la connexion
         $userRepository = new UserRepository($this->db);
-        $userRepository->logLogin((int) $user['id']);
+        $userRepository->logLogin($userId);
 
         $this->redirect('./');
     }
@@ -223,36 +262,39 @@ class AuthController extends Controller
     {
         header('Content-Type: application/json');
 
+        // Session doit être active avant le check 2FA
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
         try {
-            // 1) Récupérer les données du formulaire
-            $email = trim($_POST['email'] ?? '');
-            $password = $_POST['password'] ?? '';
+            $email      = trim($_POST['email']    ?? '');
+            $password   = $_POST['password']      ?? '';
             $rememberMe = isset($_POST['remember_me']) && $_POST['remember_me'] === 'on';
 
-            // 2) Validation rapide
             if (empty($email) || empty($password)) {
                 echo json_encode(['success' => false, 'message' => 'Email ou mot de passe manquant.']);
                 return;
             }
 
-            // 3) Vérifier si l'utilisateur existe dans la base de données 
             $stmt = $this->db->prepare("
-                    SELECT 
-                        u.id,
-                        u.email,
-                        u.username,
-                        u.fullname,
-                        u.password,
-                        u.is_confirmed,
-                        u.created_at,
-                        up.profile_picture,
-                        up.bio,
-                        up.country,
-                        up.phone_number
-                    FROM users u
-                    INNER JOIN user_profiles up ON u.id = up.user_id
-                    WHERE u.email = ?
-                ");
+                SELECT
+                    u.id,
+                    u.email,
+                    u.username,
+                    u.fullname,
+                    u.password,
+                    u.is_confirmed,
+                    u.created_at,
+                    u.two_factor_enabled,
+                    up.profile_picture,
+                    up.bio,
+                    up.country,
+                    up.phone_number
+                FROM users u
+                INNER JOIN user_profiles up ON u.id = up.user_id
+                WHERE u.email = ?
+            ");
             $stmt->execute([$email]);
             $user = $stmt->fetch(\PDO::FETCH_ASSOC);
 
@@ -261,94 +303,126 @@ class AuthController extends Controller
                 return;
             }
 
-            // 4) Vérifier si le mot de passe est correct
             if (!password_verify($password, $user['password'])) {
                 echo json_encode(['success' => false, 'message' => 'Email ou mot de passe invalide.']);
                 return;
             }
 
-            // 5) Vérifier si l'utilisateur est confirmé
             if ($user['is_confirmed'] !== 1) {
-                echo json_encode(['success' => false, 'message' => 'Votre compte n\'est pas confirmé.']);
+                // Met l'email en session pour la page noconfirmed
+                $_SESSION['unconfirmed_user'] = [
+                    'id'    => $user['id'],
+                    'email' => $user['email'],
+                ];
+
+                // Envoie UN seul code automatiquement
+                $confirmationCode = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+
+                $stmt = $this->db->prepare("UPDATE users SET confirmation_code = ? WHERE id = ?");
+                $stmt->execute([$confirmationCode, $user['id']]);
+
+                $mailService = new MailService();
+                $mailService->sendConfirmationCode($user['email'], $user['fullname'], $confirmationCode);
+
+                echo json_encode([
+                    'success'       => false,
+                    'not_confirmed' => true,
+                    'message'       => 'Votre compte n\'est pas confirmé. Un code vient d\'être envoyé.',
+                ]);
                 return;
             }
 
-            // 6) Configurer la session
-            // Vérifier si une session existe déjà
-            if (session_status() === PHP_SESSION_NONE) {
-                // Aucune session active : démarrer une nouvelle session
-                session_start();
+            // ===== CHECK 2FA =====
+            if ($user['two_factor_enabled'] == 1) {
+                $userRepository = new UserRepository($this->db);
+                $trustedToken   = $_COOKIE['trusted_device_' . $user['id']] ?? null;
+
+                if ($trustedToken && $userRepository->isTrustedDevice((int) $user['id'], $trustedToken)) {
+                    // Navigateur de confiance → on continue normalement
+                } else {
+                    $code = $userRepository->saveTwoFactorCode((int) $user['id']);
+
+                    $mailService = new MailService();
+                    $mailService->sendTwoFactorCode($user['email'], $user['fullname'], $code);
+
+                    $_SESSION['2fa_pending_user_id'] = (int) $user['id'];
+
+                    echo json_encode([
+                        'success'      => true,
+                        'requires_2fa' => true,
+                        'message'      => 'Un code de vérification a été envoyé à votre adresse e-mail.',
+                    ]);
+                    exit;
+                }
             }
 
-            // Régénérer l'ID de session pour la sécurité
+            // ===== SESSION =====
             session_regenerate_id(true);
 
-            // Vérifie si la case "Se souvenir de moi" est cochée
+            // Remember me
             if ($rememberMe) {
-                $token = bin2hex(random_bytes(32));
-                $expiresAt = time() + (30 * 24 * 60 * 60); // 30 jours
+                $token     = bin2hex(random_bytes(32));
+                $expiresAt = time() + (30 * 24 * 60 * 60);
 
-                // Définir le cookie côté client
                 setcookie('remember_me_token', $token, $expiresAt, '/', '', false, true);
 
-                // Vérifie si un token existe déjà pour cet utilisateur
                 $stmt = $this->db->prepare("SELECT id FROM user_remember_tokens WHERE user_id = ?");
                 $stmt->execute([$user['id']]);
                 $existing = $stmt->fetch();
 
                 if ($existing) {
-                    // Mettre à jour le token existant
-                    $stmt = $this->db->prepare("UPDATE user_remember_tokens 
-                                    SET token = ?, expires_at = ?, ip_address = ?, device = ?, browser = ?, created_at = NOW() 
-                                    WHERE user_id = ?");
+                    $stmt = $this->db->prepare("
+                        UPDATE user_remember_tokens
+                        SET token = ?, expires_at = ?, ip_address = ?, device = ?, browser = ?, created_at = NOW()
+                        WHERE user_id = ?
+                    ");
                     $stmt->execute([
                         $token,
                         date('Y-m-d H:i:s', $expiresAt),
-                        $_SERVER['REMOTE_ADDR'] ?? null,
-                        $_SERVER['HTTP_USER_AGENT'] ?? null, // tu peux parser pour isoler device/browser si tu veux
+                        $_SERVER['REMOTE_ADDR']     ?? null,
+                        $_SERVER['HTTP_USER_AGENT'] ?? null,
                         $_SERVER['HTTP_USER_AGENT'] ?? null,
                         $user['id']
                     ]);
                 } else {
-                    // Insérer un nouveau token
-                    $stmt = $this->db->prepare("INSERT INTO user_remember_tokens (user_id, token, expires_at, ip_address, device, browser, created_at) 
-                                    VALUES (?, ?, ?, ?, ?, ?, NOW())");
+                    $stmt = $this->db->prepare("
+                        INSERT INTO user_remember_tokens
+                            (user_id, token, expires_at, ip_address, device, browser, created_at)
+                        VALUES (?, ?, ?, ?, ?, ?, NOW())
+                    ");
                     $stmt->execute([
                         $user['id'],
                         $token,
                         date('Y-m-d H:i:s', $expiresAt),
-                        $_SERVER['REMOTE_ADDR'] ?? null,
+                        $_SERVER['REMOTE_ADDR']     ?? null,
                         $_SERVER['HTTP_USER_AGENT'] ?? null,
-                        $_SERVER['HTTP_USER_AGENT'] ?? null
+                        $_SERVER['HTTP_USER_AGENT'] ?? null,
                     ]);
                 }
             } else {
-                // Si l'utilisateur ne coche pas la case, supprimer le cookie + token en base
                 if (isset($_COOKIE['remember_me_token'])) {
                     setcookie('remember_me_token', '', time() - 3600, '/', '', false, true);
-
                     $stmt = $this->db->prepare("DELETE FROM user_remember_tokens WHERE user_id = ?");
                     $stmt->execute([$user['id']]);
                 }
             }
 
-
-            // Enregistrer les données de l'utilisateur dans la session
-            // Remplace le bloc de session existant par celui-ci
+            // Session de base
             $_SESSION['user'] = [
-                'id'              => $user['id'],
-                'email'           => $user['email'],
-                'is_confirmed'    => $user['is_confirmed'],
-                'username'        => $user['username'],
-                'fullname'        => $user['fullname'],
-                'phone_number'    => $user['phone_number']    ?? '',
-                'country'         => $user['country']         ?? '',
-                'bio'             => $user['bio']             ?? '',
-                'created_at'      => $user['created_at'],
-                'is_admin'        => false,
-                'profile_picture' => 'default.png',
-                'english_level'   => null,
-                'profile'         => [
+                'id'                 => $user['id'],
+                'email'              => $user['email'],
+                'is_confirmed'       => $user['is_confirmed'],
+                'username'           => $user['username'],
+                'fullname'           => $user['fullname'],
+                'phone_number'       => $user['phone_number']    ?? '',
+                'country'            => $user['country']         ?? '',
+                'bio'                => $user['bio']             ?? '',
+                'created_at'         => $user['created_at'],
+                'is_admin'           => false,
+                'two_factor_enabled' => (bool) $user['two_factor_enabled'], // ← ajout
+                'profile_picture'    => 'default.png',
+                'english_level'      => null,
+                'profile'            => [
                     'profile_picture' => 'default.png',
                     'birth_date'      => null,
                     'phone_number'    => $user['phone_number'] ?? '',
@@ -359,57 +433,47 @@ class AuthController extends Controller
                 ],
             ];
 
-            // Enregistre la connexion
+            // Log connexion
             $userRepository = new UserRepository($this->db);
             $userRepository->logLogin((int) $user['id']);
 
-            // Par défaut
-            $_SESSION['user']['is_admin'] = false;
-
-            // Vérifier s’il est admin
+            // Vérifie admin
             $adminRepo = new AdminRepository($this->db);
-            $admin = $adminRepo->findByUserId($user['id']);
-
+            $admin     = $adminRepo->findByUserId($user['id']);
             if ($admin && $admin['is_active'] == 1) {
                 $_SESSION['user']['is_admin'] = true;
             }
 
-
-            // 7) Récupérer le profil de l'utilisateur
+            // Profil complet
             $profileStmt = $this->db->prepare("
-            SELECT profile_picture, english_level, native_language,
-                   birth_date, phone_number, country, bio
-            FROM user_profiles
-            WHERE user_id = ?
-        ");
+                SELECT profile_picture, english_level, native_language,
+                       birth_date, phone_number, country, bio
+                FROM user_profiles
+                WHERE user_id = ?
+            ");
             $profileStmt->execute([$user['id']]);
             $profile = $profileStmt->fetch(\PDO::FETCH_ASSOC);
 
-            $_SESSION['user']['profile_picture']          = $profile['profile_picture']  ?? 'default.png';
-            $_SESSION['user']['english_level']            = $profile['english_level']    ?? null;
-            $_SESSION['user']['profile']['profile_picture'] = $profile['profile_picture'] ?? 'default.png';
-            $_SESSION['user']['profile']['birth_date']    = $profile['birth_date']       ?? null;
-            $_SESSION['user']['profile']['phone_number']  = $profile['phone_number']     ?? '';
-            $_SESSION['user']['profile']['country']       = $profile['country']          ?? '';
-            $_SESSION['user']['profile']['bio']           = $profile['bio']              ?? '';
-            $_SESSION['user']['profile']['english_level'] = $profile['english_level']    ?? null;
-            $_SESSION['user']['profile']['native_language'] = $profile['native_language'] ?? null;
+            $_SESSION['user']['profile_picture']              = $profile['profile_picture']  ?? 'default.png';
+            $_SESSION['user']['english_level']                = $profile['english_level']    ?? null;
+            $_SESSION['user']['profile']['profile_picture']   = $profile['profile_picture']  ?? 'default.png';
+            $_SESSION['user']['profile']['birth_date']        = $profile['birth_date']       ?? null;
+            $_SESSION['user']['profile']['phone_number']      = $profile['phone_number']     ?? '';
+            $_SESSION['user']['profile']['country']           = $profile['country']          ?? '';
+            $_SESSION['user']['profile']['bio']               = $profile['bio']              ?? '';
+            $_SESSION['user']['profile']['english_level']     = $profile['english_level']    ?? null;
+            $_SESSION['user']['profile']['native_language']   = $profile['native_language']  ?? null;
 
-            // 8) Répondre avec une réponse JSON réussie
             echo json_encode([
                 'success' => true,
                 'message' => 'Connexion réussie.',
-                'user' => $_SESSION['user']
+                'user'    => $_SESSION['user']
             ]);
         } catch (\Exception $e) {
-            error_log('Erreur lors de la connexion: ' . $e->getMessage());
-            echo json_encode([
-                'success' => false,
-                'message' => 'Une erreur est survenue lors de la connexion.'
-            ]);
+            error_log('Erreur lors de la connexion : ' . $e->getMessage());
+            echo json_encode(['success' => false, 'message' => 'Une erreur est survenue lors de la connexion.']);
         }
     }
-
 
     public function confirmPost()
     {
@@ -475,7 +539,20 @@ class AuthController extends Controller
 
             // 7) Récupère les infos utilisateur avec profil
             $userData = $this->db->prepare("
-            SELECT u.id, u.email, u.username, u.fullname, u.is_confirmed AS is_confirmed, p.profile_picture
+            SELECT
+                u.id,
+                u.email,
+                u.username,
+                u.fullname,
+                u.is_confirmed,
+                u.created_at,
+                p.profile_picture,
+                p.english_level,
+                p.phone_number,
+                p.country,
+                p.bio,
+                p.birth_date,
+                p.native_language
             FROM users u
             LEFT JOIN user_profiles p ON u.id = p.user_id
             WHERE u.id = ?
@@ -485,32 +562,32 @@ class AuthController extends Controller
 
             // Mettre à jour la session
             $_SESSION['user'] = [
-                'id'              => $user['id'],
-                'is_confirmed'    => $user['is_confirmed'],
-                'username'        => $user['username'],
-                'english_level'   => $user['english_level'],
-                'role'            => 'admin',
-                'fullname'        => $user['fullname'],
-                'email'           => $user['email'],
-                'created_at'      => $user['user_created_at'],
-                'phone_number'    => $user['phone_number']    ?? '',
-                'country'         => $user['country']         ?? '',
-                'bio'             => $user['bio']             ?? '',
-                'profile_picture' => $user['profile_picture'] ?? 'default.png',
+                'id'              => $fullUser['id'],
+                'is_confirmed'    => (int) $fullUser['is_confirmed'],
+                'username'        => $fullUser['username']        ?? '',
+                'english_level'   => $fullUser['english_level']   ?? null,
+                'role'            => 'user', // ← était 'admin' par erreur
+                'fullname'        => $fullUser['fullname']         ?? '',
+                'email'           => $fullUser['email']            ?? '',
+                'created_at'      => $fullUser['created_at']       ?? null,
+                'phone_number'    => $fullUser['phone_number']     ?? '',
+                'country'         => $fullUser['country']          ?? '',
+                'bio'             => $fullUser['bio']              ?? '',
+                'profile_picture' => $fullUser['profile_picture']  ?? 'default.png',
+                'is_admin'        => false,
                 'profile'         => [
-                    'profile_picture'  => $user['profile_picture'] ?? 'default.png',
-                    'birth_date'       => $user['birth_date']      ?? null,
-                    'phone_number'     => $user['phone_number']    ?? '',
-                    'bio'              => $user['bio']             ?? '',
-                    'country'          => $user['country']         ?? '',
-                    'english_level'    => $user['english_level']   ?? null,
-                    'native_language'  => $user['native_language'] ?? null,
+                    'profile_picture' => $fullUser['profile_picture'] ?? 'default.png',
+                    'birth_date'      => $fullUser['birth_date']      ?? null,
+                    'phone_number'    => $fullUser['phone_number']    ?? '',
+                    'bio'             => $fullUser['bio']             ?? '',
+                    'country'         => $fullUser['country']         ?? '',
+                    'english_level'   => $fullUser['english_level']  ?? null,
+                    'native_language' => $fullUser['native_language'] ?? null,
                 ],
             ];
-
             // Enregistre la connexion
             $userRepository = new UserRepository($this->db);
-            $userRepository->logLogin((int) $user['id']);
+            $userRepository->logLogin((int) $fullUser['id']);
             // Valider la transaction
             $this->db->commit();
 
@@ -1040,5 +1117,226 @@ class AuthController extends Controller
         ]);
 
         require __DIR__ . '/../views/auth/members.php';
+    }
+
+    public function verifyTwoFactor(): void
+    {
+        header('Content-Type: application/json');
+
+        $code        = preg_replace('/\D/', '', trim($_POST['otp_code'] ?? $_POST['code'] ?? ''));
+        $trustDevice   = filter_var($_POST['trust_device'] ?? false, FILTER_VALIDATE_BOOLEAN);
+        $userId = (int) ($_SESSION['2fa_pending_user_id'] ?? 0);
+
+        if (!$userId || strlen($code) !== 6) {
+            echo json_encode(['success' => false, 'message' => 'Code invalide.']);
+            exit;
+        }
+
+        // Debug avant vérification en base
+        $stmt = $this->db->prepare("SELECT two_factor_code, two_factor_expires FROM users WHERE id = ?");
+        $stmt->execute([$userId]);
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+
+        $userRepository = new UserRepository($this->db);
+
+        $result = $userRepository->verifyTwoFactorCode($userId, $code);
+
+        if (!$result['success']) {
+            http_response_code(200);
+            echo json_encode([
+                'success'       => false,
+                'locked'        => $result['locked']        ?? false,
+                'seconds_left'  => $result['seconds_left']  ?? null,
+                'attempts_left' => $result['attempts_left'] ?? null,
+                'message'       => $result['message'],
+            ]);
+            exit;
+        }
+
+        if (!$userRepository->verifyTwoFactorCode($userId, $code)) {
+            echo json_encode(['success' => false, 'message' => 'Code incorrect ou expiré.']);
+            exit;
+        }
+
+        // Code valide — récupère l'utilisateur et crée la session complète
+        $stmt = $this->db->prepare("
+        SELECT
+            u.*,
+            up.profile_picture,
+            up.english_level,
+            up.birth_date,
+            up.phone_number,
+            up.country,
+            up.bio,
+            up.native_language
+        FROM users u
+        LEFT JOIN user_profiles up ON up.user_id = u.id
+        WHERE u.id = ?
+    ");
+        $stmt->execute([$userId]);
+        $user = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        // Si l'étudiant veut enregistrer ce navigateur
+        if ($trustDevice) {
+            $token = $userRepository->saveTrustedDevice(
+                $userId,
+                $_SERVER['HTTP_USER_AGENT'] ?? ''
+            );
+
+            // Cookie valide 30 jours
+            setcookie(
+                'trusted_device_' . $userId,
+                $token,
+                time() + (30 * 24 * 60 * 60),
+                '/',
+                '',
+                false,
+                true // httpOnly
+            );
+        }
+
+        if (!$user) {
+            echo json_encode(['success' => false, 'message' => 'Utilisateur introuvable.']);
+            exit;
+        }
+
+        // Nettoie la session temporaire
+        unset($_SESSION['2fa_pending_user_id']);
+
+        // Crée la session complète
+        session_regenerate_id(true);
+
+        $_SESSION['user'] = [
+            'id'                  => $user['id'],
+            'email'               => $user['email'],
+            'username'            => $user['username'],
+            'fullname'            => $user['fullname'],
+            'is_confirmed'        => (int) $user['is_confirmed'],
+            'created_at'          => $user['created_at'],
+            'phone_number'        => $user['phone_number']    ?? '',
+            'country'             => $user['country']         ?? '',
+            'bio'                 => $user['bio']             ?? '',
+            'profile_picture'     => $user['profile_picture'] ?? 'default.png',
+            'english_level'       => $user['english_level']   ?? null,
+            'is_admin'            => false,
+            'two_factor_enabled'  => (bool) $user['two_factor_enabled'],
+            'profile'             => [
+                'profile_picture' => $user['profile_picture'] ?? 'default.png',
+                'birth_date'      => $user['birth_date']      ?? null,
+                'phone_number'    => $user['phone_number']    ?? '',
+                'bio'             => $user['bio']             ?? '',
+                'country'         => $user['country']         ?? '',
+                'english_level'   => $user['english_level']  ?? null,
+                'native_language' => $user['native_language'] ?? null,
+            ],
+        ];
+
+        $userRepository->logLogin($userId);
+
+        echo json_encode([
+            'success'  => true,
+            'message'  => 'Connexion réussie.',
+            'redirect' => './profile',
+        ]);
+
+        exit;
+    }
+    public function resendTwoFactorCode(): void
+    {
+        header('Content-Type: application/json');
+
+        $userId = (int) ($_SESSION['2fa_pending_user_id'] ?? 0);
+
+        if (!$userId) {
+            echo json_encode(['success' => false]);
+            exit;
+        }
+
+        $userRepository = new UserRepository($this->db);
+
+        // Récupère l'email
+        $stmt = $this->db->prepare("SELECT email, fullname FROM users WHERE id = ?");
+        $stmt->execute([$userId]);
+        $user = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        if (!$user) {
+            echo json_encode(['success' => false]);
+            exit;
+        }
+
+        $code = $userRepository->saveTwoFactorCode($userId);
+
+        $mailService = new MailService();
+        $mailService->sendTwoFactorCode($user['email'], $user['fullname'], $code);
+
+        echo json_encode(['success' => true]);
+        exit;
+    }
+
+    public function checkTwoFactorLock(): void
+    {
+        header('Content-Type: application/json');
+
+        $userId = (int) ($_SESSION['2fa_pending_user_id'] ?? 0);
+
+        if (!$userId) {
+            echo json_encode(['locked' => false]);
+            exit;
+        }
+
+        $stmt = $this->db->prepare("
+        SELECT two_factor_locked_until, two_factor_attempts
+        FROM users
+        WHERE id = ?
+    ");
+        $stmt->execute([$userId]);
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        if (!empty($row['two_factor_locked_until'])) {
+            $lockedUntil = new \DateTime($row['two_factor_locked_until']);
+            $now         = new \DateTime();
+
+            if ($now < $lockedUntil) {
+                $diff = $now->diff($lockedUntil);
+                $secondsLeft = ($diff->i * 60) + $diff->s;
+
+                echo json_encode([
+                    'locked'       => true,
+                    'seconds_left' => $secondsLeft,
+                ]);
+                exit;
+            }
+        }
+
+        echo json_encode(['locked' => false]);
+        exit;
+    }
+
+    public function noConfirmed(): void
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        // Aucune session → login
+        if (!isset($_SESSION['user']['id']) && !isset($_SESSION['unconfirmed_user']['id'])) {
+            header('Location: ./login');
+            exit();
+        }
+
+        // Priorité à la session unconfirmed (vient de loginPost)
+        if (isset($_SESSION['unconfirmed_user'])) {
+            $email = $_SESSION['unconfirmed_user']['email'];
+        } else {
+            // Utilisateur connecté mais non confirmé
+            if (!empty($_SESSION['user']['is_confirmed']) && (int) $_SESSION['user']['is_confirmed'] === 1) {
+                header('Location: ./');
+                exit();
+            }
+            $email = $_SESSION['user']['email'] ?? '';
+        }
+
+        require __DIR__ . '/../views/auth/noconfirmed.php';
     }
 }

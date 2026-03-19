@@ -14,6 +14,7 @@ $cssFiles = [
   __DIR__ . '/public/css/auth/login.css',
   __DIR__ . '/public/css/auth/register.css',
   __DIR__ . '/public/css/auth/resetPasswordPage.css',
+  __DIR__ . '/public/css/auth/verify2fa.css',
 ];
 
 $jsFiles = [
@@ -24,6 +25,8 @@ $jsFiles = [
   __DIR__ . '/public/js/login.js',
   __DIR__ . '/public/js/register.js',
   __DIR__ . '/public/js/resetPassword.js',
+  __DIR__ . '/public/js/auth/verify2fa.js',
+  __DIR__ . '/public/js/auth/noconfirmed.js',
 
 ];
 

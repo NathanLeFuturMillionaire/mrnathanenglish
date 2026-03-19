@@ -267,7 +267,7 @@ class UserRepository
         return $stmt->execute();
     }
 
-    public function getLoginHistory(int $userId, int $limit = 10): array
+    public function getLoginHistory(int $userId, int $limit = 4): array
     {
         $stmt = $this->db->prepare("
         SELECT
@@ -286,6 +286,16 @@ class UserRepository
         $stmt->execute();
 
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+    public function countLoginHistory(int $userId): int
+    {
+        $stmt = $this->db->prepare("
+        SELECT COUNT(*) FROM user_login_history WHERE user_id = :user_id
+    ");
+        $stmt->bindValue(':user_id', $userId, \PDO::PARAM_INT);
+        $stmt->execute();
+        return (int) $stmt->fetchColumn();
     }
 
     private function getIpAddress(): string
@@ -311,5 +321,242 @@ class UserRepository
         $stmt->bindValue(':id',      $id,     \PDO::PARAM_INT);
         $stmt->bindValue(':user_id', $userId, \PDO::PARAM_INT);
         return $stmt->execute();
+    }
+
+    // Active ou désactive le 2FA
+    public function toggleTwoFactor(int $userId, bool $enabled): bool
+    {
+        $stmt = $this->db->prepare("
+        UPDATE users
+        SET two_factor_enabled = :enabled
+        WHERE id = :id
+    ");
+        $stmt->bindValue(':enabled', $enabled ? 1 : 0, \PDO::PARAM_INT);
+        $stmt->bindValue(':id',      $userId,           \PDO::PARAM_INT);
+        return $stmt->execute();
+    }
+
+    // Génère et sauvegarde un code 2FA (expire dans 10 minutes)
+    public function saveTwoFactorCode(int $userId): string
+    {
+        $code      = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+
+        // Utilise la même source de temps que MySQL pour éviter les décalages
+        $stmt = $this->db->prepare("
+            UPDATE users
+            SET two_factor_code    = :code,
+                two_factor_expires = DATE_ADD(NOW(), INTERVAL 10 MINUTE)
+            WHERE id = :id
+        ");
+        $stmt->bindValue(':code', $code);
+        $stmt->bindValue(':id',   $userId, \PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $code;
+    }
+
+    // Vérifie le code 2FA
+    public function verifyTwoFactorCode(int $userId, string $code): array
+    {
+        // Vérifie si le compte est verrouillé
+        $stmtLock = $this->db->prepare("
+            SELECT two_factor_attempts, two_factor_locked_until
+            FROM users
+            WHERE id = :id
+        ");
+        $stmtLock->bindValue(':id', $userId, \PDO::PARAM_INT);
+        $stmtLock->execute();
+        $lockData = $stmtLock->fetch(\PDO::FETCH_ASSOC);
+
+        // Compte verrouillé
+        if (!empty($lockData['two_factor_locked_until'])) {
+            $lockedUntil = new \DateTime($lockData['two_factor_locked_until']);
+            $now         = new \DateTime();
+
+            if ($now < $lockedUntil) {
+                $secondsLeft = $now->diff($lockedUntil)->s + ($now->diff($lockedUntil)->i * 60);
+                return [
+                    'success'      => false,
+                    'locked'       => true,
+                    'seconds_left' => $secondsLeft,
+                    'message'      => 'Compte temporairement bloqué.',
+                ];
+            } else {
+                // Verrou expiré — réinitialise
+                $this->resetTwoFactorAttempts($userId);
+            }
+        }
+
+        // Vérifie le code
+        $stmt = $this->db->prepare("
+            SELECT id FROM users
+            WHERE id              = :id
+              AND two_factor_code = :code
+              AND two_factor_expires > NOW()
+        ");
+        $stmt->bindValue(':id',   $userId, \PDO::PARAM_INT);
+        $stmt->bindValue(':code', $code);
+        $stmt->execute();
+
+        if (!$stmt->fetch()) {
+            // Incrémente les tentatives
+            $attempts = (int) ($lockData['two_factor_attempts'] ?? 0) + 1;
+
+            if ($attempts >= 5) {
+                // Verrouille pendant 10 minutes
+                $lockStmt = $this->db->prepare("
+                    UPDATE users
+                    SET two_factor_attempts     = :attempts,
+                        two_factor_locked_until = DATE_ADD(NOW(), INTERVAL 10 MINUTE)
+                    WHERE id = :id
+                ");
+                $lockStmt->bindValue(':attempts', $attempts, \PDO::PARAM_INT);
+                $lockStmt->bindValue(':id',       $userId,   \PDO::PARAM_INT);
+                $lockStmt->execute();
+
+                return [
+                    'success'      => false,
+                    'locked'       => true,
+                    'seconds_left' => 600,
+                    'message'      => 'Trop de tentatives. Réessayez dans 10 minutes.',
+                ];
+            }
+
+            // Met à jour le compteur
+            $incrStmt = $this->db->prepare("
+                UPDATE users SET two_factor_attempts = :attempts WHERE id = :id
+            ");
+            $incrStmt->bindValue(':attempts', $attempts, \PDO::PARAM_INT);
+            $incrStmt->bindValue(':id',       $userId,   \PDO::PARAM_INT);
+            $incrStmt->execute();
+
+            return [
+                'success'          => false,
+                'locked'           => false,
+                'attempts_left'    => 5 - $attempts,
+                'message'          => 'Code incorrect.',
+            ];
+        }
+
+        // Code valide — réinitialise tout
+        $this->resetTwoFactorAttempts($userId);
+
+        $clean = $this->db->prepare("
+            UPDATE users
+            SET two_factor_code = NULL, two_factor_expires = NULL
+            WHERE id = :id
+        ");
+        $clean->bindValue(':id', $userId, \PDO::PARAM_INT);
+        $clean->execute();
+
+        return ['success' => true];
+    }
+
+    private function resetTwoFactorAttempts(int $userId): void
+    {
+        $stmt = $this->db->prepare("
+            UPDATE users
+            SET two_factor_attempts     = 0,
+                two_factor_locked_until = NULL
+            WHERE id = :id
+        ");
+        $stmt->bindValue(':id', $userId, \PDO::PARAM_INT);
+        $stmt->execute();
+    }
+
+    // Vérifie si le 2FA est activé pour un utilisateur
+    public function hasTwoFactorEnabled(int $userId): bool
+    {
+        $stmt = $this->db->prepare("
+        SELECT two_factor_enabled FROM users WHERE id = :id
+    ");
+        $stmt->bindValue(':id', $userId, \PDO::PARAM_INT);
+        $stmt->execute();
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+        return (bool) ($row['two_factor_enabled'] ?? false);
+    }
+
+    // Enregistre un navigateur de confiance
+    public function saveTrustedDevice(int $userId, string $userAgent): string
+    {
+        $token     = bin2hex(random_bytes(32));
+        $expiresAt = date('Y-m-d H:i:s', strtotime('+30 days'));
+
+        // Détecte le nom lisible du navigateur/OS
+        $browser = match (true) {
+            str_contains($userAgent, 'Edg')     => 'Edge',
+            str_contains($userAgent, 'Chrome')  => 'Chrome',
+            str_contains($userAgent, 'Firefox') => 'Firefox',
+            str_contains($userAgent, 'Safari')  => 'Safari',
+            str_contains($userAgent, 'Opera')  => 'Opera',
+            default                             => 'Navigateur'
+        };
+
+        $os = match (true) {
+            str_contains($userAgent, 'Windows') => 'Windows',
+            str_contains($userAgent, 'iPhone')  => 'iPhone',
+            str_contains($userAgent, 'Android') => 'Android',
+            str_contains($userAgent, 'Mac')     => 'macOS',
+            str_contains($userAgent, 'Linux')   => 'Linux',
+            default                             => 'OS inconnu'
+        };
+
+        $stmt = $this->db->prepare("
+        INSERT INTO user_trusted_devices
+            (user_id, token, user_agent, ip_address, name, expires_at)
+        VALUES
+            (:user_id, :token, :ua, :ip, :name, :expires)
+    ");
+
+        $stmt->bindValue(':user_id', $userId, \PDO::PARAM_INT);
+        $stmt->bindValue(':token',   $token);
+        $stmt->bindValue(':ua',      $userAgent);
+        $stmt->bindValue(':ip',      $this->getIpAddress());
+        $stmt->bindValue(':name',    $browser . ' sur ' . $os);
+        $stmt->bindValue(':expires', $expiresAt);
+        $stmt->execute();
+
+        return $token;
+    }
+
+    // Vérifie si le navigateur est de confiance
+    public function isTrustedDevice(int $userId, string $token): bool
+    {
+        $stmt = $this->db->prepare("
+        SELECT id FROM user_trusted_devices
+        WHERE user_id  = :user_id
+          AND token    = :token
+          AND expires_at > NOW()
+    ");
+        $stmt->bindValue(':user_id', $userId, \PDO::PARAM_INT);
+        $stmt->bindValue(':token',   $token);
+        $stmt->execute();
+        return (bool) $stmt->fetch();
+    }
+
+    // Supprime un appareil de confiance
+    public function deleteTrustedDevice(int $userId, string $token): bool
+    {
+        $stmt = $this->db->prepare("
+        DELETE FROM user_trusted_devices
+        WHERE user_id = :user_id AND token = :token
+    ");
+        $stmt->bindValue(':user_id', $userId, \PDO::PARAM_INT);
+        $stmt->bindValue(':token',   $token);
+        return $stmt->execute();
+    }
+
+    // Liste les appareils de confiance
+    public function getTrustedDevices(int $userId): array
+    {
+        $stmt = $this->db->prepare("
+        SELECT id, name, ip_address, created_at, expires_at
+        FROM user_trusted_devices
+        WHERE user_id = :user_id AND expires_at > NOW()
+        ORDER BY created_at DESC
+    ");
+        $stmt->bindValue(':user_id', $userId, \PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 }

@@ -454,20 +454,22 @@ label {
 /* ===== MESSAGES ===== */
 #error-code {
   display: block;
-  color: var(--danger);
+  min-height: 18px; /* ← réserve toujours la place, même vide */
   font-size: 0.82rem;
   font-weight: 500;
-  margin-bottom: 14px;
+  color: var(--danger, #e74c3c);
   text-align: left;
-  min-height: 18px;
-  transition: opacity var(--transition);
+  margin-bottom: 10px;
+  transition: opacity 0.2s ease;
 }
 
 #message,
 #resend-message {
+  min-height: 0;
   font-size: 0.88rem;
   font-weight: 500;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
+  transition: opacity 0.2s ease;
 }
 
 /* ===== BOUTON CONFIRMER ===== */
@@ -522,6 +524,13 @@ label {
 .btn-confirm:focus {
   outline: none;
   box-shadow: 0 0 0 4px rgba(26, 111, 181, 0.3);
+}
+
+.btn-confirm .btn-text {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
 
 /* ===== LIEN RENVOI ===== */
