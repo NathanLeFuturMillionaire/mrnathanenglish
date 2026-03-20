@@ -27,6 +27,7 @@ $jsFiles = [
   __DIR__ . '/public/js/resetPassword.js',
   __DIR__ . '/public/js/auth/verify2fa.js',
   __DIR__ . '/public/js/auth/noconfirmed.js',
+  __DIR__ . '/public/js/auth/verifyTotp.js',
 
 ];
 

@@ -266,12 +266,19 @@ form?.addEventListener("submit", async (e) => {
 
     // ===== SUCCÈS =====
     if (data.success) {
+      // Double auth — enchaîne vers TOTP
+      if (data.requires_totp) {
+        window.location.href = "./auth/verify-totp";
+        return;
+      }
+
+      // Connexion réussie normale
       submitBtn.style.background = "linear-gradient(135deg, #00c48c, #00e6a8)";
       btnText.innerHTML = '<i class="fas fa-check"></i> Connexion réussie !';
       btnText.style.display = "flex";
       spinner.style.display = "none";
       setTimeout(() => {
-        window.location.href = data.redirect ?? "./";
+        window.location.href = data.redirect ?? "../";
       }, 800);
       return;
     }

@@ -7,6 +7,7 @@ use App\Services\MailService;
 use App\Models\AdminRepository;
 use App\Models\AuthRepository;
 use App\Models\UserRepository;
+use PragmaRX\Google2FA\Google2FA;
 use DateTime;
 use Exception;
 use PDO;
@@ -266,6 +267,8 @@ class AuthController extends Controller
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
+        // ===== SESSION =====
+        session_regenerate_id(true);
 
         try {
             $email      = trim($_POST['email']    ?? '');
@@ -287,6 +290,7 @@ class AuthController extends Controller
                     u.is_confirmed,
                     u.created_at,
                     u.two_factor_enabled,
+                    u.totp_enabled,
                     up.profile_picture,
                     up.bio,
                     up.country,
@@ -332,14 +336,37 @@ class AuthController extends Controller
                 return;
             }
 
-            // ===== CHECK 2FA =====
-            if ($user['two_factor_enabled'] == 1) {
-                $userRepository = new UserRepository($this->db);
-                $trustedToken   = $_COOKIE['trusted_device_' . $user['id']] ?? null;
+            // ===== CHECK 2FA + TOTP =====
+            $has2fa  = !empty($user['two_factor_enabled']);
+            $hasTotp = !empty($user['totp_enabled']);
 
-                if ($trustedToken && $userRepository->isTrustedDevice((int) $user['id'], $trustedToken)) {
-                    // Navigateur de confiance → on continue normalement
-                } else {
+            $userRepository = new UserRepository($this->db);
+            $trustedToken   = $_COOKIE['trusted_device_' . $user['id']] ?? null;
+            $isTrusted      = $trustedToken && $userRepository->isTrustedDevice((int) $user['id'], $trustedToken);
+
+            if (!$isTrusted) {
+
+                // ===== CAS 1 : Les deux sont activés → double authentification =====
+                // On commence par le 2FA email, le TOTP sera demandé après
+                if ($has2fa && $hasTotp) {
+                    $code = $userRepository->saveTwoFactorCode((int) $user['id']);
+
+                    $mailService = new MailService();
+                    $mailService->sendTwoFactorCode($user['email'], $user['fullname'], $code);
+
+                    $_SESSION['2fa_pending_user_id']    = (int) $user['id'];
+                    $_SESSION['2fa_requires_totp_next'] = true; // ← flag pour enchaîner le TOTP
+
+                    echo json_encode([
+                        'success'      => true,
+                        'requires_2fa' => true,
+                        'message'      => 'Un code de vérification a été envoyé à votre adresse e-mail.',
+                    ]);
+                    exit;
+                }
+
+                // ===== CAS 2 : Seulement 2FA email =====
+                if ($has2fa) {
                     $code = $userRepository->saveTwoFactorCode((int) $user['id']);
 
                     $mailService = new MailService();
@@ -354,10 +381,21 @@ class AuthController extends Controller
                     ]);
                     exit;
                 }
-            }
 
-            // ===== SESSION =====
-            session_regenerate_id(true);
+                // ===== CAS 3 : Seulement TOTP =====
+                if ($hasTotp) {
+                    $_SESSION['totp_pending_user_id'] = (int) $user['id'];
+
+                    echo json_encode([
+                        'success'       => true,
+                        'requires_totp' => true,
+                        'message'       => 'Saisissez le code de votre application Google Authenticator.',
+                    ]);
+                    exit;
+                }
+
+                // ===== CAS 4 : Aucun 2FA → connexion directe =====
+            }
 
             // Remember me
             if ($rememberMe) {
@@ -1123,7 +1161,7 @@ class AuthController extends Controller
     {
         header('Content-Type: application/json');
 
-        $code        = preg_replace('/\D/', '', trim($_POST['otp_code'] ?? $_POST['code'] ?? ''));
+        $code        = preg_replace('/\D/', '', trim($_POST['otp_code'] ?? $_POST['otp_code'] ?? ''));
         $trustDevice   = filter_var($_POST['trust_device'] ?? false, FILTER_VALIDATE_BOOLEAN);
         $userId = (int) ($_SESSION['2fa_pending_user_id'] ?? 0);
 
@@ -1156,6 +1194,22 @@ class AuthController extends Controller
 
         if (!$userRepository->verifyTwoFactorCode($userId, $code)) {
             echo json_encode(['success' => false, 'message' => 'Code incorrect ou expiré.']);
+            exit;
+        }
+
+        // Code email valide — vérifie si TOTP doit suivre
+        if (!empty($_SESSION['2fa_requires_totp_next'])) {
+            unset($_SESSION['2fa_requires_totp_next']);
+            unset($_SESSION['2fa_pending_user_id']);
+
+            // Passe en mode TOTP
+            $_SESSION['totp_pending_user_id'] = $userId;
+
+            echo json_encode([
+                'success'       => true,
+                'requires_totp' => true,
+                'message'       => 'Saisissez maintenant le code de votre application Google Authenticator.',
+            ]);
             exit;
         }
 
@@ -1338,5 +1392,134 @@ class AuthController extends Controller
         }
 
         require __DIR__ . '/../views/auth/noconfirmed.php';
+    }
+
+    /**
+     * Vérifie le code TOTP lors de la connexion.
+     * Crée la session complète si le code est valide.
+     * Gère également l'option "Se souvenir de ce navigateur".
+     * Récupère le secret directement sans condition sur totp_enabled.
+     *
+     * @return void
+     */
+    public function verifyTotp(): void
+    {
+        header('Content-Type: application/json');
+
+        if (
+            $_SERVER['REQUEST_METHOD'] !== 'POST' ||
+            empty($_SERVER['HTTP_X_REQUESTED_WITH'])
+        ) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Requête non autorisée.']);
+            exit;
+        }
+
+        $userId      = (int) ($_SESSION['totp_pending_user_id'] ?? 0);
+        $code        = preg_replace('/\D/', '', trim($_POST['otp_code'] ?? $_POST['code'] ?? ''));
+        $trustDevice = filter_var($_POST['trust_device'] ?? false, FILTER_VALIDATE_BOOLEAN);
+
+        if (!$userId || strlen($code) !== 6) {
+            echo json_encode(['success' => false, 'message' => 'Code invalide ou session expirée.']);
+            exit;
+        }
+
+        // Récupère le secret sans condition sur totp_enabled
+        $stmt = $this->db->prepare("SELECT totp_secret FROM users WHERE id = ?");
+        $stmt->execute([$userId]);
+        $row    = $stmt->fetch(\PDO::FETCH_ASSOC);
+        $secret = $row['totp_secret'] ?? null;
+
+        if (!$secret) {
+            echo json_encode(['success' => false, 'message' => 'TOTP non configuré pour cet utilisateur.']);
+            exit;
+        }
+
+        $google2fa = new Google2FA();
+
+        if (!$google2fa->verifyKey($secret, $code, 4)) {
+            echo json_encode(['success' => false, 'message' => 'Code incorrect ou expiré.']);
+            exit;
+        }
+
+        $userRepository = new UserRepository($this->db);
+
+        // Enregistre le navigateur de confiance si demandé
+        if ($trustDevice) {
+            $token = $userRepository->saveTrustedDevice($userId, $_SERVER['HTTP_USER_AGENT'] ?? '');
+            setcookie(
+                'trusted_device_' . $userId,
+                $token,
+                time() + (30 * 24 * 60 * 60),
+                '/',
+                '',
+                false,
+                true
+            );
+        }
+
+        // Récupère les données complètes de l'utilisateur
+        $stmt = $this->db->prepare("
+            SELECT
+                u.*,
+                up.profile_picture,
+                up.english_level,
+                up.birth_date,
+                up.phone_number,
+                up.country,
+                up.bio,
+                up.native_language
+            FROM users u
+            LEFT JOIN user_profiles up ON up.user_id = u.id
+            WHERE u.id = ?
+        ");
+        $stmt->execute([$userId]);
+        $user = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        if (!$user) {
+            echo json_encode(['success' => false, 'message' => 'Utilisateur introuvable.']);
+            exit;
+        }
+
+        // Nettoie la session temporaire
+        unset($_SESSION['totp_pending_user_id']);
+
+        // Crée la session complète
+        session_regenerate_id(true);
+
+        $_SESSION['user'] = [
+            'id'                 => $user['id'],
+            'email'              => $user['email'],
+            'username'           => $user['username'],
+            'fullname'           => $user['fullname'],
+            'is_confirmed'       => (int) $user['is_confirmed'],
+            'created_at'         => $user['created_at'],
+            'phone_number'       => $user['phone_number']    ?? '',
+            'country'            => $user['country']         ?? '',
+            'bio'                => $user['bio']             ?? '',
+            'profile_picture'    => $user['profile_picture'] ?? 'default.png',
+            'english_level'      => $user['english_level']   ?? null,
+            'is_admin'           => false,
+            'two_factor_enabled' => (bool) ($user['two_factor_enabled'] ?? false),
+            'totp_enabled'       => (bool) ($user['totp_enabled']       ?? false),
+            'profile'            => [
+                'profile_picture' => $user['profile_picture'] ?? 'default.png',
+                'birth_date'      => $user['birth_date']      ?? null,
+                'phone_number'    => $user['phone_number']    ?? '',
+                'bio'             => $user['bio']             ?? '',
+                'country'         => $user['country']         ?? '',
+                'english_level'   => $user['english_level']  ?? null,
+                'native_language' => $user['native_language'] ?? null,
+            ],
+        ];
+
+        $userRepository->logLogin($userId);
+
+        echo json_encode([
+            'success'  => true,
+            'message'  => 'Connexion réussie.',
+            'redirect' => '../profile',
+        ]);
+        exit;
     }
 }

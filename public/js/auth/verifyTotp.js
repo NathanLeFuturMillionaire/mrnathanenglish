@@ -1,0 +1,245 @@
+// ===== OTP (même logique que verify2fa.js) =====
+const otpInputs = document.querySelectorAll(".otp-input");
+const hiddenInput = document.getElementById("otp_code");
+const submitBtn = document.getElementById("btn-verify");
+const otpError = document.getElementById("otp-error");
+const form = document.getElementById("verifyTotpForm");
+
+// ===== INITIALISATION =====
+submitBtn.disabled = true;
+submitBtn.style.opacity = "0.5";
+submitBtn.style.cursor = "not-allowed";
+
+otpInputs.forEach((input, index) => {
+  if (index !== 0) {
+    input.setAttribute("disabled", true);
+    input.style.opacity = "0.4";
+    input.style.cursor = "not-allowed";
+  }
+});
+
+// ===== HELPERS OTP =====
+function enableInput(index) {
+  const input = otpInputs[index];
+  input.removeAttribute("disabled");
+  input.style.opacity = "1";
+  input.style.cursor = "text";
+  input.focus();
+}
+
+function disableInput(index) {
+  const input = otpInputs[index];
+  input.setAttribute("disabled", true);
+  input.value = "";
+  input.style.opacity = "0.4";
+  input.style.cursor = "not-allowed";
+  input.classList.remove("is-filled", "is-error");
+}
+
+function syncHidden() {
+  hiddenInput.value = [...otpInputs].map((i) => i.value).join("");
+}
+
+function isComplete() {
+  return [...otpInputs].every((i) => i.value !== "");
+}
+
+function updateBtn() {
+  const complete = isComplete();
+  submitBtn.disabled = !complete;
+  submitBtn.style.opacity = complete ? "1" : "0.5";
+  submitBtn.style.cursor = complete ? "pointer" : "not-allowed";
+}
+
+function clearOtpError() {
+  otpError.textContent = "";
+  otpInputs.forEach((inp) => inp.classList.remove("is-error"));
+}
+
+function resetOtpInputs() {
+  otpInputs.forEach((inp, i) => {
+    inp.value = "";
+    inp.classList.remove("is-filled", "is-error");
+    if (i !== 0) disableInput(i);
+    else {
+      inp.removeAttribute("disabled");
+      inp.style.opacity = "1";
+      inp.style.cursor = "text";
+    }
+  });
+  syncHidden();
+  updateBtn();
+  otpInputs[0].focus();
+}
+
+// ===== ÉCOUTEURS OTP =====
+otpInputs.forEach((input, index) => {
+  input.addEventListener("input", (e) => {
+    const val = e.target.value.replace(/\D/g, "");
+    input.value = val ? val[val.length - 1] : "";
+    if (input.value) {
+      input.classList.add("is-filled");
+      if (index < otpInputs.length - 1) enableInput(index + 1);
+    } else {
+      input.classList.remove("is-filled");
+    }
+    syncHidden();
+    updateBtn();
+    clearOtpError();
+  });
+
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Backspace") {
+      if (input.value) {
+        input.value = "";
+        input.classList.remove("is-filled");
+        syncHidden();
+        updateBtn();
+      } else if (index > 0) {
+        disableInput(index);
+        enableInput(index - 1);
+        otpInputs[index - 1].value = "";
+        otpInputs[index - 1].classList.remove("is-filled");
+        syncHidden();
+        updateBtn();
+      }
+    }
+  });
+
+  input.addEventListener("paste", (e) => {
+    e.preventDefault();
+    const pasted = e.clipboardData
+      .getData("text")
+      .replace(/\D/g, "")
+      .slice(0, 6);
+    if (!pasted) return;
+    otpInputs.forEach((inp, i) => {
+      if (i !== 0) disableInput(i);
+      inp.value = "";
+      inp.classList.remove("is-filled");
+    });
+    [...pasted].forEach((char, i) => {
+      if (i < otpInputs.length) {
+        if (i !== 0) enableInput(i);
+        otpInputs[i].value = char;
+        otpInputs[i].classList.add("is-filled");
+      }
+    });
+    if (pasted.length < otpInputs.length) enableInput(pasted.length);
+    else otpInputs[otpInputs.length - 1].focus();
+    syncHidden();
+    updateBtn();
+    clearOtpError();
+  });
+
+  input.addEventListener("focus", () => {
+    if (!input.disabled) input.select();
+  });
+});
+
+// ===== TIMER 30 SECONDES =====
+const ringFill = document.getElementById("totp-ring-fill");
+const timerCount = document.getElementById("totp-timer-count");
+const timerSeconds = document.getElementById("totp-seconds");
+const circumference = 100; // stroke-dasharray
+
+function startTotpTimer() {
+  const now = Math.floor(Date.now() / 1000);
+  const remaining = 30 - (now % 30);
+
+  function tick() {
+    const currentNow = Math.floor(Date.now() / 1000);
+    const currentRemaining = 30 - (currentNow % 30);
+    const offset = circumference - (currentRemaining / 30) * circumference;
+
+    // Met à jour le cercle
+    ringFill.style.strokeDashoffset = offset;
+
+    // Met à jour le texte
+    timerCount.textContent = currentRemaining;
+    if (timerSeconds) timerSeconds.textContent = currentRemaining;
+
+    // Rouge dans les 5 dernières secondes
+    const isEnding = currentRemaining <= 5;
+    ringFill.classList.toggle("is-ending", isEnding);
+    timerCount.classList.toggle("is-ending", isEnding);
+    if (timerSeconds)
+      timerSeconds.parentElement
+        .querySelector("strong")
+        .classList.toggle("is-ending", isEnding);
+
+    // Réinitialise les cases quand le code expire
+    if (currentRemaining === 30 && currentNow !== now) {
+      resetOtpInputs();
+      clearOtpError();
+    }
+  }
+
+  tick();
+  setInterval(tick, 1000);
+}
+
+startTotpTimer();
+
+// ===== SOUMISSION =====
+form?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if (!isComplete()) return;
+
+  const btnText = submitBtn.querySelector(".btn-text");
+  const spinner = submitBtn.querySelector(".btn-spinner");
+  const trustDevice = document.getElementById("trust-device").checked;
+
+  submitBtn.disabled = true;
+  btnText.style.display = "none";
+  spinner.style.display = "flex";
+  clearOtpError();
+
+  try {
+    const res = await fetch("../auth/verify-totp", {
+      method: "POST",
+      body: new URLSearchParams({
+        otp_code: hiddenInput.value,
+        trust_device: trustDevice ? "1" : "0",
+      }),
+      headers: {
+        "X-Requested-With": "XMLHttpRequest",
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      submitBtn.style.background = "linear-gradient(135deg, #00c48c, #00e6a8)";
+      btnText.innerHTML = '<i class="fas fa-check"></i> Connexion réussie !';
+      btnText.style.display = "flex";
+      spinner.style.display = "none";
+      setTimeout(() => {
+        window.location.href = data.redirect ?? "./";
+      }, 800);
+      return;
+    }
+
+    // Erreur
+    otpError.textContent = data.message ?? "Code incorrect ou expiré.";
+    otpInputs.forEach((inp) => {
+      if (!inp.disabled) inp.classList.add("is-error");
+    });
+    setTimeout(() => {
+      otpInputs.forEach((inp) => inp.classList.remove("is-error"));
+    }, 600);
+
+    resetOtpInputs();
+    submitBtn.disabled = false;
+    btnText.style.display = "flex";
+    spinner.style.display = "none";
+    updateBtn();
+  } catch {
+    otpError.textContent = "Erreur réseau. Veuillez réessayer.";
+    submitBtn.disabled = false;
+    btnText.style.display = "flex";
+    spinner.style.display = "none";
+    updateBtn();
+  }
+});

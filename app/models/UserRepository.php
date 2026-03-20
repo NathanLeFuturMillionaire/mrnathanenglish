@@ -115,12 +115,7 @@ class UserRepository
     public function getUserWithProfileAndSubscriptionsById(int $userId): ?array
     {
         $sql = "SELECT 
-            u.id,
-            u.fullname,
-            u.email,
-            u.username,
-            u.is_confirmed,
-            u.created_at,
+            u.*,
 
             p.profile_picture,
             p.birth_date,
@@ -558,5 +553,60 @@ class UserRepository
         $stmt->bindValue(':user_id', $userId, \PDO::PARAM_INT);
         $stmt->execute();
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+    /**
+     * Sauvegarde le secret TOTP et active Google Authenticator pour l'utilisateur.
+     *
+     * @param  int    $userId Identifiant de l'utilisateur
+     * @param  string $secret Secret TOTP généré par la librairie OTPHP
+     * @return bool          True si la mise à jour a réussi
+     */
+    public function saveTotpSecret(int $userId, string $secret): bool
+    {
+        $stmt = $this->db->prepare("
+        UPDATE users
+        SET totp_secret  = :secret,
+            totp_enabled = 1
+        WHERE id = :id
+    ");
+        $stmt->bindValue(':secret', $secret);
+        $stmt->bindValue(':id',     $userId, \PDO::PARAM_INT);
+        return $stmt->execute();
+    }
+
+    /**
+     * Désactive Google Authenticator et supprime le secret TOTP de l'utilisateur.
+     *
+     * @param  int  $userId Identifiant de l'utilisateur
+     * @return bool         True si la mise à jour a réussi
+     */
+    public function disableTotp(int $userId): bool
+    {
+        $stmt = $this->db->prepare("
+        UPDATE users
+        SET totp_secret  = NULL,
+            totp_enabled = 0
+        WHERE id = :id
+    ");
+        $stmt->bindValue(':id', $userId, \PDO::PARAM_INT);
+        return $stmt->execute();
+    }
+
+    /**
+     * Récupère le secret TOTP d'un utilisateur si Google Authenticator est activé.
+     *
+     * @param  int         $userId Identifiant de l'utilisateur
+     * @return string|null         Le secret TOTP ou null si non configuré
+     */
+    public function getTotpSecret(int $userId): ?string
+    {
+        $stmt = $this->db->prepare("
+        SELECT totp_secret FROM users
+        WHERE id = :id AND totp_enabled = 1
+    ");
+        $stmt->bindValue(':id', $userId, \PDO::PARAM_INT);
+        $stmt->execute();
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+        return $row['totp_secret'] ?? null;
     }
 }

@@ -353,3 +353,71 @@
   font-size: 13px;
   flex-shrink: 0;
 }
+
+/* ===== TOTP TIMER ===== */
+.totp-timer-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 4px auto 0;
+  width: 48px;
+  height: 48px;
+}
+
+.totp-timer-ring {
+  transform: rotate(-90deg);
+}
+
+.totp-timer-ring__bg {
+  fill: none;
+  stroke: #e2eaf5;
+  stroke-width: 3;
+}
+
+.totp-timer-ring__fill {
+  fill: none;
+  stroke: #1a6fb5;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 100;
+  stroke-dashoffset: 0;
+  transition:
+    stroke-dashoffset 1s linear,
+    stroke 0.5s ease;
+}
+
+.totp-timer-ring__fill.is-ending {
+  stroke: #f5365c;
+}
+
+.totp-timer-count {
+  position: absolute;
+  font-family: "Montserrat", sans-serif;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #0d2b5e;
+  font-variant-numeric: tabular-nums;
+  transition: color 0.5s ease;
+}
+
+.totp-timer-count.is-ending {
+  color: #f5365c;
+}
+
+.totp-timer-label {
+  font-size: 0.78rem;
+  color: #6b7a99;
+  text-align: center;
+  margin: 6px 0 16px;
+}
+
+.totp-timer-label strong {
+  color: #0d2b5e;
+  font-variant-numeric: tabular-nums;
+  transition: color 0.5s ease;
+}
+
+.totp-timer-label strong.is-ending {
+  color: #f5365c;
+}

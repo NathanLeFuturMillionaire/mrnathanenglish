@@ -5,6 +5,13 @@ namespace App\Controllers;
 use App\Core\Database;
 use App\Helpers\LanguageHelper;
 use App\Models\UserRepository;
+use PragmaRX\Google2FA\Google2FA;
+use BaconQrCode\Renderer\ImageRenderer;
+use BaconQrCode\Renderer\Image\SvgImageBackEnd;
+use BaconQrCode\Renderer\RendererStyle\RendererStyle;
+use BaconQrCode\Writer;
+
+
 use Throwable;
 
 class UserController
@@ -332,6 +339,8 @@ class UserController
             'english_level'         => $englishLevel,
             'english_level_label'   => $englishLevelLabel,
             'profile_picture'       => $row['profile_picture'] ?? 'default.png',
+            'two_factor_enabled' => (bool) ($row['two_factor_enabled'] ?? false),
+            'totp_enabled'       => (bool) ($row['totp_enabled']       ?? false),
             'is_confirmed'          => $row['is_confirmed'],
             'created_at'            => $row['created_at'],
             'created_at_formatted'  => $createdAtFormatted,
@@ -601,6 +610,154 @@ class UserController
             'message' => $enabled
                 ? 'Authentification à deux facteurs activée.'
                 : 'Authentification à deux facteurs désactivée.',
+        ]);
+        exit;
+    }
+
+
+    /**
+     * Génère un secret TOTP et retourne le QR code à scanner.
+     * Le secret est stocké temporairement en session jusqu'à validation.
+     * Utilise bacon/bacon-qr-code pour générer le QR code en SVG base64.
+     *
+     * @return void
+     */
+    public function generateTotp(): void
+    {
+        header('Content-Type: application/json');
+
+        if (empty($_SESSION['user']['id'])) {
+            http_response_code(401);
+            echo json_encode(['success' => false, 'message' => 'Non authentifié.']);
+            exit;
+        }
+
+        $username = $_SESSION['user']['email'] ?? 'user';
+
+        $google2fa = new Google2FA();
+        $secret    = $google2fa->generateSecretKey();
+
+        $_SESSION['totp_pending_secret'] = $secret;
+
+        $otpUrl = $google2fa->getQRCodeUrl('OpenDoorsClass', $username, $secret);
+
+        $renderer = new ImageRenderer(
+            new RendererStyle(200),
+            new SvgImageBackEnd()
+        );
+        $writer = new Writer($renderer);
+        $svg    = $writer->writeString($otpUrl);
+        $qrUrl  = 'data:image/svg+xml;base64,' . base64_encode($svg);
+
+        echo json_encode([
+            'success' => true,
+            'qr_url'  => $qrUrl,
+            'secret'  => $secret,
+        ]);
+        exit;
+    }
+
+    /**
+     * Vérifie le code TOTP saisi par l'utilisateur et active Google Authenticator.
+     * Le secret temporaire en session est sauvegardé en base si le code est valide.
+     * Utilise pragmarx/google2fa avec une tolérance de ±2 minutes.
+     *
+     * @return void
+     */
+    public function activateTotp(): void
+    {
+        header('Content-Type: application/json');
+
+        if (
+            $_SERVER['REQUEST_METHOD'] !== 'POST' ||
+            empty($_SERVER['HTTP_X_REQUESTED_WITH']) ||
+            empty($_SESSION['user']['id'])
+        ) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Requête non autorisée.']);
+            exit;
+        }
+
+        $userId = (int) $_SESSION['user']['id'];
+        $code   = preg_replace('/\D/', '', trim($_POST['code'] ?? ''));
+        $secret = $_SESSION['totp_pending_secret'] ?? trim($_POST['secret'] ?? '');
+
+        if (!$secret || strlen($code) !== 6) {
+            echo json_encode(['success' => false, 'message' => 'Données invalides.']);
+            exit;
+        }
+
+        $google2fa = new Google2FA();
+
+        if (!$google2fa->verifyKey($secret, $code, 4)) {
+            echo json_encode(['success' => false, 'message' => 'Code incorrect. Vérifiez votre application.']);
+            exit;
+        }
+
+        $this->userRepository->saveTotpSecret($userId, $secret);
+        unset($_SESSION['totp_pending_secret']);
+        $_SESSION['user']['totp_enabled'] = true;
+
+        echo json_encode([
+            'success' => true,
+            'message' => 'Google Authenticator activé avec succès.',
+        ]);
+        exit;
+    }
+
+    /**
+     * Désactive Google Authenticator après vérification du code actuel.
+     * Le secret est supprimé de la base uniquement si le code fourni est valide.
+     * Récupère le secret sans condition sur totp_enabled pour éviter les blocages.
+     *
+     * @return void
+     */
+    public function disableTotp(): void
+    {
+        header('Content-Type: application/json');
+
+        if (
+            $_SERVER['REQUEST_METHOD'] !== 'POST' ||
+            empty($_SERVER['HTTP_X_REQUESTED_WITH']) ||
+            empty($_SESSION['user']['id'])
+        ) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Requête non autorisée.']);
+            exit;
+        }
+
+        $userId = (int) $_SESSION['user']['id'];
+        $code   = preg_replace('/\D/', '', trim($_POST['code'] ?? ''));
+
+        if (strlen($code) !== 6) {
+            echo json_encode(['success' => false, 'message' => 'Code invalide.']);
+            exit;
+        }
+
+        // Récupère le secret sans condition sur totp_enabled
+        $stmt = $this->db->prepare("SELECT totp_secret FROM users WHERE id = ?");
+        $stmt->execute([$userId]);
+        $row    = $stmt->fetch(\PDO::FETCH_ASSOC);
+        $secret = $row['totp_secret'] ?? null;
+
+        if (!$secret) {
+            echo json_encode(['success' => false, 'message' => 'TOTP non configuré.']);
+            exit;
+        }
+
+        $google2fa = new Google2FA();
+
+        if (!$google2fa->verifyKey($secret, $code, 4)) {
+            echo json_encode(['success' => false, 'message' => 'Code incorrect. Impossible de désactiver.']);
+            exit;
+        }
+
+        $this->userRepository->disableTotp($userId);
+        $_SESSION['user']['totp_enabled'] = false;
+
+        echo json_encode([
+            'success' => true,
+            'message' => 'Google Authenticator désactivé avec succès.',
         ]);
         exit;
     }

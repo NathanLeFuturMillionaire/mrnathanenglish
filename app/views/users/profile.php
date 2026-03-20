@@ -56,9 +56,8 @@ if ($_SESSION['user']['is_confirmed'] != 1) {
                     <i class="fas fa-graduation-cap"></i>
                     <?= htmlspecialchars($user['profile']['english_level_label'] ?? $levelLabel) ?>
                 </span>
-                <!-- ===== COMPLÉTION PROFIL ===== -->
-                <?php if ($completion['percentage'] < 100): ?>
 
+                <?php if ($completion['percentage'] < 100): ?>
                     <div class="profile-completion">
                         <div class="profile-completion__header">
                             <span class="profile-completion__label">Profil complété</span>
@@ -66,7 +65,6 @@ if ($_SESSION['user']['is_confirmed'] != 1) {
                                 <?= $completion['percentage'] ?>%
                             </span>
                         </div>
-
                         <div class="profile-completion__bar">
                             <div
                                 class="profile-completion__fill profile-completion__fill--<?= $completion['color'] ?>"
@@ -74,33 +72,25 @@ if ($_SESSION['user']['is_confirmed'] != 1) {
                                 style="width: <?= $completion['percentage'] ?>%">
                             </div>
                         </div>
-
                         <div class="profile-completion__details" id="completion-details">
-                            <?php if ($completion['percentage'] < 100): ?>
-                                <span class="profile-completion__hint">
-                                    <i class="fas fa-circle-info"></i>
-                                    <?= $completion['filled'] ?>/<?= $completion['total'] ?> champs remplis
-                                </span>
-                                <?php if (!empty($completion['missing'])): ?>
-                                    <div class="profile-completion__missing">
-                                        <?php foreach (array_slice($completion['missing'], 0, 3) as $missing): ?>
-                                            <span class="profile-completion__tag">
-                                                <i class="fas fa-plus"></i>
-                                                <?= htmlspecialchars($missing) ?>
-                                            </span>
-                                        <?php endforeach; ?>
-                                        <?php if (count($completion['missing']) > 3): ?>
-                                            <span class="profile-completion__tag profile-completion__tag--more">
-                                                +<?= count($completion['missing']) - 3 ?> autre(s)
-                                            </span>
-                                        <?php endif; ?>
-                                    </div>
-                                <?php endif; ?>
-                            <?php else: ?>
-                                <span class="profile-completion__hint profile-completion__hint--done">
-                                    <i class="fas fa-circle-check"></i>
-                                    Profil complet
-                                </span>
+                            <span class="profile-completion__hint">
+                                <i class="fas fa-circle-info"></i>
+                                <?= $completion['filled'] ?>/<?= $completion['total'] ?> champs remplis
+                            </span>
+                            <?php if (!empty($completion['missing'])): ?>
+                                <div class="profile-completion__missing">
+                                    <?php foreach (array_slice($completion['missing'], 0, 3) as $missing): ?>
+                                        <span class="profile-completion__tag">
+                                            <i class="fas fa-plus"></i>
+                                            <?= htmlspecialchars($missing) ?>
+                                        </span>
+                                    <?php endforeach; ?>
+                                    <?php if (count($completion['missing']) > 3): ?>
+                                        <span class="profile-completion__tag profile-completion__tag--more">
+                                            +<?= count($completion['missing']) - 3 ?> autre(s)
+                                        </span>
+                                    <?php endif; ?>
+                                </div>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -108,7 +98,6 @@ if ($_SESSION['user']['is_confirmed'] != 1) {
 
             </div>
 
-            <!-- Stats rapides -->
             <div class="menu-stats">
                 <div class="menu-stat">
                     <span class="menu-stat__value">0</span>
@@ -181,7 +170,6 @@ if ($_SESSION['user']['is_confirmed'] != 1) {
                     </button>
                 </div>
 
-                <!-- ===== VUE LECTURE ===== -->
                 <div id="profile-view">
 
                     <div class="card">
@@ -192,7 +180,6 @@ if ($_SESSION['user']['is_confirmed'] != 1) {
                             </h2>
                         </div>
                         <div class="info-list">
-                            <!-- Informations personnelles -->
                             <div class="info-item">
                                 <label>Nom d'utilisateur</label>
                                 <p data-field="username"><?= htmlspecialchars($user['username'] ?? 'Non renseigné') ?></p>
@@ -229,7 +216,6 @@ if ($_SESSION['user']['is_confirmed'] != 1) {
                                 <label>Biographie</label>
                                 <p data-field="bio"><?= nl2br(htmlspecialchars($user['bio'] ?? 'Aucune biographie.')) ?></p>
                             </div>
-
                             <div class="info-item">
                                 <label>État du compte</label>
                                 <p>
@@ -244,7 +230,7 @@ if ($_SESSION['user']['is_confirmed'] != 1) {
                             </div>
                         </div>
                     </div>
-                    <!-- ===== HISTORIQUE DES CONNEXIONS ===== -->
+
                     <div class="card">
                         <div class="card-header">
                             <h2 class="card-title">
@@ -254,14 +240,11 @@ if ($_SESSION['user']['is_confirmed'] != 1) {
                         </div>
 
                         <?php if (empty($loginHistory)): ?>
-                            <p style="color:var(--text-muted);font-size:0.88rem;">
-                                Aucune connexion enregistrée.
-                            </p>
+                            <p style="color:var(--text-muted);font-size:0.88rem;">Aucune connexion enregistrée.</p>
                         <?php else: ?>
                             <ul class="login-history" id="login-history-list">
                                 <?php foreach ($loginHistory as $index => $login): ?>
                                     <li class="login-history__item <?= $index === 0 ? 'login-history__item--current' : '' ?>">
-
                                         <div class="login-history__icon">
                                             <?php if ($login['device'] === 'mobile'): ?>
                                                 <i class="fas fa-mobile-screen"></i>
@@ -271,12 +254,9 @@ if ($_SESSION['user']['is_confirmed'] != 1) {
                                                 <i class="fas fa-display"></i>
                                             <?php endif; ?>
                                         </div>
-
                                         <div class="login-history__info">
                                             <span class="login-history__device">
-                                                <?= htmlspecialchars($login['browser']) ?>
-                                                sur
-                                                <?= htmlspecialchars($login['os']) ?>
+                                                <?= htmlspecialchars($login['browser']) ?> sur <?= htmlspecialchars($login['os']) ?>
                                                 <?php if ($index === 0): ?>
                                                     <span class="login-history__badge">Session actuelle</span>
                                                 <?php endif; ?>
@@ -289,7 +269,6 @@ if ($_SESSION['user']['is_confirmed'] != 1) {
                                                 <?= htmlspecialchars($login['created_at']) ?>
                                             </span>
                                         </div>
-
                                         <?php if ($index !== 0): ?>
                                             <button
                                                 class="login-history__delete"
@@ -298,7 +277,6 @@ if ($_SESSION['user']['is_confirmed'] != 1) {
                                                 <i class="fas fa-trash-can"></i>
                                             </button>
                                         <?php endif; ?>
-
                                     </li>
                                 <?php endforeach; ?>
                             </ul>
@@ -313,14 +291,12 @@ if ($_SESSION['user']['is_confirmed'] != 1) {
                                 </div>
                             <?php endif; ?>
                         <?php endif; ?>
-
                     </div>
 
                 </div>
 
                 <!-- ===== FORMULAIRE ÉDITION ===== -->
                 <div id="profile-edit" style="display:none;">
-
                     <div class="card edit-card">
                         <div class="card-header">
                             <h2 class="card-title">
@@ -334,25 +310,13 @@ if ($_SESSION['user']['is_confirmed'] != 1) {
 
                         <form id="profile-edit-form" enctype="multipart/form-data">
 
-                            <!-- Photo de profil -->
                             <div class="edit-avatar-section">
                                 <div class="edit-avatar-wrapper">
-                                    <img
-                                        src="<?= $avatar ?>"
-                                        alt="Avatar"
-                                        id="avatar-preview"
-                                        class="edit-avatar-preview"
-                                        width="80"
-                                        height="80">
+                                    <img src="<?= $avatar ?>" alt="Avatar" id="avatar-preview" class="edit-avatar-preview" width="80" height="80">
                                     <label for="profile_picture" class="edit-avatar-btn" title="Changer la photo">
                                         <i class="fas fa-camera"></i>
                                     </label>
-                                    <input
-                                        type="file"
-                                        id="profile_picture"
-                                        name="profile_picture"
-                                        accept="image/jpeg,image/png,image/webp"
-                                        style="display:none;">
+                                    <input type="file" id="profile_picture" name="profile_picture" accept="image/jpeg,image/png,image/webp" style="display:none;">
                                 </div>
                                 <div class="edit-avatar-hint">
                                     <p>Cliquez sur l'icône pour changer votre photo</p>
@@ -361,103 +325,49 @@ if ($_SESSION['user']['is_confirmed'] != 1) {
                             </div>
 
                             <div class="edit-grid">
-
                                 <div class="edit-field">
                                     <label for="edit-username">Nom d'utilisateur</label>
-                                    <input
-                                        type="text"
-                                        id="edit-username"
-                                        name="username"
-                                        value="<?= htmlspecialchars($user['username'] ?? '') ?>"
-                                        placeholder="Votre nom d'utilisateur"
-                                        autocomplete="username">
+                                    <input type="text" id="edit-username" name="username" value="<?= htmlspecialchars($user['username'] ?? '') ?>" placeholder="Votre nom d'utilisateur" autocomplete="username">
                                     <small class="edit-error" id="err-username"></small>
                                 </div>
-
                                 <div class="edit-field">
                                     <label for="edit-fullname">Nom complet</label>
-                                    <input
-                                        type="text"
-                                        id="edit-fullname"
-                                        name="fullname"
-                                        value="<?= htmlspecialchars($user['fullname'] ?? '') ?>"
-                                        placeholder="Votre nom complet"
-                                        autocomplete="name">
+                                    <input type="text" id="edit-fullname" name="fullname" value="<?= htmlspecialchars($user['fullname'] ?? '') ?>" placeholder="Votre nom complet" autocomplete="name">
                                     <small class="edit-error" id="err-fullname"></small>
                                 </div>
-
                                 <div class="edit-field">
                                     <label for="edit-email">Adresse e-mail</label>
-                                    <input
-                                        type="email"
-                                        id="edit-email"
-                                        name="email"
-                                        value="<?= htmlspecialchars($user['email'] ?? '') ?>"
-                                        placeholder="votre@email.com"
-                                        autocomplete="email">
+                                    <input type="email" id="edit-email" name="email" value="<?= htmlspecialchars($user['email'] ?? '') ?>" placeholder="votre@email.com" autocomplete="email">
                                     <small class="edit-error" id="err-email"></small>
                                 </div>
-
                                 <div class="edit-field">
                                     <label for="edit-phone">Numéro de téléphone</label>
-                                    <input
-                                        type="tel"
-                                        id="edit-phone"
-                                        name="phone_number"
-                                        value="<?= htmlspecialchars($user['phone_number'] ?? '') ?>"
-                                        placeholder="+241 00 00 00 00"
-                                        autocomplete="tel">
+                                    <input type="tel" id="edit-phone" name="phone_number" value="<?= htmlspecialchars($user['phone_number'] ?? '') ?>" placeholder="+241 00 00 00 00" autocomplete="tel">
                                     <small class="edit-error" id="err-phone"></small>
                                 </div>
-
                                 <div class="edit-field">
                                     <label for="edit-country">Pays</label>
-                                    <input
-                                        type="text"
-                                        id="edit-country"
-                                        name="country"
-                                        value="<?= htmlspecialchars($user['country'] ?? '') ?>"
-                                        placeholder="Votre pays"
-                                        autocomplete="country-name">
+                                    <input type="text" id="edit-country" name="country" value="<?= htmlspecialchars($user['country'] ?? '') ?>" placeholder="Votre pays" autocomplete="country-name">
                                     <small class="edit-error" id="err-country"></small>
                                 </div>
-
                                 <div class="edit-field">
                                     <label for="edit-birthdate">Date de naissance</label>
-                                    <input
-                                        type="date"
-                                        id="edit-birthdate"
-                                        name="birth_date"
-                                        value="<?= htmlspecialchars($user['profile']['birth_date'] ?? '') ?>">
+                                    <input type="date" id="edit-birthdate" name="birth_date" value="<?= htmlspecialchars($user['profile']['birth_date'] ?? '') ?>">
                                     <small class="edit-error" id="err-birth_date"></small>
                                 </div>
-
-                                <!-- ===== NIVEAU D'ANGLAIS ===== -->
                                 <div class="edit-field">
                                     <label for="edit-level">Niveau d'anglais</label>
                                     <select id="edit-level" name="english_level">
                                         <option value="">-- Choisir un niveau --</option>
-                                        <option value="beginner"
-                                            <?= ($user['profile']['english_level'] ?? '') === 'beginner'     ? 'selected' : '' ?>>
-                                            Débutant
-                                        </option>
-                                        <option value="intermediate"
-                                            <?= ($user['profile']['english_level'] ?? '') === 'intermediate' ? 'selected' : '' ?>>
-                                            Intermédiaire
-                                        </option>
-                                        <option value="advanced"
-                                            <?= ($user['profile']['english_level'] ?? '') === 'advanced'     ? 'selected' : '' ?>>
-                                            Avancé
-                                        </option>
+                                        <option value="beginner" <?= ($user['profile']['english_level'] ?? '') === 'beginner' ? 'selected' : '' ?>>Débutant</option>
+                                        <option value="intermediate" <?= ($user['profile']['english_level'] ?? '') === 'intermediate' ? 'selected' : '' ?>>Intermédiaire</option>
+                                        <option value="advanced" <?= ($user['profile']['english_level'] ?? '') === 'advanced' ? 'selected' : '' ?>>Avancé</option>
                                     </select>
                                     <small class="edit-error" id="err-english_level"></small>
                                 </div>
-
-                                <!-- ===== LANGUE MATERNELLE ===== -->
                                 <div class="edit-field edit-field--full">
                                     <label>Langue maternelle</label>
                                     <div class="lang-dropdown" id="lang-dropdown">
-
                                         <div class="lang-trigger" id="lang-trigger">
                                             <span class="lang-trigger__flag" id="lang-selected-flag">🌐</span>
                                             <span class="lang-trigger__text" id="lang-selected-text">
@@ -476,24 +386,15 @@ if ($_SESSION['user']['is_confirmed'] != 1) {
                                             </span>
                                             <i class="fas fa-chevron-down lang-trigger__arrow"></i>
                                         </div>
-
-                                        <input type="hidden" name="native_language" id="native_language_input"
-                                            value="<?= htmlspecialchars($user['profile']['native_language'] ?? '') ?>">
-
+                                        <input type="hidden" name="native_language" id="native_language_input" value="<?= htmlspecialchars($user['profile']['native_language'] ?? '') ?>">
                                         <div class="lang-panel" id="lang-panel">
-
                                             <div class="lang-search">
                                                 <i class="fas fa-magnifying-glass"></i>
-                                                <input
-                                                    type="text"
-                                                    id="lang-search-input"
-                                                    placeholder="Rechercher une langue..."
-                                                    autocomplete="off">
+                                                <input type="text" id="lang-search-input" placeholder="Rechercher une langue..." autocomplete="off">
                                                 <button type="button" class="lang-search__clear" id="lang-search-clear" style="display:none;">
                                                     <i class="fas fa-xmark"></i>
                                                 </button>
                                             </div>
-
                                             <div class="lang-results" id="lang-results">
                                                 <?php foreach ($languages as $region => $langs): ?>
                                                     <div class="lang-group" data-region="<?= htmlspecialchars($region) ?>">
@@ -511,36 +412,24 @@ if ($_SESSION['user']['is_confirmed'] != 1) {
                                                         <?php endforeach; ?>
                                                     </div>
                                                 <?php endforeach; ?>
-
                                                 <div class="lang-no-results" id="lang-no-results" style="display:none;">
                                                     <i class="fas fa-face-frown-open"></i>
                                                     <p>OpenDoorsClass n'a trouvé aucune langue.</p>
                                                 </div>
                                             </div>
-
                                         </div>
                                     </div>
                                     <small class="edit-error" id="err-native_language"></small>
                                 </div>
-
-                                <!-- ===== BIOGRAPHIE ===== -->
                                 <div class="edit-field edit-field--full">
                                     <label for="edit-bio">Biographie</label>
-                                    <textarea
-                                        id="edit-bio"
-                                        name="bio"
-                                        rows="4"
-                                        placeholder="Parlez-nous de vous..."><?= htmlspecialchars($user['bio'] ?? '') ?></textarea>
+                                    <textarea id="edit-bio" name="bio" rows="4" placeholder="Parlez-nous de vous..."><?= htmlspecialchars($user['bio'] ?? '') ?></textarea>
                                     <small class="edit-error" id="err-bio"></small>
                                 </div>
-
-                                <p style="color: gray; font-size: 0.9rem;">Pensez aussi à actualiser la page.</p>
                             </div>
 
-                            <!-- Message global -->
                             <div id="edit-message" class="edit-message" style="display:none;"></div>
 
-                            <!-- Actions -->
                             <div class="edit-actions">
                                 <button type="button" class="btn-cancel-edit" id="btn-cancel-edit-2">
                                     <i class="fas fa-xmark"></i> Annuler
@@ -555,7 +444,6 @@ if ($_SESSION['user']['is_confirmed'] != 1) {
 
                         </form>
                     </div>
-
                 </div>
 
             </section>
@@ -584,8 +472,7 @@ if ($_SESSION['user']['is_confirmed'] != 1) {
                 <div class="card">
                     <div class="progress-item">
                         <div class="progress-item__header">
-                            <p>Anglais Niveau 1</p>
-                            <small>45%</small>
+                            <p>Anglais Niveau 1</p><small>45%</small>
                         </div>
                         <div class="progress-bar">
                             <div class="progress" style="width:45%"></div>
@@ -593,8 +480,7 @@ if ($_SESSION['user']['is_confirmed'] != 1) {
                     </div>
                     <div class="progress-item">
                         <div class="progress-item__header">
-                            <p>Anglais des affaires</p>
-                            <small>70%</small>
+                            <p>Anglais des affaires</p><small>70%</small>
                         </div>
                         <div class="progress-bar">
                             <div class="progress" style="width:70%"></div>
@@ -631,8 +517,7 @@ if ($_SESSION['user']['is_confirmed'] != 1) {
                 <div class="card">
                     <div class="progress-item">
                         <div class="progress-item__header">
-                            <p>Objectif semaine — 3 chapitres</p>
-                            <small>60%</small>
+                            <p>Objectif semaine — 3 chapitres</p><small>60%</small>
                         </div>
                         <div class="progress-bar">
                             <div class="progress" style="width:60%"></div>
@@ -649,16 +534,17 @@ if ($_SESSION['user']['is_confirmed'] != 1) {
                         <p class="section-subtitle">Gérez la sécurité de votre compte</p>
                     </div>
                 </div>
-
                 <div class="card">
                     <div class="card-header">
                         <h2 class="card-title">
                             <i class="fas fa-shield-halved"></i>
                             Sécurité
                         </h2>
+                        <p class="card-subtitle">
+                            Protégez votre compte et votre progression en anglais. Activez la double authentification pour qu'aucun accès non autorisé ne compromette votre formation.
+                        </p>
                     </div>
 
-                    <!-- Toggle 2FA -->
                     <div class="setting-item">
                         <div class="setting-item__info">
                             <span class="setting-item__title">
@@ -666,19 +552,41 @@ if ($_SESSION['user']['is_confirmed'] != 1) {
                                 Authentification à deux facteurs
                             </span>
                             <span class="setting-item__desc">
-                                Renforcez la protection de votre compte.
+                                À chaque connexion, un code à 6 chiffres vous sera envoyé par e-mail. Saisissez-le pour confirmer votre identité et sécuriser l'accès à votre formation.
                             </span>
                         </div>
                         <label class="toggle-switch">
                             <input
                                 type="checkbox"
                                 id="toggle-2fa"
-                                <?= !empty($_SESSION['user']['two_factor_enabled']) ? 'checked' : '' ?>>
+                                <?= !empty($user['two_factor_enabled']) ? 'checked' : '' ?>>
                             <span class="toggle-switch__slider"></span>
                         </label>
                     </div>
 
-                    <div class="setting-item__feedback" id="2fa-feedback" style="display:none;"></div>
+                    <div id="2fa-feedback" class="setting-item__feedback" style="display:none;"></div>
+
+                    <div class="setting-item">
+                        <div class="setting-item__info">
+                            <span class="setting-item__title">
+                                <i class="fas fa-mobile-screen"></i>
+                                Google Authenticator
+                            </span>
+                            <span class="setting-item__desc">
+                                Utilisez une application d'authentification (Google Authenticator, Authy)
+                                pour générer des codes à usage unique toutes les 30 secondes.
+                            </span>
+                        </div>
+                        <label class="toggle-switch">
+                            <input
+                                type="checkbox"
+                                id="toggle-totp"
+                                <?= !empty($user['totp_enabled']) ? 'checked' : '' ?>>
+                            <span class="toggle-switch__slider"></span>
+                        </label>
+                    </div>
+
+                    <div id="totp-feedback" class="setting-item__feedback" style="display:none;"></div>
 
                     <button class="btn-setting" style="margin-top:16px;">
                         <i class="fas fa-lock"></i> Changer le mot de passe
@@ -736,6 +644,127 @@ if ($_SESSION['user']['is_confirmed'] != 1) {
             </section>
 
         </main>
+    </div>
+
+    <!-- ===== MODALS TOTP — EN DEHORS DE TOUT CONTENEUR ===== -->
+
+    <!-- Modal Activation TOTP -->
+    <div id="modal-totp-setup" class="totp-modal-overlay" style="display:none;" aria-modal="true" role="dialog">
+        <div class="totp-modal">
+            <div class="totp-modal__header">
+                <div class="totp-modal__icon">
+                    <i class="fas fa-mobile-screen"></i>
+                </div>
+                <h3 class="totp-modal__title">Activer Google Authenticator</h3>
+                <button type="button" class="totp-modal__close" id="totp-modal-close" aria-label="Fermer">
+                    <i class="fas fa-xmark"></i>
+                </button>
+            </div>
+            <div class="totp-modal__body">
+                <div class="totp-step">
+                    <div class="totp-step__header">
+                        <span class="totp-step__number">1</span>
+                        <span class="totp-step__title">Scannez le QR code</span>
+                    </div>
+                    <p class="totp-step__desc">
+                        Ouvrez <strong>Google Authenticator</strong> ou <strong>Authy</strong>
+                        sur votre téléphone et scannez ce code.
+                    </p>
+                    <div class="totp-qr-wrapper">
+                        <div class="totp-qr-loader" id="totp-qr-loader">
+                            <i class="fas fa-spinner fa-spin"></i>
+                        </div>
+                        <img id="totp-qr-img" src="" alt="QR Code Google Authenticator"
+                            style="display:none; width:180px; height:180px; object-fit:contain;">
+                    </div>
+                    <details class="totp-manual">
+                        <summary><i class="fas fa-keyboard"></i> Entrer le code manuellement</summary>
+                        <div class="totp-manual__content">
+                            <p>Copiez cette clé dans votre application :</p>
+                            <div class="totp-secret-box">
+                                <code id="totp-secret-text">—</code>
+                                <button type="button" id="totp-copy-secret" title="Copier">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </details>
+                </div>
+
+                <div class="totp-step">
+                    <div class="totp-step__header">
+                        <span class="totp-step__number">2</span>
+                        <span class="totp-step__title">Vérifiez le code</span>
+                    </div>
+                    <p class="totp-step__desc">
+                        Saisissez le code à 6 chiffres affiché dans votre application pour confirmer l'activation.
+                    </p>
+                    <div class="totp-otp-wrapper">
+                        <input class="totp-otp-input" type="text" inputmode="numeric" maxlength="1" pattern="\d" autocomplete="off" data-index="0">
+                        <input class="totp-otp-input" type="text" inputmode="numeric" maxlength="1" pattern="\d" autocomplete="off" data-index="1">
+                        <input class="totp-otp-input" type="text" inputmode="numeric" maxlength="1" pattern="\d" autocomplete="off" data-index="2">
+                        <span class="totp-otp-separator">—</span>
+                        <input class="totp-otp-input" type="text" inputmode="numeric" maxlength="1" pattern="\d" autocomplete="off" data-index="3">
+                        <input class="totp-otp-input" type="text" inputmode="numeric" maxlength="1" pattern="\d" autocomplete="off" data-index="4">
+                        <input class="totp-otp-input" type="text" inputmode="numeric" maxlength="1" pattern="\d" autocomplete="off" data-index="5">
+                    </div>
+                    <input type="hidden" id="totp-code-hidden">
+                    <small id="totp-error" style="color:var(--danger);font-size:0.82rem;min-height:18px;display:block;margin:6px 0;"></small>
+                    <button type="button" class="btn-totp-activate" id="btn-totp-activate" disabled>
+                        <span class="btn-text"><i class="fas fa-shield-check"></i> Activer Google Authenticator</span>
+                        <span class="btn-spinner" style="display:none;"><i class="fas fa-spinner fa-spin"></i></span>
+                    </button>
+                </div>
+            </div>
+            <div class="totp-modal__footer">
+                <button type="button" class="totp-modal__btn-cancel" id="totp-cancel">
+                    <i class="fas fa-xmark"></i> Annuler
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Désactivation TOTP -->
+    <div id="modal-totp-disable" class="totp-modal-overlay" style="display:none;" aria-modal="true" role="dialog">
+        <div class="totp-modal totp-modal--danger">
+            <div class="totp-modal__header">
+                <div class="totp-modal__icon totp-modal__icon--danger">
+                    <i class="fas fa-lock-open"></i>
+                </div>
+                <h3 class="totp-modal__title">Désactiver Google Authenticator</h3>
+                <button type="button" class="totp-modal__close" id="totp-disable-modal-close" aria-label="Fermer">
+                    <i class="fas fa-xmark"></i>
+                </button>
+            </div>
+            <div class="totp-modal__body">
+                <div class="totp-step">
+                    <p class="totp-step__desc">
+                        Saisissez un code valide de votre application <strong>Google Authenticator</strong>
+                        pour confirmer la désactivation de la protection.
+                    </p>
+                    <div class="totp-otp-wrapper">
+                        <input class="totp-disable-input" type="text" inputmode="numeric" maxlength="1" pattern="\d" autocomplete="off" data-index="0">
+                        <input class="totp-disable-input" type="text" inputmode="numeric" maxlength="1" pattern="\d" autocomplete="off" data-index="1">
+                        <input class="totp-disable-input" type="text" inputmode="numeric" maxlength="1" pattern="\d" autocomplete="off" data-index="2">
+                        <span class="totp-otp-separator">—</span>
+                        <input class="totp-disable-input" type="text" inputmode="numeric" maxlength="1" pattern="\d" autocomplete="off" data-index="3">
+                        <input class="totp-disable-input" type="text" inputmode="numeric" maxlength="1" pattern="\d" autocomplete="off" data-index="4">
+                        <input class="totp-disable-input" type="text" inputmode="numeric" maxlength="1" pattern="\d" autocomplete="off" data-index="5">
+                    </div>
+                    <input type="hidden" id="totp-disable-hidden">
+                    <small id="totp-disable-error" style="color:var(--danger);font-size:0.82rem;min-height:18px;display:block;margin:6px 0;"></small>
+                    <button type="button" class="btn-totp-disable" id="btn-totp-disable" disabled>
+                        <span class="btn-text"><i class="fas fa-lock-open"></i> Confirmer la désactivation</span>
+                        <span class="btn-spinner" style="display:none;"><i class="fas fa-spinner fa-spin"></i></span>
+                    </button>
+                </div>
+            </div>
+            <div class="totp-modal__footer">
+                <button type="button" class="totp-modal__btn-cancel" id="totp-disable-cancel">
+                    <i class="fas fa-xmark"></i> Annuler
+                </button>
+            </div>
+        </div>
     </div>
 
     <script src="./js/header.min.js" defer></script>

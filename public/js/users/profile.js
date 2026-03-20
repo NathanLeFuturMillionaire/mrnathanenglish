@@ -19,11 +19,9 @@ document.addEventListener("DOMContentLoaded", () => {
       s.classList.remove("active");
       s.style.display = "none";
     });
-
     const target = document.getElementById(targetId);
     if (target) {
       target.style.display = "block";
-      // Force le reflow pour que l'animation se déclenche
       target.offsetHeight;
       target.classList.add("active");
     }
@@ -34,7 +32,6 @@ document.addEventListener("DOMContentLoaded", () => {
     link.classList.add("active");
   }
 
-  // Initialisation : affiche la section active par défaut
   const defaultSection = document.querySelector(".profile-section.active");
   if (defaultSection) {
     sections.forEach((s) => {
@@ -84,13 +81,11 @@ document.addEventListener("DOMContentLoaded", () => {
     ?.addEventListener("change", (e) => {
       const file = e.target.files[0];
       if (!file) return;
-
       if (file.size > 5 * 1024 * 1024) {
         alert("L'image ne doit pas dépasser 5 Mo.");
         e.target.value = "";
         return;
       }
-
       const reader = new FileReader();
       reader.onload = (ev) => {
         document.getElementById("avatar-preview").src = ev.target.result;
@@ -98,7 +93,7 @@ document.addEventListener("DOMContentLoaded", () => {
       reader.readAsDataURL(file);
     });
 
-  // ===== SOUMISSION AJAX =====
+  // ===== SOUMISSION AJAX PROFIL =====
   document
     .getElementById("profile-edit-form")
     ?.addEventListener("submit", async (e) => {
@@ -109,14 +104,12 @@ document.addEventListener("DOMContentLoaded", () => {
       const btnText = btn.querySelector(".btn-text");
       const spinner = btn.querySelector(".btn-spinner");
 
-      // Reset erreurs
       document
         .querySelectorAll(".edit-error")
         .forEach((el) => (el.textContent = ""));
       msgBox.style.display = "none";
       msgBox.className = "edit-message";
 
-      // Loading
       btn.disabled = true;
       btnText.style.display = "none";
       spinner.style.display = "flex";
@@ -127,7 +120,6 @@ document.addEventListener("DOMContentLoaded", () => {
           body: new FormData(e.target),
           headers: { "X-Requested-With": "XMLHttpRequest" },
         });
-
         const data = await res.json();
 
         if (data.success) {
@@ -135,7 +127,6 @@ document.addEventListener("DOMContentLoaded", () => {
           msgBox.classList.add("success");
           msgBox.style.display = "block";
 
-          // Met à jour les champs en lecture sans recharger
           if (data.user) {
             const fieldMap = {
               username: '[data-field="username"]',
@@ -148,15 +139,12 @@ document.addEventListener("DOMContentLoaded", () => {
               english_level: '[data-field="english_level"]',
               native_language: '[data-field="native_language"]',
             };
-
             Object.entries(fieldMap).forEach(([key, selector]) => {
               const el = document.querySelector(selector);
-              if (el && data.user[key] !== undefined) {
+              if (el && data.user[key] !== undefined)
                 el.textContent = data.user[key] || "Non renseigné";
-              }
             });
 
-            // Met à jour l'avatar partout si changé
             if (data.user.profile_picture) {
               const newSrc =
                 "../public/uploads/profiles/" +
@@ -170,28 +158,22 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
             }
 
-            // Met à jour le badge de niveau dans la sidebar
             if (data.user.english_level) {
               const levelLabels = {
                 beginner: "Débutant",
                 intermediate: "Intermédiaire",
                 advanced: "Avancé",
               };
-
               const levelBadge = document.querySelector(".level-badge");
-              if (levelBadge) {
+              if (levelBadge)
                 levelBadge.innerHTML = `<i class="fas fa-graduation-cap"></i> ${levelLabels[data.user.english_level] ?? data.user.english_level}`;
-              }
             }
 
-            // Met à jour le username dans la sidebar
             const sidebarUsername = document.querySelector(".menu-header h2");
-            if (sidebarUsername && data.user.username) {
+            if (sidebarUsername && data.user.username)
               sidebarUsername.textContent = data.user.username;
-            }
           }
 
-          // Met à jour la barre de complétion si retournée par le serveur
           if (data.completion) {
             const fill = document.getElementById("completion-fill");
             const percent = document.getElementById("completion-percent");
@@ -203,27 +185,21 @@ document.addEventListener("DOMContentLoaded", () => {
                 "profile-completion__fill profile-completion__fill--" +
                 data.completion.color;
             }
+            if (percent) percent.textContent = data.completion.percentage + "%";
 
-            if (percent) {
-              percent.textContent = data.completion.percentage + "%";
-            }
-
-            // Disparition si 100%
             if (data.completion.percentage === 100 && completion) {
               setTimeout(() => {
                 completion.classList.add("is-complete");
-                // Supprime du DOM après l'animation
                 setTimeout(() => completion.remove(), 1500);
               }, 800);
             }
-
-            // Réapparition si on redescend sous 70% (cas d'un champ effacé)
             if (data.completion.percentage < 70 && completion) {
               completion.classList.remove("is-complete");
               completion.style.opacity = "1";
               completion.style.maxHeight = "";
             }
           }
+
           setTimeout(() => showView(), 1500);
         } else {
           if (data.errors) {
@@ -232,12 +208,11 @@ document.addEventListener("DOMContentLoaded", () => {
               if (el) el.textContent = msg;
             });
           }
-
           msgBox.textContent = data.message ?? "Une erreur est survenue.";
           msgBox.classList.add("error");
           msgBox.style.display = "block";
         }
-      } catch (err) {
+      } catch {
         msgBox.textContent = "Erreur réseau. Veuillez réessayer.";
         msgBox.classList.add("error");
         msgBox.style.display = "block";
@@ -251,7 +226,6 @@ document.addEventListener("DOMContentLoaded", () => {
   // ===== LANG DROPDOWN =====
   const langDropdown = document.getElementById("lang-dropdown");
   const langTrigger = document.getElementById("lang-trigger");
-  const langPanel = document.getElementById("lang-panel");
   const langSearchInput = document.getElementById("lang-search-input");
   const langSearchClear = document.getElementById("lang-search-clear");
   const langResults = document.getElementById("lang-results");
@@ -260,7 +234,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const langHiddenInput = document.getElementById("native_language_input");
 
   if (langDropdown) {
-    // Ouvrir / fermer
     langTrigger.addEventListener("click", () => {
       const isOpen = langDropdown.classList.toggle("is-open");
       if (isOpen) {
@@ -272,7 +245,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
 
-    // Fermer en cliquant dehors
     document.addEventListener("click", (e) => {
       if (!langDropdown.contains(e.target)) {
         langDropdown.classList.remove("is-open");
@@ -281,7 +253,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
 
-    // Fermer avec Escape
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape" && langDropdown.classList.contains("is-open")) {
         langDropdown.classList.remove("is-open");
@@ -290,14 +261,12 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
 
-    // Recherche
     langSearchInput.addEventListener("input", () => {
       const query = langSearchInput.value.trim().toLowerCase();
       langSearchClear.style.display = query ? "flex" : "none";
       filterLanguages(query);
     });
 
-    // Clear recherche
     langSearchClear.addEventListener("click", () => {
       langSearchInput.value = "";
       langSearchClear.style.display = "none";
@@ -305,64 +274,42 @@ document.addEventListener("DOMContentLoaded", () => {
       langSearchInput.focus();
     });
 
-    // Sélection d'une option
     langResults.addEventListener("click", (e) => {
       const option = e.target.closest(".lang-option");
       if (!option) return;
-
-      const value = option.dataset.value;
-      const label = option.dataset.label;
-
-      // Met à jour l'input caché
-      langHiddenInput.value = value;
-
-      // Met à jour le trigger
-      langSelectedText.textContent = label;
+      langHiddenInput.value = option.dataset.value;
+      langSelectedText.textContent = option.dataset.label;
       langSelectedText.classList.remove("is-placeholder");
-
-      // Met à jour l'état visuel des options
       document.querySelectorAll(".lang-option").forEach((opt) => {
         opt.classList.remove("is-selected");
         const check = opt.querySelector(".lang-option__check");
         if (check) check.remove();
       });
-
       option.classList.add("is-selected");
       const check = document.createElement("i");
       check.className = "fas fa-check lang-option__check";
       option.appendChild(check);
-
-      // Ferme le panel
       langDropdown.classList.remove("is-open");
       langSearchInput.value = "";
       langSearchClear.style.display = "none";
       resetSearch();
     });
 
-    // Filtre les langues
     function filterLanguages(query) {
-      let totalVisible = 0;
-      const groups = langResults.querySelectorAll(".lang-group");
-
-      groups.forEach((group) => {
-        let groupVisible = 0;
-        const options = group.querySelectorAll(".lang-option");
-
-        options.forEach((option) => {
-          const label = option.dataset.label.toLowerCase();
+      let total = 0;
+      langResults.querySelectorAll(".lang-group").forEach((group) => {
+        let visible = 0;
+        group.querySelectorAll(".lang-option").forEach((opt) => {
+          const label = opt.dataset.label.toLowerCase();
           const match = !query || label.includes(query);
-
-          option.style.display = match ? "flex" : "none";
-
+          opt.style.display = match ? "flex" : "none";
           if (match) {
-            groupVisible++;
-            totalVisible++;
-
-            // Highlight
-            const labelEl = option.querySelector(".lang-option__label");
+            visible++;
+            total++;
+            const labelEl = opt.querySelector(".lang-option__label");
             if (query) {
-              const idx = label.indexOf(query);
-              const orig = option.dataset.label;
+              const idx = label.indexOf(query),
+                orig = opt.dataset.label;
               labelEl.innerHTML =
                 orig.slice(0, idx) +
                 "<mark>" +
@@ -370,16 +317,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 "</mark>" +
                 orig.slice(idx + query.length);
             } else {
-              labelEl.textContent = option.dataset.label;
+              labelEl.textContent = opt.dataset.label;
             }
           }
         });
-
-        // Cache le groupe si aucun résultat
-        group.style.display = groupVisible > 0 ? "block" : "none";
+        group.style.display = visible > 0 ? "block" : "none";
       });
-
-      langNoResults.style.display = totalVisible === 0 ? "flex" : "none";
+      langNoResults.style.display = total === 0 ? "flex" : "none";
     }
 
     function resetSearch() {
@@ -388,19 +332,19 @@ document.addEventListener("DOMContentLoaded", () => {
         .forEach((g) => (g.style.display = "block"));
       document.querySelectorAll(".lang-option").forEach((opt) => {
         opt.style.display = "flex";
-        const labelEl = opt.querySelector(".lang-option__label");
-        labelEl.textContent = opt.dataset.label;
+        opt.querySelector(".lang-option__label").textContent =
+          opt.dataset.label;
       });
       langNoResults.style.display = "none";
     }
 
     function scrollToSelected() {
-      const selected = langResults.querySelector(".lang-option.is-selected");
-      if (selected) {
-        setTimeout(() => {
-          selected.scrollIntoView({ block: "center", behavior: "smooth" });
-        }, 150);
-      }
+      const sel = langResults.querySelector(".lang-option.is-selected");
+      if (sel)
+        setTimeout(
+          () => sel.scrollIntoView({ block: "center", behavior: "smooth" }),
+          150,
+        );
     }
   }
 
@@ -410,16 +354,12 @@ document.addEventListener("DOMContentLoaded", () => {
     ?.addEventListener("click", async (e) => {
       const btn = e.target.closest(".login-history__delete");
       if (!btn) return;
-
       const id = btn.dataset.id;
       const item = btn.closest(".login-history__item");
-
-      // Animation de sortie
       item.style.transition = "opacity 0.25s ease, transform 0.25s ease";
       item.style.opacity = "0.5";
       item.style.pointerEvents = "none";
       btn.disabled = true;
-
       try {
         const res = await fetch("./profile/delete-login", {
           method: "POST",
@@ -429,9 +369,7 @@ document.addEventListener("DOMContentLoaded", () => {
             "Content-Type": "application/x-www-form-urlencoded",
           },
         });
-
         const data = await res.json();
-
         if (data.success) {
           item.style.opacity = "0";
           item.style.transform = "translateX(20px)";
@@ -452,14 +390,11 @@ document.addEventListener("DOMContentLoaded", () => {
   document
     .getElementById("btn-show-all-logins")
     ?.addEventListener("click", async function () {
-      const btn = this;
       const list = document.getElementById("login-history-list");
-      const isOpen = btn.classList.contains("is-open");
+      const isOpen = this.classList.contains("is-open");
 
       if (isOpen) {
-        // Refermer — ne garder que les 4 premiers
-        const items = list.querySelectorAll(".login-history__item");
-        items.forEach((item, i) => {
+        list.querySelectorAll(".login-history__item").forEach((item, i) => {
           if (i >= 4) {
             item.style.transition = "opacity 0.2s ease, transform 0.2s ease";
             item.style.opacity = "0";
@@ -467,76 +402,47 @@ document.addEventListener("DOMContentLoaded", () => {
             setTimeout(() => item.remove(), 200);
           }
         });
-
-        btn.classList.remove("is-open");
-        btn.querySelector(".fa-clock-rotate-left").style.display = "";
-        btn.childNodes[2].textContent = " Voir toutes les connexions ";
+        this.classList.remove("is-open");
+        this.innerHTML = `<i class="fas fa-clock-rotate-left"></i> Voir toutes les connexions <i class="fas fa-chevron-down login-history__more-arrow"></i>`;
         return;
       }
 
-      // Loading
-      btn.disabled = true;
-      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Chargement...';
+      this.disabled = true;
+      this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Chargement...';
 
       try {
         const res = await fetch("./profile/login-history", {
           headers: { "X-Requested-With": "XMLHttpRequest" },
         });
         const data = await res.json();
-
         if (data.success && data.logins) {
-          // Ajoute les connexions supplémentaires (après la 4ème)
           data.logins.slice(4).forEach((login, i) => {
             const li = document.createElement("li");
             li.className = "login-history__item";
             li.style.opacity = "0";
             li.style.transform = "translateY(8px)";
             li.style.transition = `opacity 0.25s ease ${i * 0.04}s, transform 0.25s ease ${i * 0.04}s`;
-
             li.innerHTML = `
-                    <div class="login-history__icon">
-                        <i class="fas fa-${login.device === "mobile" ? "mobile-screen" : login.device === "tablette" ? "tablet-screen-button" : "display"}"></i>
-                    </div>
-                    <div class="login-history__info">
-                        <span class="login-history__device">
-                            ${login.browser} sur ${login.os}
-                        </span>
-                        <span class="login-history__meta">
-                            <i class="fas fa-location-dot"></i> ${login.ip_address}
-                            <span class="sep">·</span>
-                            <i class="fas fa-clock"></i> ${login.created_at}
-                        </span>
-                    </div>
-                    <button class="login-history__delete" data-id="${login.id}" title="Supprimer cette session">
-                        <i class="fas fa-trash-can"></i>
-                    </button>
-                `;
-
+                      <div class="login-history__icon"><i class="fas fa-${login.device === "mobile" ? "mobile-screen" : login.device === "tablette" ? "tablet-screen-button" : "display"}"></i></div>
+                      <div class="login-history__info">
+                          <span class="login-history__device">${login.browser} sur ${login.os}</span>
+                          <span class="login-history__meta"><i class="fas fa-location-dot"></i> ${login.ip_address} <span class="sep">·</span> <i class="fas fa-clock"></i> ${login.created_at}</span>
+                      </div>
+                      <button class="login-history__delete" data-id="${login.id}" title="Supprimer"><i class="fas fa-trash-can"></i></button>
+                  `;
             list.appendChild(li);
-
-            // Déclenche l'animation
             requestAnimationFrame(() => {
               li.style.opacity = "1";
               li.style.transform = "translateY(0)";
             });
           });
-
-          btn.disabled = false;
-          btn.classList.add("is-open");
-          btn.innerHTML = `
-                <i class="fas fa-clock-rotate-left"></i>
-                Réduire
-                <span class="login-history__more-count">${data.logins.length} au total</span>
-                <i class="fas fa-chevron-down login-history__more-arrow" style="transform:rotate(180deg)"></i>
-            `;
+          this.disabled = false;
+          this.classList.add("is-open");
+          this.innerHTML = `<i class="fas fa-clock-rotate-left"></i> Réduire <span class="login-history__more-count">${data.logins.length} au total</span> <i class="fas fa-chevron-down login-history__more-arrow" style="transform:rotate(180deg)"></i>`;
         }
       } catch {
-        btn.disabled = false;
-        btn.innerHTML = `
-            <i class="fas fa-clock-rotate-left"></i>
-            Voir toutes les connexions
-            <i class="fas fa-chevron-down login-history__more-arrow"></i>
-        `;
+        this.disabled = false;
+        this.innerHTML = `<i class="fas fa-clock-rotate-left"></i> Voir toutes les connexions <i class="fas fa-chevron-down login-history__more-arrow"></i>`;
       }
     });
 
@@ -546,7 +452,6 @@ document.addEventListener("DOMContentLoaded", () => {
     ?.addEventListener("change", async function () {
       const enabled = this.checked;
       const feedback = document.getElementById("2fa-feedback");
-
       try {
         const res = await fetch("./profile/toggle-2fa", {
           method: "POST",
@@ -556,19 +461,12 @@ document.addEventListener("DOMContentLoaded", () => {
             "Content-Type": "application/x-www-form-urlencoded",
           },
         });
-
         const data = await res.json();
-
         feedback.textContent = data.message;
         feedback.className =
           "setting-item__feedback " + (data.success ? "success" : "error");
         feedback.style.display = "block";
-
-        if (!data.success) {
-          // Revert le toggle si erreur
-          this.checked = !enabled;
-        }
-
+        if (!data.success) this.checked = !enabled;
         setTimeout(() => {
           feedback.style.display = "none";
         }, 3500);
@@ -581,6 +479,466 @@ document.addEventListener("DOMContentLoaded", () => {
           feedback.style.display = "none";
         }, 3500);
       }
+    });
+
+  // ===== TOTP =====
+  const totpFeedback = document.getElementById("totp-feedback");
+  const toggleTotp = document.getElementById("toggle-totp");
+  const modalSetup = document.getElementById("modal-totp-setup");
+  const modalDisable = document.getElementById("modal-totp-disable");
+  let totpActionInProgress = false;
+
+  function openModal(modal) {
+    modal.style.display = "flex";
+    modal.classList.remove("is-closing");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeModal(modal) {
+    modal.classList.add("is-closing");
+    setTimeout(() => {
+      modal.style.display = "none";
+      modal.classList.remove("is-closing");
+      document.body.style.overflow = "";
+    }, 250);
+  }
+
+  function showTotpFeedback(message, type = "success") {
+    if (!totpFeedback) return;
+    totpFeedback.textContent = message;
+    totpFeedback.className = `setting-item__feedback ${type}`;
+    totpFeedback.style.display = "block";
+    setTimeout(() => {
+      totpFeedback.style.display = "none";
+    }, 3500);
+  }
+
+  // ===== OTP CASES HELPER =====
+  function initOtpInputs(selector, hiddenId, getBtnFn, errorId) {
+    const inputs = document.querySelectorAll(selector);
+    const hidden = document.getElementById(hiddenId);
+    const error = document.getElementById(errorId);
+
+    function getBtn() {
+      return typeof getBtnFn === "function"
+        ? getBtnFn()
+        : document.getElementById(getBtnFn);
+    }
+
+    function enable(i) {
+      inputs[i].removeAttribute("disabled");
+      inputs[i].style.opacity = "1";
+      inputs[i].style.cursor = "text";
+      inputs[i].focus();
+    }
+
+    function disable(i) {
+      inputs[i].setAttribute("disabled", true);
+      inputs[i].value = "";
+      inputs[i].style.opacity = "0.4";
+      inputs[i].style.cursor = "not-allowed";
+      inputs[i].classList.remove("is-filled", "is-error");
+    }
+
+    function sync() {
+      if (hidden) hidden.value = [...inputs].map((i) => i.value).join("");
+    }
+
+    function complete() {
+      return [...inputs].every((i) => i.value !== "");
+    }
+
+    function updateBtn() {
+      const btn = getBtn();
+      if (!btn) return;
+      btn.disabled = !complete();
+      btn.style.opacity = complete() ? "1" : "0.45";
+      btn.style.cursor = complete() ? "pointer" : "not-allowed";
+    }
+
+    function clearErr() {
+      if (error) error.textContent = "";
+      inputs.forEach((i) => i.classList.remove("is-error"));
+    }
+
+    function reset() {
+      inputs.forEach((inp, i) => {
+        inp.value = "";
+        inp.classList.remove("is-filled", "is-error");
+        if (i !== 0) disable(i);
+        else {
+          inp.removeAttribute("disabled");
+          inp.style.opacity = "1";
+          inp.style.cursor = "text";
+        }
+      });
+      sync();
+      updateBtn();
+    }
+
+    inputs.forEach((input, index) => {
+      if (index !== 0) {
+        input.setAttribute("disabled", true);
+        input.style.opacity = "0.4";
+        input.style.cursor = "not-allowed";
+      }
+
+      input.addEventListener("input", (e) => {
+        const val = e.target.value.replace(/\D/g, "");
+        input.value = val ? val[val.length - 1] : "";
+        if (input.value) {
+          input.classList.add("is-filled");
+          if (index < inputs.length - 1) enable(index + 1);
+        } else {
+          input.classList.remove("is-filled");
+        }
+        sync();
+        updateBtn();
+        clearErr();
+      });
+
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Backspace") {
+          if (input.value) {
+            input.value = "";
+            input.classList.remove("is-filled");
+            sync();
+            updateBtn();
+          } else if (index > 0) {
+            disable(index);
+            enable(index - 1);
+            inputs[index - 1].value = "";
+            inputs[index - 1].classList.remove("is-filled");
+            sync();
+            updateBtn();
+          }
+        }
+      });
+
+      input.addEventListener("paste", (e) => {
+        e.preventDefault();
+        const pasted = e.clipboardData
+          .getData("text")
+          .replace(/\D/g, "")
+          .slice(0, 6);
+        if (!pasted) return;
+        inputs.forEach((inp, i) => {
+          if (i !== 0) disable(i);
+          inp.value = "";
+          inp.classList.remove("is-filled");
+        });
+        [...pasted].forEach((char, i) => {
+          if (i < inputs.length) {
+            if (i !== 0) enable(i);
+            inputs[i].value = char;
+            inputs[i].classList.add("is-filled");
+          }
+        });
+        if (pasted.length < inputs.length) enable(pasted.length);
+        else inputs[inputs.length - 1].focus();
+        sync();
+        updateBtn();
+        clearErr();
+      });
+
+      input.addEventListener("focus", () => {
+        if (!input.disabled) input.select();
+      });
+    });
+
+    return {
+      reset,
+      clearErr,
+      getCode: () => (hidden ? hidden.value : ""),
+      showError: (msg) => {
+        if (error) error.textContent = msg;
+        inputs.forEach((i) => {
+          if (!i.disabled) i.classList.add("is-error");
+        });
+        setTimeout(
+          () => inputs.forEach((i) => i.classList.remove("is-error")),
+          600,
+        );
+      },
+      updateBtn,
+    };
+  }
+
+  // ===== CLONE LES BOUTONS AVANT INIT OTP =====
+  const btnActivateOld = document.getElementById("btn-totp-activate");
+  let btnActivate = btnActivateOld;
+  if (btnActivateOld) {
+    btnActivate = btnActivateOld.cloneNode(true);
+    btnActivateOld.parentNode.replaceChild(btnActivate, btnActivateOld);
+  }
+
+  const btnDisableOld = document.getElementById("btn-totp-disable");
+  let btnDisable = btnDisableOld;
+  if (btnDisableOld) {
+    btnDisable = btnDisableOld.cloneNode(true);
+    btnDisableOld.parentNode.replaceChild(btnDisable, btnDisableOld);
+  }
+
+  // ===== INIT OTP après cloneNode =====
+  const totpOtp = initOtpInputs(
+    ".totp-otp-input",
+    "totp-code-hidden",
+    () => document.getElementById("btn-totp-activate"),
+    "totp-error",
+  );
+  const disableOtp = initOtpInputs(
+    ".totp-disable-input",
+    "totp-disable-hidden",
+    () => document.getElementById("btn-totp-disable"),
+    "totp-disable-error",
+  );
+
+  // ===== TOGGLE TOTP =====
+  toggleTotp?.addEventListener("change", async function () {
+    if (totpActionInProgress) return;
+    const enabled = this.checked;
+
+    if (enabled) {
+      openModal(modalSetup);
+
+      const qrImg = document.getElementById("totp-qr-img");
+      const qrLoader = document.getElementById("totp-qr-loader");
+
+      qrImg.style.display = "none";
+      qrImg.src = "";
+      qrLoader.style.display = "flex";
+      totpOtp.reset();
+
+      try {
+        const res = await fetch("./profile/generate-totp", {
+          headers: { "X-Requested-With": "XMLHttpRequest" },
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          // Stocke le secret
+          let secretInput = document.getElementById("totp-secret-input");
+          if (!secretInput) {
+            secretInput = document.createElement("input");
+            secretInput.type = "hidden";
+            secretInput.id = "totp-secret-input";
+            modalSetup.appendChild(secretInput);
+          }
+          secretInput.value = data.secret;
+
+          // data:image/svg+xml;base64 — affichage direct sans préchargement
+          qrImg.src = data.qr_url;
+          qrLoader.style.display = "none";
+          qrImg.style.display = "block";
+
+          // Affiche le secret formaté
+          const secretEl = document.getElementById("totp-secret-text");
+          if (secretEl) {
+            secretEl.textContent = data.secret.match(/.{1,4}/g).join(" ");
+            secretEl.dataset.raw = data.secret;
+          }
+        } else {
+          qrLoader.style.display = "none";
+          showTotpFeedback(
+            data.message ?? "Erreur lors de la génération.",
+            "error",
+          );
+          closeModal(modalSetup);
+          totpActionInProgress = true;
+          this.checked = false;
+          setTimeout(() => {
+            totpActionInProgress = false;
+          }, 300);
+        }
+      } catch {
+        qrLoader.style.display = "none";
+        showTotpFeedback("Erreur réseau. Veuillez réessayer.", "error");
+        closeModal(modalSetup);
+        totpActionInProgress = true;
+        this.checked = false;
+        setTimeout(() => {
+          totpActionInProgress = false;
+        }, 300);
+      }
+    } else {
+      openModal(modalDisable);
+      disableOtp.reset();
+    }
+  });
+
+  // ===== FERMETURE MODALS =====
+  function cancelSetup() {
+    closeModal(modalSetup);
+    totpOtp.reset();
+    totpActionInProgress = true;
+    toggleTotp.checked = false;
+    setTimeout(() => {
+      totpActionInProgress = false;
+    }, 300);
+  }
+
+  function cancelDisable() {
+    closeModal(modalDisable);
+    disableOtp.reset();
+    totpActionInProgress = true;
+    toggleTotp.checked = true;
+    setTimeout(() => {
+      totpActionInProgress = false;
+    }, 300);
+  }
+
+  document
+    .getElementById("totp-modal-close")
+    ?.addEventListener("click", cancelSetup);
+  document
+    .getElementById("totp-cancel")
+    ?.addEventListener("click", cancelSetup);
+  document
+    .getElementById("totp-disable-modal-close")
+    ?.addEventListener("click", cancelDisable);
+  document
+    .getElementById("totp-disable-cancel")
+    ?.addEventListener("click", cancelDisable);
+  modalSetup?.addEventListener("click", (e) => {
+    if (e.target === modalSetup) cancelSetup();
+  });
+  modalDisable?.addEventListener("click", (e) => {
+    if (e.target === modalDisable) cancelDisable();
+  });
+
+  // ===== ACTIVATION TOTP =====
+  btnActivate?.addEventListener("click", async function () {
+    if (this.disabled) return;
+
+    const btnText = this.querySelector(".btn-text");
+    const spinner = this.querySelector(".btn-spinner");
+    const code = totpOtp.getCode();
+    const secret = document.getElementById("totp-secret-input")?.value ?? "";
+
+    this.disabled = true;
+    btnText.style.display = "none";
+    spinner.style.display = "flex";
+    totpOtp.clearErr();
+
+    try {
+      const res = await fetch("./profile/activate-totp", {
+        method: "POST",
+        body: new URLSearchParams({ code, secret }),
+        headers: {
+          "X-Requested-With": "XMLHttpRequest",
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        totpActionInProgress = true;
+        closeModal(modalSetup);
+        toggleTotp.checked = true;
+        showTotpFeedback("Google Authenticator activé avec succès.", "success");
+        totpOtp.reset();
+        setTimeout(() => {
+          totpActionInProgress = false;
+        }, 300);
+      } else {
+        totpOtp.showError(data.message ?? "Code incorrect.");
+        totpOtp.reset();
+        this.disabled = false;
+        btnText.style.display = "inline-flex";
+        spinner.style.display = "none";
+      }
+    } catch {
+      totpOtp.showError("Erreur réseau. Veuillez réessayer.");
+      this.disabled = false;
+      btnText.style.display = "inline-flex";
+      spinner.style.display = "none";
+    }
+  });
+
+  // ===== DÉSACTIVATION TOTP =====
+  btnDisable?.addEventListener("click", async function () {
+    if (this.disabled) return;
+
+    const btnText = this.querySelector(".btn-text");
+    const spinner = this.querySelector(".btn-spinner");
+
+    // Récupère le code depuis l'input caché
+    const hidden = document.getElementById("totp-disable-hidden");
+    const code = hidden ? hidden.value : disableOtp.getCode();
+
+    if (!code || code.length !== 6) {
+      disableOtp.showError("Veuillez saisir le code à 6 chiffres.");
+      return;
+    }
+
+    this.disabled = true;
+    btnText.style.display = "none";
+    spinner.style.display = "flex";
+    disableOtp.clearErr();
+
+    try {
+      const res = await fetch("./profile/disable-totp", {
+        method: "POST",
+        body: new URLSearchParams({ code }),
+        headers: {
+          "X-Requested-With": "XMLHttpRequest",
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        totpActionInProgress = true;
+        closeModal(modalDisable);
+        toggleTotp.checked = false;
+        showTotpFeedback(
+          "Google Authenticator désactivé avec succès.",
+          "success",
+        );
+        disableOtp.reset();
+        setTimeout(() => {
+          totpActionInProgress = false;
+        }, 300);
+      } else {
+        disableOtp.showError(data.message ?? "Code incorrect.");
+        disableOtp.reset();
+        this.disabled = false;
+        btnText.style.display = "inline-flex";
+        spinner.style.display = "none";
+        totpActionInProgress = true;
+        toggleTotp.checked = true;
+        setTimeout(() => {
+          totpActionInProgress = false;
+        }, 300);
+      }
+    } catch {
+      disableOtp.showError("Erreur réseau. Veuillez réessayer.");
+      this.disabled = false;
+      btnText.style.display = "inline-flex";
+      spinner.style.display = "none";
+      totpActionInProgress = true;
+      toggleTotp.checked = true;
+      setTimeout(() => {
+        totpActionInProgress = false;
+      }, 300);
+    }
+  });
+
+  // ===== COPIER LE SECRET =====
+  document
+    .getElementById("totp-copy-secret")
+    ?.addEventListener("click", function () {
+      const secretEl = document.getElementById("totp-secret-text");
+      const secret =
+        secretEl.dataset.raw ?? secretEl.textContent.replace(/\s/g, "");
+      navigator.clipboard.writeText(secret).then(() => {
+        this.innerHTML = '<i class="fas fa-check"></i>';
+        this.style.color = "#00c48c";
+        setTimeout(() => {
+          this.innerHTML = '<i class="fas fa-copy"></i>';
+          this.style.color = "";
+        }, 2000);
+      });
     });
 
   // ===== DÉCONNEXION =====

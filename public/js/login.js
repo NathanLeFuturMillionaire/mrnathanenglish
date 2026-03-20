@@ -85,25 +85,31 @@ document.addEventListener("DOMContentLoaded", function () {
       .then((data) => {
         btn.classList.remove("loading");
 
-        // ===== REDIRECTION 2FA =====
+        // ===== 1. COMPTE NON CONFIRMÉ =====
+        if (data.not_confirmed) {
+          window.location.href = "./noconfirmed";
+          return;
+        }
+
+        // ===== 2. REDIRECTION 2FA EMAIL =====
         if (data.success && data.requires_2fa) {
           window.location.href = "./verify-2fa";
           return;
         }
 
-        // ===== CONNEXION RÉUSSIE =====
+        // ===== 3. REDIRECTION TOTP =====
+        if (data.success && data.requires_totp) {
+          window.location.href = "./auth/verify-totp";
+          return;
+        }
+
+        // ===== 4. CONNEXION RÉUSSIE =====
         if (data.success) {
           window.location.href = "./";
           return;
         }
 
-        // ===== COMPTE NON CONFIRMÉ =====
-        if (!data.success && data.not_confirmed) {
-          window.location.href = "./noconfirmed";
-          return;
-        }
-
-        // ===== ERREURS =====
+        // ===== 5. ERREURS =====
         if (data.errors) {
           Object.entries(data.errors).forEach(([field, message]) => {
             showError(field, message);

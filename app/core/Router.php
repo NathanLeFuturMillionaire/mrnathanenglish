@@ -427,6 +427,34 @@ class Router
                 $authController = new AuthController();
                 $authController->noConfirmed();
                 break;
+
+            case 'profile/generate-totp':
+                session_start();
+                $userController = new UserController();
+                $userController->generateTotp();
+                break;
+
+            case 'profile/activate-totp':
+                session_start();
+                $userController = new UserController();
+                $userController->activateTotp();
+                break;
+
+            case 'profile/disable-totp':
+                session_start();
+                $userController = new UserController();
+                $userController->disableTotp();
+                break;
+
+            case 'auth/verify-totp':
+                session_start();
+                if ($method === 'POST') {
+                    $authController = new AuthController();
+                    $authController->verifyTotp();
+                } else {
+                    require __DIR__ . '/../views/auth/verifyTotp.php';
+                }
+                break;
         }
     }
 }
