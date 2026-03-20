@@ -31,7 +31,14 @@ class AuthController extends Controller
         require_once __DIR__ . '/../views/auth/register.php';
     }
 
-    public function loginAsUser()
+    /**
+     * Connexion administrative en tant qu'un utilisateur cible.
+     * Vérifie le 2FA email et le TOTP si activés sur le compte cible.
+     * En cas de navigateur de confiance, connexion directe sans vérification.
+     *
+     * @return void
+     */
+    public function loginAsUser(): void
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST' || empty($_POST['login_as_user_id'])) {
             $this->redirect('./login');
@@ -51,23 +58,22 @@ class AuthController extends Controller
             $this->redirect('./login');
         }
 
-        // Récupère le statut 2FA
-        $stmt = $this->db->prepare("SELECT two_factor_enabled FROM users WHERE id = ?");
+        // Récupère le statut 2FA et TOTP en une seule requête
+        $stmt = $this->db->prepare("SELECT two_factor_enabled, totp_enabled FROM users WHERE id = ?");
         $stmt->execute([$userId]);
-        $twoFaRow = $stmt->fetch(\PDO::FETCH_ASSOC);
+        $securityRow = $stmt->fetch(\PDO::FETCH_ASSOC);
 
-        // ===== CHECK 2FA =====
-        if (!empty($twoFaRow['two_factor_enabled'])) {
+        $has2fa  = !empty($securityRow['two_factor_enabled']);
+        $hasTotp = !empty($securityRow['totp_enabled']);
 
-            $userRepository = new UserRepository($this->db);
+        $userRepository   = new UserRepository($this->db);
+        $trustedToken     = $_COOKIE['trusted_device_' . $userId] ?? null;
+        $isTrusted        = $trustedToken && $userRepository->isTrustedDevice($userId, $trustedToken);
 
-            // Vérifie si le navigateur est de confiance
-            $trustedToken = $_COOKIE['trusted_device_' . $userId] ?? null;
+        if (!$isTrusted) {
 
-            if ($trustedToken && $userRepository->isTrustedDevice($userId, $trustedToken)) {
-                // Navigateur de confiance → connexion directe
-            } else {
-                // Génère et envoie le code 2FA sur l'email de l'utilisateur cible
+            // ===== CAS 1 : Les deux sont activés → 2FA email en premier, TOTP après =====
+            if ($has2fa && $hasTotp) {
                 $code = $userRepository->saveTwoFactorCode($userId);
 
                 $mailService = new MailService();
@@ -77,13 +83,39 @@ class AuthController extends Controller
                     $code
                 );
 
-                // Stocke l'ID en attente
-                $_SESSION['2fa_pending_user_id'] = $userId;
+                $_SESSION['2fa_pending_user_id']    = $userId;
+                $_SESSION['2fa_requires_totp_next'] = true;
 
-                // Redirige vers la page de vérification
                 $this->redirect('./verify-2fa');
                 exit;
             }
+
+            // ===== CAS 2 : Seulement 2FA email =====
+            if ($has2fa) {
+                $code = $userRepository->saveTwoFactorCode($userId);
+
+                $mailService = new MailService();
+                $mailService->sendTwoFactorCode(
+                    $user['email'],
+                    $user['fullname'] ?? $user['username'],
+                    $code
+                );
+
+                $_SESSION['2fa_pending_user_id'] = $userId;
+
+                $this->redirect('./verify-2fa');
+                exit;
+            }
+
+            // ===== CAS 3 : Seulement TOTP =====
+            if ($hasTotp) {
+                $_SESSION['totp_pending_user_id'] = $userId;
+
+                $this->redirect('./auth/verify-totp');
+                exit;
+            }
+
+            // ===== CAS 4 : Aucun 2FA → connexion directe =====
         }
 
         // ===== SESSION COMPLÈTE =====
@@ -102,7 +134,8 @@ class AuthController extends Controller
             'country'            => $user['country']         ?? '',
             'bio'                => $user['bio']             ?? '',
             'is_admin'           => false,
-            'two_factor_enabled' => (bool) ($twoFaRow['two_factor_enabled'] ?? false),
+            'two_factor_enabled' => (bool) ($securityRow['two_factor_enabled'] ?? false),
+            'totp_enabled'       => (bool) ($securityRow['totp_enabled']       ?? false),
             'profile_picture'    => $user['profile_picture'] ?? 'default.png',
             'profile'            => [
                 'profile_picture' => $user['profile_picture'] ?? 'default.png',
@@ -115,12 +148,10 @@ class AuthController extends Controller
             ],
         ];
 
-        $userRepository = new UserRepository($this->db);
         $userRepository->logLogin($userId);
 
         $this->redirect('./');
     }
-
 
     public function rememberLogin()
     {
@@ -259,16 +290,19 @@ class AuthController extends Controller
         exit;
     }
 
-    public function loginPost()
+    /**
+     * Traite la soumission du formulaire de connexion.
+     * Gère le 2FA email, le TOTP, le remember me et la session complète.
+     *
+     * @return void
+     */
+    public function loginPost(): void
     {
         header('Content-Type: application/json');
 
-        // Session doit être active avant le check 2FA
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
-        // ===== SESSION =====
-        session_regenerate_id(true);
 
         try {
             $email      = trim($_POST['email']    ?? '');
@@ -302,24 +336,18 @@ class AuthController extends Controller
             $stmt->execute([$email]);
             $user = $stmt->fetch(\PDO::FETCH_ASSOC);
 
-            if (!$user) {
+            if (!$user || !password_verify($password, $user['password'])) {
                 echo json_encode(['success' => false, 'message' => 'Email ou mot de passe invalide.']);
                 return;
             }
 
-            if (!password_verify($password, $user['password'])) {
-                echo json_encode(['success' => false, 'message' => 'Email ou mot de passe invalide.']);
-                return;
-            }
-
-            if ($user['is_confirmed'] !== 1) {
-                // Met l'email en session pour la page noconfirmed
+            // ===== COMPTE NON CONFIRMÉ =====
+            if ((int) $user['is_confirmed'] !== 1) {
                 $_SESSION['unconfirmed_user'] = [
                     'id'    => $user['id'],
                     'email' => $user['email'],
                 ];
 
-                // Envoie UN seul code automatiquement
                 $confirmationCode = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
 
                 $stmt = $this->db->prepare("UPDATE users SET confirmation_code = ? WHERE id = ?");
@@ -346,143 +374,93 @@ class AuthController extends Controller
 
             if (!$isTrusted) {
 
-                // ===== CAS 1 : Les deux sont activés → double authentification =====
-                // On commence par le 2FA email, le TOTP sera demandé après
+                // CAS 1 : Les deux activés → email d'abord, TOTP après
                 if ($has2fa && $hasTotp) {
                     $code = $userRepository->saveTwoFactorCode((int) $user['id']);
-
-                    $mailService = new MailService();
-                    $mailService->sendTwoFactorCode($user['email'], $user['fullname'], $code);
-
+                    (new MailService())->sendTwoFactorCode($user['email'], $user['fullname'], $code);
                     $_SESSION['2fa_pending_user_id']    = (int) $user['id'];
-                    $_SESSION['2fa_requires_totp_next'] = true; // ← flag pour enchaîner le TOTP
-
-                    echo json_encode([
-                        'success'      => true,
-                        'requires_2fa' => true,
-                        'message'      => 'Un code de vérification a été envoyé à votre adresse e-mail.',
-                    ]);
+                    $_SESSION['2fa_requires_totp_next'] = true;
+                    echo json_encode(['success' => true, 'requires_2fa' => true, 'message' => 'Un code de vérification a été envoyé à votre adresse e-mail.']);
                     exit;
                 }
 
-                // ===== CAS 2 : Seulement 2FA email =====
+                // CAS 2 : Seulement 2FA email
                 if ($has2fa) {
                     $code = $userRepository->saveTwoFactorCode((int) $user['id']);
-
-                    $mailService = new MailService();
-                    $mailService->sendTwoFactorCode($user['email'], $user['fullname'], $code);
-
+                    (new MailService())->sendTwoFactorCode($user['email'], $user['fullname'], $code);
                     $_SESSION['2fa_pending_user_id'] = (int) $user['id'];
-
-                    echo json_encode([
-                        'success'      => true,
-                        'requires_2fa' => true,
-                        'message'      => 'Un code de vérification a été envoyé à votre adresse e-mail.',
-                    ]);
+                    echo json_encode(['success' => true, 'requires_2fa' => true, 'message' => 'Un code de vérification a été envoyé à votre adresse e-mail.']);
                     exit;
                 }
 
-                // ===== CAS 3 : Seulement TOTP =====
+                // CAS 3 : Seulement TOTP
                 if ($hasTotp) {
                     $_SESSION['totp_pending_user_id'] = (int) $user['id'];
-
-                    echo json_encode([
-                        'success'       => true,
-                        'requires_totp' => true,
-                        'message'       => 'Saisissez le code de votre application Google Authenticator.',
-                    ]);
+                    echo json_encode(['success' => true, 'requires_totp' => true, 'message' => 'Saisissez le code de votre application Google Authenticator.']);
                     exit;
                 }
 
-                // ===== CAS 4 : Aucun 2FA → connexion directe =====
+                // CAS 4 : Aucun 2FA → connexion directe
             }
 
-            // Remember me
+            // ===== SESSION SÉCURISÉE =====
+            // Régénère l'ID seulement ici — après toutes les vérifications
+            session_regenerate_id(true);
+
+            // ===== REMEMBER ME =====
             if ($rememberMe) {
                 $token     = bin2hex(random_bytes(32));
-                $expiresAt = time() + (30 * 24 * 60 * 60);
+                $expiresAt = time() + (30 * 24 * 60 * 60); // 30 jours
 
-                setcookie('remember_me_token', $token, $expiresAt, '/', '', false, true);
+                // Cookie sécurisé
+                setcookie(
+                    'remember_me_token',
+                    $token,
+                    [
+                        'expires'  => $expiresAt,
+                        'path'     => '/',
+                        'httponly' => true,
+                        'samesite' => 'Lax',
+                    ]
+                );
 
-                $stmt = $this->db->prepare("SELECT id FROM user_remember_tokens WHERE user_id = ?");
-                $stmt->execute([$user['id']]);
-                $existing = $stmt->fetch();
-
-                if ($existing) {
-                    $stmt = $this->db->prepare("
-                        UPDATE user_remember_tokens
-                        SET token = ?, expires_at = ?, ip_address = ?, device = ?, browser = ?, created_at = NOW()
-                        WHERE user_id = ?
-                    ");
-                    $stmt->execute([
-                        $token,
-                        date('Y-m-d H:i:s', $expiresAt),
-                        $_SERVER['REMOTE_ADDR']     ?? null,
-                        $_SERVER['HTTP_USER_AGENT'] ?? null,
-                        $_SERVER['HTTP_USER_AGENT'] ?? null,
-                        $user['id']
-                    ]);
-                } else {
-                    $stmt = $this->db->prepare("
-                        INSERT INTO user_remember_tokens
-                            (user_id, token, expires_at, ip_address, device, browser, created_at)
-                        VALUES (?, ?, ?, ?, ?, ?, NOW())
-                    ");
-                    $stmt->execute([
-                        $user['id'],
-                        $token,
-                        date('Y-m-d H:i:s', $expiresAt),
-                        $_SERVER['REMOTE_ADDR']     ?? null,
-                        $_SERVER['HTTP_USER_AGENT'] ?? null,
-                        $_SERVER['HTTP_USER_AGENT'] ?? null,
-                    ]);
-                }
+                // Upsert en base — INSERT ou UPDATE si existe déjà
+                $stmt = $this->db->prepare("
+                    INSERT INTO user_remember_tokens
+                        (user_id, token, expires_at, ip_address, device, browser, created_at)
+                    VALUES
+                        (?, ?, ?, ?, ?, ?, NOW())
+                    ON DUPLICATE KEY UPDATE
+                        token      = VALUES(token),
+                        expires_at = VALUES(expires_at),
+                        ip_address = VALUES(ip_address),
+                        device     = VALUES(device),
+                        browser    = VALUES(browser),
+                        created_at = NOW()
+                ");
+                $stmt->execute([
+                    $user['id'],
+                    $token,
+                    date('Y-m-d H:i:s', $expiresAt),
+                    $_SERVER['REMOTE_ADDR']     ?? null,
+                    $_SERVER['HTTP_USER_AGENT'] ?? null,
+                    $_SERVER['HTTP_USER_AGENT'] ?? null,
+                ]);
             } else {
+                // Supprime le cookie et le token en base si décoché
                 if (isset($_COOKIE['remember_me_token'])) {
-                    setcookie('remember_me_token', '', time() - 3600, '/', '', false, true);
+                    setcookie('remember_me_token', '', [
+                        'expires'  => time() - 3600,
+                        'path'     => '/',
+                        'httponly' => true,
+                        'samesite' => 'Lax',
+                    ]);
                     $stmt = $this->db->prepare("DELETE FROM user_remember_tokens WHERE user_id = ?");
                     $stmt->execute([$user['id']]);
                 }
             }
 
-            // Session de base
-            $_SESSION['user'] = [
-                'id'                 => $user['id'],
-                'email'              => $user['email'],
-                'is_confirmed'       => $user['is_confirmed'],
-                'username'           => $user['username'],
-                'fullname'           => $user['fullname'],
-                'phone_number'       => $user['phone_number']    ?? '',
-                'country'            => $user['country']         ?? '',
-                'bio'                => $user['bio']             ?? '',
-                'created_at'         => $user['created_at'],
-                'is_admin'           => false,
-                'two_factor_enabled' => (bool) $user['two_factor_enabled'], // ← ajout
-                'profile_picture'    => 'default.png',
-                'english_level'      => null,
-                'profile'            => [
-                    'profile_picture' => 'default.png',
-                    'birth_date'      => null,
-                    'phone_number'    => $user['phone_number'] ?? '',
-                    'bio'             => $user['bio']          ?? '',
-                    'country'         => $user['country']      ?? '',
-                    'english_level'   => null,
-                    'native_language' => null,
-                ],
-            ];
-
-            // Log connexion
-            $userRepository = new UserRepository($this->db);
-            $userRepository->logLogin((int) $user['id']);
-
-            // Vérifie admin
-            $adminRepo = new AdminRepository($this->db);
-            $admin     = $adminRepo->findByUserId($user['id']);
-            if ($admin && $admin['is_active'] == 1) {
-                $_SESSION['user']['is_admin'] = true;
-            }
-
-            // Profil complet
+            // ===== PROFIL COMPLET =====
             $profileStmt = $this->db->prepare("
                 SELECT profile_picture, english_level, native_language,
                        birth_date, phone_number, country, bio
@@ -492,15 +470,42 @@ class AuthController extends Controller
             $profileStmt->execute([$user['id']]);
             $profile = $profileStmt->fetch(\PDO::FETCH_ASSOC);
 
-            $_SESSION['user']['profile_picture']              = $profile['profile_picture']  ?? 'default.png';
-            $_SESSION['user']['english_level']                = $profile['english_level']    ?? null;
-            $_SESSION['user']['profile']['profile_picture']   = $profile['profile_picture']  ?? 'default.png';
-            $_SESSION['user']['profile']['birth_date']        = $profile['birth_date']       ?? null;
-            $_SESSION['user']['profile']['phone_number']      = $profile['phone_number']     ?? '';
-            $_SESSION['user']['profile']['country']           = $profile['country']          ?? '';
-            $_SESSION['user']['profile']['bio']               = $profile['bio']              ?? '';
-            $_SESSION['user']['profile']['english_level']     = $profile['english_level']    ?? null;
-            $_SESSION['user']['profile']['native_language']   = $profile['native_language']  ?? null;
+            // ===== SESSION =====
+            $_SESSION['user'] = [
+                'id'                 => $user['id'],
+                'email'              => $user['email'],
+                'is_confirmed'       => (int) $user['is_confirmed'],
+                'username'           => $user['username'],
+                'fullname'           => $user['fullname'],
+                'phone_number'       => $profile['phone_number']   ?? $user['phone_number'] ?? '',
+                'country'            => $profile['country']        ?? $user['country']       ?? '',
+                'bio'                => $profile['bio']            ?? $user['bio']           ?? '',
+                'created_at'         => $user['created_at'],
+                'is_admin'           => false,
+                'two_factor_enabled' => (bool) $user['two_factor_enabled'],
+                'totp_enabled'       => (bool) ($user['totp_enabled'] ?? false),
+                'profile_picture'    => $profile['profile_picture'] ?? 'default.png',
+                'english_level'      => $profile['english_level']   ?? null,
+                'profile'            => [
+                    'profile_picture' => $profile['profile_picture'] ?? 'default.png',
+                    'birth_date'      => $profile['birth_date']      ?? null,
+                    'phone_number'    => $profile['phone_number']    ?? '',
+                    'bio'             => $profile['bio']             ?? '',
+                    'country'         => $profile['country']         ?? '',
+                    'english_level'   => $profile['english_level']  ?? null,
+                    'native_language' => $profile['native_language'] ?? null,
+                ],
+            ];
+
+            // ===== VÉRIFIE ADMIN =====
+            $adminRepo = new AdminRepository($this->db);
+            $admin     = $adminRepo->findByUserId($user['id']);
+            if ($admin && $admin['is_active'] == 1) {
+                $_SESSION['user']['is_admin'] = true;
+            }
+
+            // ===== LOG CONNEXION =====
+            $userRepository->logLogin((int) $user['id']);
 
             echo json_encode([
                 'success' => true,

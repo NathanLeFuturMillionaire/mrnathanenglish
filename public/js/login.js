@@ -74,9 +74,25 @@ document.addEventListener("DOMContentLoaded", function () {
       return;
     }
 
+    // ===== Construit le body manuellement =====
+    const email = document.getElementById("email")?.value.trim() ?? "";
+    const password = document.getElementById("password")?.value ?? "";
+    const rememberMe =
+      document.querySelector('input[name="remember_me"]')?.checked ?? false;
+
+    const body = new URLSearchParams({
+      email,
+      password,
+      ...(rememberMe ? { remember_me: "on" } : {}),
+    });
+
     fetch("./login", {
       method: "POST",
-      body: new FormData(form),
+      body,
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "X-Requested-With": "XMLHttpRequest",
+      },
     })
       .then((response) => {
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
