@@ -941,6 +941,401 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
 
+  // ===== CHANGER MOT DE PASSE =====
+
+  const modalPwd2fa = document.getElementById("modal-pwd-2fa");
+  const modalPwdTotp = document.getElementById("modal-pwd-totp");
+  const modalPwdForm = document.getElementById("modal-pwd-form");
+  const modalPwdSuccess = document.getElementById("modal-pwd-success");
+
+  let pwdHas2fa = false;
+  let pwdHasTotp = false;
+
+  function openPwdModal(modal) {
+    modal.style.display = "flex";
+    modal.classList.remove("is-closing");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closePwdModal(modal, callback) {
+    modal.classList.add("is-closing");
+    setTimeout(() => {
+      modal.style.display = "none";
+      modal.classList.remove("is-closing");
+      document.body.style.overflow = "";
+      if (callback) callback();
+    }, 250);
+  }
+
+  function closeAllPwdModals() {
+    [modalPwd2fa, modalPwdTotp, modalPwdForm, modalPwdSuccess].forEach((m) => {
+      if (m) {
+        m.style.display = "none";
+        m.classList.remove("is-closing");
+      }
+    });
+    document.body.style.overflow = "";
+  }
+
+  // ===== OTP CASES POUR MOT DE PASSE =====
+  const pwd2faOtp = initOtpInputs(
+    ".pwd-otp-input",
+    "pwd-2fa-code",
+    () => document.getElementById("pwd-2fa-submit"),
+    "pwd-2fa-error",
+  );
+  const pwdTotpOtp = initOtpInputs(
+    ".pwd-totp-input",
+    "pwd-totp-code",
+    () => document.getElementById("pwd-totp-submit"),
+    "pwd-totp-error",
+  );
+
+  // ===== OUVRE LE FLOW =====
+  document
+    .querySelector(".btn-setting:not(.logout)")
+    ?.addEventListener("click", async function () {
+      // Lance le processus
+      try {
+        const res = await fetch("./profile/change-password-start", {
+          method: "POST",
+          headers: { "X-Requested-With": "XMLHttpRequest" },
+        });
+        const data = await res.json();
+
+        if (!data.success) return;
+
+        pwdHas2fa = data.has_2fa;
+        pwdHasTotp = data.has_totp;
+
+        if (pwdHas2fa) {
+          // Réinitialise les cases
+          pwd2faOtp.reset();
+          openPwdModal(modalPwd2fa);
+        } else if (pwdHasTotp) {
+          pwdTotpOtp.reset();
+          openPwdModal(modalPwdTotp);
+        } else {
+          openPwdModal(modalPwdForm);
+        }
+      } catch {
+        // Si erreur réseau, ouvre directement le form
+        openPwdModal(modalPwdForm);
+      }
+    });
+
+  // ===== VÉRIFICATION 2FA =====
+  document
+    .getElementById("pwd-2fa-submit")
+    ?.addEventListener("click", async function () {
+      const btnText = this.querySelector(".btn-text");
+      const spinner = this.querySelector(".btn-spinner");
+      const code = pwd2faOtp.getCode();
+
+      this.disabled = true;
+      btnText.style.display = "none";
+      spinner.style.display = "flex";
+      pwd2faOtp.clearErr();
+
+      try {
+        const res = await fetch("./profile/change-password-verify", {
+          method: "POST",
+          body: new URLSearchParams({ step: "2fa", code }),
+          headers: {
+            "X-Requested-With": "XMLHttpRequest",
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          closePwdModal(modalPwd2fa, () => {
+            if (data.next === "totp") {
+              pwdTotpOtp.reset();
+              openPwdModal(modalPwdTotp);
+            } else {
+              openPwdModal(modalPwdForm);
+            }
+          });
+        } else {
+          pwd2faOtp.showError(data.message ?? "Code incorrect.");
+          pwd2faOtp.reset();
+          this.disabled = false;
+          btnText.style.display = "flex";
+          spinner.style.display = "none";
+        }
+      } catch {
+        pwd2faOtp.showError("Erreur réseau. Veuillez réessayer.");
+        this.disabled = false;
+        btnText.style.display = "flex";
+        spinner.style.display = "none";
+      }
+    });
+
+  // ===== RENVOI CODE 2FA =====
+  document
+    .getElementById("pwd-resend-2fa")
+    ?.addEventListener("click", async (e) => {
+      e.preventDefault();
+      const link = e.currentTarget;
+      link.style.opacity = "0.5";
+      link.style.pointerEvents = "none";
+      link.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Envoi...';
+
+      try {
+        await fetch("./profile/change-password-start", {
+          method: "POST",
+          headers: { "X-Requested-With": "XMLHttpRequest" },
+        });
+        link.innerHTML = '<i class="fas fa-check"></i> Code envoyé !';
+        link.style.color = "#00c48c";
+        pwd2faOtp.reset();
+        setTimeout(() => {
+          link.innerHTML =
+            '<i class="fas fa-rotate-right"></i> Renvoyer le code';
+          link.style.color = "";
+          link.style.opacity = "1";
+          link.style.pointerEvents = "auto";
+        }, 3000);
+      } catch {
+        link.innerHTML = '<i class="fas fa-rotate-right"></i> Renvoyer le code';
+        link.style.opacity = "1";
+        link.style.pointerEvents = "auto";
+      }
+    });
+
+  // ===== VÉRIFICATION TOTP =====
+  document
+    .getElementById("pwd-totp-submit")
+    ?.addEventListener("click", async function () {
+      const btnText = this.querySelector(".btn-text");
+      const spinner = this.querySelector(".btn-spinner");
+      const code = pwdTotpOtp.getCode();
+
+      this.disabled = true;
+      btnText.style.display = "none";
+      spinner.style.display = "flex";
+      pwdTotpOtp.clearErr();
+
+      try {
+        const res = await fetch("./profile/change-password-verify", {
+          method: "POST",
+          body: new URLSearchParams({ step: "totp", code }),
+          headers: {
+            "X-Requested-With": "XMLHttpRequest",
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          closePwdModal(modalPwdTotp, () => {
+            openPwdModal(modalPwdForm);
+          });
+        } else {
+          pwdTotpOtp.showError(data.message ?? "Code incorrect.");
+          pwdTotpOtp.reset();
+          this.disabled = false;
+          btnText.style.display = "flex";
+          spinner.style.display = "none";
+        }
+      } catch {
+        pwdTotpOtp.showError("Erreur réseau. Veuillez réessayer.");
+        this.disabled = false;
+        btnText.style.display = "flex";
+        spinner.style.display = "none";
+      }
+    });
+
+  // ===== INDICATEUR DE FORCE MOT DE PASSE =====
+  document.getElementById("pwd-new")?.addEventListener("input", function () {
+    const val = this.value;
+    const fill = document.getElementById("pwd-strength-fill");
+    const label = document.getElementById("pwd-strength-label");
+
+    if (!val) {
+      fill.className = "pwd-strength__fill";
+      fill.style.width = "0";
+      label.textContent = "";
+      return;
+    }
+
+    let score = 0;
+    if (val.length >= 8) score++;
+    if (/[A-Z]/.test(val)) score++;
+    if (/[0-9]/.test(val)) score++;
+    if (/[^A-Za-z0-9]/.test(val)) score++;
+
+    const levels = [
+      { cls: "weak", label: "Faible", color: "#f5365c" },
+      { cls: "fair", label: "Moyen", color: "#f7b731" },
+      { cls: "good", label: "Bon", color: "#1a6fb5" },
+      { cls: "strong", label: "Fort", color: "#00c48c" },
+    ];
+
+    const level = levels[score - 1] ?? levels[0];
+    fill.className = `pwd-strength__fill pwd-strength__fill--${level.cls}`;
+    label.textContent = level.label;
+    label.style.color = level.color;
+  });
+
+  // ===== TOGGLE AFFICHAGE MOT DE PASSE =====
+  document.querySelectorAll(".pwd-toggle-eye").forEach((btn) => {
+    btn.addEventListener("click", function () {
+      const target = document.getElementById(this.dataset.target);
+      if (!target) return;
+      const isPassword = target.type === "password";
+      target.type = isPassword ? "text" : "password";
+      this.innerHTML = `<i class="fas fa-${isPassword ? "eye-slash" : "eye"}"></i>`;
+    });
+  });
+
+  // ===== SOUMISSION FORMULAIRE MOT DE PASSE =====
+  document
+    .getElementById("pwd-form-submit")
+    ?.addEventListener("click", async function () {
+      const btnText = this.querySelector(".btn-text");
+      const spinner = this.querySelector(".btn-spinner");
+
+      const current = document.getElementById("pwd-current")?.value ?? "";
+      const newPwd = document.getElementById("pwd-new")?.value ?? "";
+      const confirm = document.getElementById("pwd-confirm")?.value ?? "";
+
+      // Reset erreurs
+      [
+        "err-pwd-current",
+        "err-pwd-new",
+        "err-pwd-confirm",
+        "pwd-form-error",
+      ].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = "";
+      });
+      ["pwd-current", "pwd-new", "pwd-confirm"].forEach((id) => {
+        document.getElementById(id)?.classList.remove("is-error");
+      });
+
+      // Validations JS
+      let valid = true;
+
+      if (!current) {
+        document.getElementById("err-pwd-current").textContent =
+          "Ce champ est obligatoire.";
+        document.getElementById("pwd-current").classList.add("is-error");
+        valid = false;
+      }
+      if (newPwd.length < 8) {
+        document.getElementById("err-pwd-new").textContent =
+          "Au moins 8 caractères.";
+        document.getElementById("pwd-new").classList.add("is-error");
+        valid = false;
+      }
+      if (newPwd !== confirm) {
+        document.getElementById("err-pwd-confirm").textContent =
+          "Les mots de passe ne correspondent pas.";
+        document.getElementById("pwd-confirm").classList.add("is-error");
+        valid = false;
+      }
+
+      if (!valid) return;
+
+      this.disabled = true;
+      btnText.style.display = "none";
+      spinner.style.display = "flex";
+
+      try {
+        const logoutAll =
+          document.getElementById("pwd-logout-all-checkbox")?.checked ?? false;
+
+        const res = await fetch("./profile/change-password", {
+          method: "POST",
+          body: new URLSearchParams({
+            current_password: current,
+            new_password: newPwd,
+            confirm_password: confirm,
+            logout_all: logoutAll ? "1" : "0",
+          }),
+          headers: {
+            "X-Requested-With": "XMLHttpRequest",
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          // Met à jour le texte du modal succès si logout_all
+          if (data.logout_all) {
+            const desc = document.querySelector(
+              "#modal-pwd-success .pwd-modal__desc",
+            );
+            if (desc)
+              desc.textContent =
+                "Votre mot de passe a été mis à jour. Vous avez été déconnecté de tous les autres appareils.";
+          }
+          closePwdModal(modalPwdForm, () => {
+            openPwdModal(modalPwdSuccess);
+          });
+        } else {
+          if (data.field === "current") {
+            document.getElementById("err-pwd-current").textContent =
+              data.message;
+            document.getElementById("pwd-current").classList.add("is-error");
+          } else if (data.field === "new") {
+            document.getElementById("err-pwd-new").textContent = data.message;
+            document.getElementById("pwd-new").classList.add("is-error");
+          } else if (data.field === "confirm") {
+            document.getElementById("err-pwd-confirm").textContent =
+              data.message;
+            document.getElementById("pwd-confirm").classList.add("is-error");
+          } else {
+            document.getElementById("pwd-form-error").textContent =
+              data.message ?? "Une erreur est survenue.";
+          }
+          this.disabled = false;
+          btnText.style.display = "flex";
+          spinner.style.display = "none";
+        }
+      } catch {
+        document.getElementById("pwd-form-error").textContent =
+          "Erreur réseau. Veuillez réessayer.";
+        this.disabled = false;
+        btnText.style.display = "flex";
+        spinner.style.display = "none";
+      }
+    });
+
+  // ===== FERMETURES =====
+  document
+    .getElementById("pwd-2fa-close")
+    ?.addEventListener("click", closeAllPwdModals);
+  document
+    .getElementById("pwd-2fa-cancel")
+    ?.addEventListener("click", closeAllPwdModals);
+  document
+    .getElementById("pwd-totp-close")
+    ?.addEventListener("click", closeAllPwdModals);
+  document
+    .getElementById("pwd-totp-cancel")
+    ?.addEventListener("click", closeAllPwdModals);
+  document
+    .getElementById("pwd-form-close")
+    ?.addEventListener("click", closeAllPwdModals);
+  document
+    .getElementById("pwd-form-cancel")
+    ?.addEventListener("click", closeAllPwdModals);
+  document
+    .getElementById("pwd-success-close")
+    ?.addEventListener("click", closeAllPwdModals);
+
+  // Ferme en cliquant sur l'overlay
+  [modalPwd2fa, modalPwdTotp, modalPwdForm, modalPwdSuccess].forEach(
+    (modal) => {
+      modal?.addEventListener("click", (e) => {
+        if (e.target === modal) closeAllPwdModals();
+      });
+    },
+  );
+
   // ===== DÉCONNEXION =====
   document
     .querySelector(".btn-setting.logout")

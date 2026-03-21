@@ -766,6 +766,199 @@ if ($_SESSION['user']['is_confirmed'] != 1) {
             </div>
         </div>
     </div>
+    <!-- ===== MODAL CHANGER MOT DE PASSE — ÉTAPE 2FA EMAIL ===== -->
+    <div id="modal-pwd-2fa" class="pwd-modal-overlay" style="display:none;" aria-modal="true" role="dialog">
+        <div class="pwd-modal">
+            <div class="pwd-modal__header">
+                <div class="pwd-modal__icon">
+                    <i class="fas fa-envelope-shield"></i>
+                </div>
+                <h3 class="pwd-modal__title">Vérification par e-mail</h3>
+                <button type="button" class="pwd-modal__close" id="pwd-2fa-close">
+                    <i class="fas fa-xmark"></i>
+                </button>
+            </div>
+            <div class="pwd-modal__body">
+                <p class="pwd-modal__desc">
+                    Un code de vérification a été envoyé à votre adresse e-mail.
+                    Saisissez-le pour continuer.
+                </p>
+                <div class="pwd-otp-wrapper">
+                    <input class="pwd-otp-input" type="text" inputmode="numeric" maxlength="1" pattern="\d" autocomplete="off" data-index="0">
+                    <input class="pwd-otp-input" type="text" inputmode="numeric" maxlength="1" pattern="\d" autocomplete="off" data-index="1">
+                    <input class="pwd-otp-input" type="text" inputmode="numeric" maxlength="1" pattern="\d" autocomplete="off" data-index="2">
+                    <span class="pwd-otp-separator">—</span>
+                    <input class="pwd-otp-input" type="text" inputmode="numeric" maxlength="1" pattern="\d" autocomplete="off" data-index="3">
+                    <input class="pwd-otp-input" type="text" inputmode="numeric" maxlength="1" pattern="\d" autocomplete="off" data-index="4">
+                    <input class="pwd-otp-input" type="text" inputmode="numeric" maxlength="1" pattern="\d" autocomplete="off" data-index="5">
+                </div>
+                <input type="hidden" id="pwd-2fa-code">
+                <small id="pwd-2fa-error" class="pwd-modal__error"></small>
+                <a href="#" class="pwd-resend-link" id="pwd-resend-2fa">
+                    <i class="fas fa-rotate-right"></i>
+                    Renvoyer le code
+                </a>
+            </div>
+            <div class="pwd-modal__footer">
+                <button type="button" class="pwd-modal__btn-cancel" id="pwd-2fa-cancel">
+                    <i class="fas fa-xmark"></i> Annuler
+                </button>
+                <button type="button" class="pwd-modal__btn-primary" id="pwd-2fa-submit" disabled>
+                    <span class="btn-text"><i class="fas fa-arrow-right"></i> Continuer</span>
+                    <span class="btn-spinner" style="display:none;"><i class="fas fa-spinner fa-spin"></i></span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MODAL CHANGER MOT DE PASSE — ÉTAPE TOTP ===== -->
+    <div id="modal-pwd-totp" class="pwd-modal-overlay" style="display:none;" aria-modal="true" role="dialog">
+        <div class="pwd-modal">
+            <div class="pwd-modal__header">
+                <div class="pwd-modal__icon">
+                    <i class="fas fa-mobile-screen"></i>
+                </div>
+                <h3 class="pwd-modal__title">Vérification Google Authenticator</h3>
+                <button type="button" class="pwd-modal__close" id="pwd-totp-close">
+                    <i class="fas fa-xmark"></i>
+                </button>
+            </div>
+            <div class="pwd-modal__body">
+                <p class="pwd-modal__desc">
+                    Saisissez le code à 6 chiffres affiché dans votre application
+                    <strong>Google Authenticator</strong>.
+                </p>
+                <div class="pwd-otp-wrapper">
+                    <input class="pwd-totp-input" type="text" inputmode="numeric" maxlength="1" pattern="\d" autocomplete="off" data-index="0">
+                    <input class="pwd-totp-input" type="text" inputmode="numeric" maxlength="1" pattern="\d" autocomplete="off" data-index="1">
+                    <input class="pwd-totp-input" type="text" inputmode="numeric" maxlength="1" pattern="\d" autocomplete="off" data-index="2">
+                    <span class="pwd-otp-separator">—</span>
+                    <input class="pwd-totp-input" type="text" inputmode="numeric" maxlength="1" pattern="\d" autocomplete="off" data-index="3">
+                    <input class="pwd-totp-input" type="text" inputmode="numeric" maxlength="1" pattern="\d" autocomplete="off" data-index="4">
+                    <input class="pwd-totp-input" type="text" inputmode="numeric" maxlength="1" pattern="\d" autocomplete="off" data-index="5">
+                </div>
+                <input type="hidden" id="pwd-totp-code">
+                <small id="pwd-totp-error" class="pwd-modal__error"></small>
+            </div>
+            <div class="pwd-modal__footer">
+                <button type="button" class="pwd-modal__btn-cancel" id="pwd-totp-cancel">
+                    <i class="fas fa-xmark"></i> Annuler
+                </button>
+                <button type="button" class="pwd-modal__btn-primary" id="pwd-totp-submit" disabled>
+                    <span class="btn-text"><i class="fas fa-arrow-right"></i> Continuer</span>
+                    <span class="btn-spinner" style="display:none;"><i class="fas fa-spinner fa-spin"></i></span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MODAL CHANGER MOT DE PASSE — FORMULAIRE ===== -->
+    <div id="modal-pwd-form" class="pwd-modal-overlay" style="display:none;" aria-modal="true" role="dialog">
+        <div class="pwd-modal">
+            <div class="pwd-modal__header">
+                <div class="pwd-modal__icon">
+                    <i class="fas fa-lock"></i>
+                </div>
+                <h3 class="pwd-modal__title">Changer le mot de passe</h3>
+                <button type="button" class="pwd-modal__close" id="pwd-form-close">
+                    <i class="fas fa-xmark"></i>
+                </button>
+            </div>
+            <div class="pwd-modal__body">
+                <p class="pwd-modal__desc">
+                    Choisissez un mot de passe fort d'au moins 8 caractères.
+                </p>
+
+                <div class="pwd-field">
+                    <label for="pwd-current">Mot de passe actuel</label>
+                    <div class="pwd-input-wrapper">
+                        <input type="password" id="pwd-current" placeholder="Votre mot de passe actuel" autocomplete="current-password">
+                        <button type="button" class="pwd-toggle-eye" data-target="pwd-current">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <small class="pwd-field__error" id="err-pwd-current"></small>
+                </div>
+
+                <div class="pwd-field">
+                    <label for="pwd-new">Nouveau mot de passe</label>
+                    <div class="pwd-input-wrapper">
+                        <input type="password" id="pwd-new" placeholder="Au moins 8 caractères" autocomplete="new-password">
+                        <button type="button" class="pwd-toggle-eye" data-target="pwd-new">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <!-- Indicateur de force -->
+                    <div class="pwd-strength" id="pwd-strength">
+                        <div class="pwd-strength__bar">
+                            <div class="pwd-strength__fill" id="pwd-strength-fill"></div>
+                        </div>
+                        <span class="pwd-strength__label" id="pwd-strength-label"></span>
+                    </div>
+                    <small class="pwd-field__error" id="err-pwd-new"></small>
+                </div>
+
+                <div class="pwd-field">
+                    <label for="pwd-confirm">Confirmer le nouveau mot de passe</label>
+                    <div class="pwd-input-wrapper">
+                        <input type="password" id="pwd-confirm" placeholder="Répétez le nouveau mot de passe" autocomplete="new-password">
+                        <button type="button" class="pwd-toggle-eye" data-target="pwd-confirm">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <small class="pwd-field__error" id="err-pwd-confirm"></small>
+                </div>
+                <!-- ===== DÉCONNEXION TOUS LES APPAREILS ===== -->
+                <label class="pwd-logout-all">
+                    <input type="checkbox" id="pwd-logout-all-checkbox">
+                    <span class="pwd-logout-all__checkmark">
+                        <i class="fas fa-check"></i>
+                    </span>
+                    <div class="pwd-logout-all__text">
+                        <span class="pwd-logout-all__label">
+                            <i class="fas fa-right-from-bracket"></i>
+                            Se déconnecter de tous les appareils
+                        </span>
+                        <span class="pwd-logout-all__hint">
+                            Révoque tous les cookies "Se souvenir de moi" et les appareils de confiance
+                        </span>
+                    </div>
+                </label>
+
+                <small class="pwd-modal__error" id="pwd-form-error"></small>
+
+                <small class="pwd-modal__error" id="pwd-form-error"></small>
+            </div>
+            <div class="pwd-modal__footer">
+                <button type="button" class="pwd-modal__btn-cancel" id="pwd-form-cancel">
+                    <i class="fas fa-xmark"></i> Annuler
+                </button>
+                <button type="button" class="pwd-modal__btn-primary" id="pwd-form-submit">
+                    <span class="btn-text"><i class="fas fa-check"></i> Enregistrer</span>
+                    <span class="btn-spinner" style="display:none;"><i class="fas fa-spinner fa-spin"></i></span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MODAL SUCCÈS MOT DE PASSE ===== -->
+    <div id="modal-pwd-success" class="pwd-modal-overlay" style="display:none;" aria-modal="true" role="dialog">
+        <div class="pwd-modal pwd-modal--success">
+            <div class="pwd-modal__body pwd-modal__body--centered">
+                <div class="pwd-success-icon">
+                    <i class="fas fa-check"></i>
+                </div>
+                <h3 class="pwd-success-title">Mot de passe modifié !</h3>
+                <p class="pwd-modal__desc">
+                    Votre mot de passe a été mis à jour avec succès.
+                    Vous restez connecté sur cet appareil.
+                </p>
+                <button type="button" class="pwd-modal__btn-primary pwd-modal__btn--full" id="pwd-success-close">
+                    <i class="fas fa-check-circle"></i> Parfait
+                </button>
+            </div>
+        </div>
+    </div>
 
     <script src="./js/header.min.js" defer></script>
     <script src="./js/users/profile.min.js" defer></script>

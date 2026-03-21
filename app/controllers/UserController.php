@@ -761,4 +761,243 @@ class UserController
         ]);
         exit;
     }
+
+    /**
+     * Lance le processus de changement de mot de passe.
+     * Envoie un code 2FA si activé, vérifie le TOTP si activé.
+     * Retourne le statut de vérification nécessaire.
+     *
+     * @return void
+     */
+    public function changePasswordStart(): void
+    {
+        header('Content-Type: application/json');
+
+        if (empty($_SESSION['user']['id'])) {
+            http_response_code(401);
+            echo json_encode(['success' => false]);
+            exit;
+        }
+
+        $userId  = (int) $_SESSION['user']['id'];
+        $has2fa  = !empty($_SESSION['user']['two_factor_enabled']);
+        $hasTotp = !empty($_SESSION['user']['totp_enabled']);
+
+        // Envoie le code 2FA si activé
+        if ($has2fa) {
+            $code = $this->userRepository->saveTwoFactorCode($userId);
+
+            $stmt = $this->db->prepare("SELECT email, fullname FROM users WHERE id = ?");
+            $stmt->execute([$userId]);
+            $user = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+            $mailService = new \App\Services\MailService();
+            $mailService->sendTwoFactorCode($user['email'], $user['fullname'], $code);
+        }
+
+        echo json_encode([
+            'success'  => true,
+            'has_2fa'  => $has2fa,
+            'has_totp' => $hasTotp,
+        ]);
+        exit;
+    }
+
+    /**
+     * Vérifie le code 2FA et/ou TOTP pour le changement de mot de passe.
+     * Stocke un token de vérification en session si tout est valide.
+     *
+     * @return void
+     */
+    public function changePasswordVerify(): void
+    {
+        header('Content-Type: application/json');
+
+        if (
+            $_SERVER['REQUEST_METHOD'] !== 'POST' ||
+            empty($_SERVER['HTTP_X_REQUESTED_WITH']) ||
+            empty($_SESSION['user']['id'])
+        ) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Requête non autorisée.']);
+            exit;
+        }
+
+        $userId   = (int) $_SESSION['user']['id'];
+        $step     = trim($_POST['step']     ?? '');
+        $code     = preg_replace('/\D/', '', trim($_POST['code'] ?? ''));
+        $has2fa   = !empty($_SESSION['user']['two_factor_enabled']);
+        $hasTotp  = !empty($_SESSION['user']['totp_enabled']);
+
+        if (strlen($code) !== 6) {
+            echo json_encode(['success' => false, 'message' => 'Code invalide.']);
+            exit;
+        }
+
+        // ===== VÉRIFICATION 2FA EMAIL =====
+        if ($step === '2fa') {
+            $result = $this->userRepository->verifyTwoFactorCode($userId, $code);
+
+            if (!$result['success']) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => $result['message'],
+                    'locked'  => $result['locked']       ?? false,
+                    'seconds' => $result['seconds_left'] ?? null,
+                ]);
+                exit;
+            }
+
+            // Si TOTP aussi activé → étape suivante
+            if ($hasTotp) {
+                echo json_encode(['success' => true, 'next' => 'totp']);
+                exit;
+            }
+
+            // Sinon → peut changer le mot de passe
+            $_SESSION['pwd_change_verified'] = true;
+            echo json_encode(['success' => true, 'next' => 'form']);
+            exit;
+        }
+
+        // ===== VÉRIFICATION TOTP =====
+        if ($step === 'totp') {
+            $stmt = $this->db->prepare("SELECT totp_secret FROM users WHERE id = ?");
+            $stmt->execute([$userId]);
+            $row    = $stmt->fetch(\PDO::FETCH_ASSOC);
+            $secret = $row['totp_secret'] ?? null;
+
+            if (!$secret) {
+                echo json_encode(['success' => false, 'message' => 'TOTP non configuré.']);
+                exit;
+            }
+
+            $google2fa = new \PragmaRX\Google2FA\Google2FA();
+
+            if (!$google2fa->verifyKey($secret, $code, 4)) {
+                echo json_encode(['success' => false, 'message' => 'Code incorrect. Vérifiez votre application.']);
+                exit;
+            }
+
+            $_SESSION['pwd_change_verified'] = true;
+            echo json_encode(['success' => true, 'next' => 'form']);
+            exit;
+        }
+
+        echo json_encode(['success' => false, 'message' => 'Étape inconnue.']);
+        exit;
+    }
+
+    /**
+     * Change le mot de passe de l'utilisateur connecté.
+     * Nécessite une vérification préalable via changePasswordVerify().
+     * Vérifie le mot de passe actuel avant de le remplacer.
+     *
+     * @return void
+     */
+    public function changePassword(): void
+    {
+        header('Content-Type: application/json');
+
+        if (
+            $_SERVER['REQUEST_METHOD'] !== 'POST' ||
+            empty($_SERVER['HTTP_X_REQUESTED_WITH']) ||
+            empty($_SESSION['user']['id'])
+        ) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Requête non autorisée.']);
+            exit;
+        }
+
+        // Vérifie que la vérification 2FA/TOTP a bien été faite
+        if (empty($_SESSION['pwd_change_verified'])) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Vérification de sécurité requise.']);
+            exit;
+        }
+
+        $userId      = (int) $_SESSION['user']['id'];
+        $current     = $_POST['current_password'] ?? '';
+        $newPassword = $_POST['new_password']     ?? '';
+        $confirm     = $_POST['confirm_password'] ?? '';
+
+        // Validations
+        if (empty($current) || empty($newPassword) || empty($confirm)) {
+            echo json_encode(['success' => false, 'message' => 'Tous les champs sont obligatoires.']);
+            exit;
+        }
+
+        if (strlen($newPassword) < 8) {
+            echo json_encode(['success' => false, 'field' => 'new', 'message' => 'Le mot de passe doit contenir au moins 8 caractères.']);
+            exit;
+        }
+
+        if ($newPassword !== $confirm) {
+            echo json_encode(['success' => false, 'field' => 'confirm', 'message' => 'Les mots de passe ne correspondent pas.']);
+            exit;
+        }
+
+        // Vérifie le mot de passe actuel
+        $stmt = $this->db->prepare("SELECT password FROM users WHERE id = ?");
+        $stmt->execute([$userId]);
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        if (!password_verify($current, $row['password'])) {
+            echo json_encode(['success' => false, 'field' => 'current', 'message' => 'Mot de passe actuel incorrect.']);
+            exit;
+        }
+
+        if (password_verify($newPassword, $row['password'])) {
+            echo json_encode(['success' => false, 'field' => 'new', 'message' => 'Le nouveau mot de passe doit être différent de l\'ancien.']);
+            exit;
+        }
+
+        // Met à jour le mot de passe
+        $hashed = password_hash($newPassword, PASSWORD_DEFAULT);
+        $update = $this->db->prepare("UPDATE users SET password = ? WHERE id = ?");
+        $update->execute([$hashed, $userId]);
+
+        // ===== DÉCONNEXION DE TOUS LES APPAREILS =====
+        $logoutAll = !empty($_POST['logout_all']) && $_POST['logout_all'] === '1';
+
+        if ($logoutAll) {
+            // Supprime tous les tokens remember me
+            $stmt = $this->db->prepare("DELETE FROM user_remember_tokens WHERE user_id = ?");
+            $stmt->execute([$userId]);
+
+            // Supprime tous les appareils de confiance
+            $stmt = $this->db->prepare("DELETE FROM user_trusted_devices WHERE user_id = ?");
+            $stmt->execute([$userId]);
+
+            // Supprime le cookie remember me côté client
+            setcookie('remember_me_token', '', [
+                'expires'  => time() - 3600,
+                'path'     => '/',
+                'httponly' => true,
+                'samesite' => 'Lax',
+            ]);
+
+            // Supprime les cookies trusted_device
+            foreach ($_COOKIE as $name => $value) {
+                if (str_starts_with($name, 'trusted_device_')) {
+                    setcookie($name, '', [
+                        'expires'  => time() - 3600,
+                        'path'     => '/',
+                        'httponly' => true,
+                        'samesite' => 'Lax',
+                    ]);
+                }
+            }
+        }
+
+        // Nettoie le token de vérification
+        unset($_SESSION['pwd_change_verified']);
+
+        echo json_encode([
+            'success' => true,
+            'message' => 'Mot de passe modifié avec succès.',
+            'logout_all' => $logoutAll,
+        ]);
+        exit;
+    }
 }

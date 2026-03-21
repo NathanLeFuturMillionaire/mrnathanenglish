@@ -455,6 +455,23 @@ class Router
                     require __DIR__ . '/../views/auth/verifyTotp.php';
                 }
                 break;
+            case 'profile/change-password-verify':
+                session_start();
+                $userController = new UserController();
+                $userController->changePasswordVerify();
+                break;
+
+            case 'profile/change-password':
+                session_start();
+                $userController = new UserController();
+                $userController->changePassword();
+                break;
+
+            case 'profile/change-password-start':
+                session_start();
+                $userController = new UserController();
+                $userController->changePasswordStart();
+                break;
         }
     }
 }
