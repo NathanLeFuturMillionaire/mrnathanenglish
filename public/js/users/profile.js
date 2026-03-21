@@ -1336,6 +1336,183 @@ document.addEventListener("DOMContentLoaded", () => {
     },
   );
 
+  // ===== APPAREILS DE CONFIANCE =====
+  const btnShowDevices = document.getElementById("btn-show-devices");
+  const devicesList = document.getElementById("trusted-devices-list");
+  const devicesLoader = document.getElementById("devices-loader");
+  const devicesItems = document.getElementById("devices-items");
+  const devicesEmpty = document.getElementById("devices-empty");
+  const btnRevokeAll = document.getElementById("btn-revoke-all");
+
+  let devicesVisible = false;
+
+  function getBrowserIcon(name) {
+    name = name.toLowerCase();
+    if (name.includes("chrome")) return "fab fa-chrome";
+    if (name.includes("firefox")) return "fab fa-firefox-browser";
+    if (name.includes("safari")) return "fab fa-safari";
+    if (name.includes("edge")) return "fab fa-edge";
+    if (name.includes("opera")) return "fab fa-opera";
+    return "fas fa-globe";
+  }
+
+  async function loadTrustedDevices() {
+    devicesLoader.style.display = "block";
+    devicesItems.style.display = "none";
+    devicesEmpty.style.display = "none";
+    btnRevokeAll.style.display = "none";
+
+    try {
+      const res = await fetch("./profile/trusted-devices", {
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+      });
+      const data = await res.json();
+
+      devicesLoader.style.display = "none";
+
+      if (!data.success || !data.devices.length) {
+        devicesEmpty.style.display = "flex";
+        return;
+      }
+
+      devicesItems.innerHTML = "";
+
+      data.devices.forEach((device) => {
+        const li = document.createElement("li");
+        li.className = "trusted-device-item";
+        li.dataset.id = device.id;
+
+        const isExpiring = device.days_left <= 7 && !device.is_expired;
+
+        li.innerHTML = `
+                <div class="trusted-device-item__icon ${device.is_current ? "trusted-device-item__icon--current" : ""}">
+                    <i class="${getBrowserIcon(device.name)}"></i>
+                </div>
+                <div class="trusted-device-item__info">
+                    <span class="trusted-device-item__name">
+                        ${device.name}
+                        ${device.is_current ? '<span class="trusted-device-item__badge">Cet appareil</span>' : ""}
+                    </span>
+                    <span class="trusted-device-item__meta">
+                        <i class="fas fa-location-dot"></i> ${device.ip_address}
+                        <span class="sep">·</span>
+                        <i class="fas fa-calendar"></i> ${device.created_at}
+                    </span>
+                </div>
+                <span class="trusted-device-item__days ${isExpiring ? "trusted-device-item__days--expiring" : ""}">
+                    ${device.is_expired ? "Expiré" : isExpiring ? `⚠ ${device.days_left}j` : `${device.days_left}j`}
+                </span>
+                <button type="button" class="trusted-device-item__revoke" data-id="${device.id}" title="Révoquer">
+                    <i class="fas fa-trash-can"></i>
+                </button>
+            `;
+
+        devicesItems.appendChild(li);
+      });
+
+      devicesItems.style.display = "flex";
+      btnRevokeAll.style.display = "flex";
+    } catch {
+      devicesLoader.style.display = "none";
+      devicesEmpty.style.display = "flex";
+    }
+  }
+
+  btnShowDevices?.addEventListener("click", async function () {
+    devicesVisible = !devicesVisible;
+
+    if (devicesVisible) {
+      devicesList.style.display = "block";
+      this.innerHTML = '<i class="fas fa-eye-slash"></i> Masquer';
+      await loadTrustedDevices();
+    } else {
+      devicesList.style.display = "none";
+      this.innerHTML = '<i class="fas fa-eye"></i> Gérer';
+    }
+  });
+
+  // ===== RÉVOQUER UN APPAREIL =====
+  devicesItems?.addEventListener("click", async (e) => {
+    const btn = e.target.closest(".trusted-device-item__revoke");
+    if (!btn) return;
+
+    const deviceId = btn.dataset.id;
+    const item = btn.closest(".trusted-device-item");
+
+    btn.disabled = true;
+    item.style.opacity = "0.5";
+    item.style.transition = "opacity 0.25s ease";
+
+    try {
+      const res = await fetch("./profile/revoke-device", {
+        method: "POST",
+        body: new URLSearchParams({ device_id: deviceId }),
+        headers: {
+          "X-Requested-With": "XMLHttpRequest",
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        item.style.opacity = "0";
+        item.style.transform = "translateX(20px)";
+        setTimeout(() => {
+          item.remove();
+          // Si plus d'appareils → affiche vide
+          if (!devicesItems.children.length) {
+            devicesItems.style.display = "none";
+            btnRevokeAll.style.display = "none";
+            devicesEmpty.style.display = "flex";
+          }
+        }, 250);
+      } else {
+        item.style.opacity = "1";
+        btn.disabled = false;
+      }
+    } catch {
+      item.style.opacity = "1";
+      btn.disabled = false;
+    }
+  });
+
+  // ===== RÉVOQUER TOUS =====
+  btnRevokeAll?.addEventListener("click", async function () {
+    this.disabled = true;
+    this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Révocation...';
+
+    try {
+      const res = await fetch("./profile/revoke-all-devices", {
+        method: "POST",
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        // Anime la sortie de tous les items
+        [...devicesItems.children].forEach((item, i) => {
+          item.style.transition = `opacity 0.2s ease ${i * 0.05}s, transform 0.2s ease ${i * 0.05}s`;
+          item.style.opacity = "0";
+          item.style.transform = "translateX(20px)";
+        });
+        setTimeout(() => {
+          devicesItems.innerHTML = "";
+          devicesItems.style.display = "none";
+          this.style.display = "none";
+          devicesEmpty.style.display = "flex";
+        }, 400);
+      } else {
+        this.disabled = false;
+        this.innerHTML =
+          '<i class="fas fa-trash-can"></i> Révoquer tous les appareils';
+      }
+    } catch {
+      this.disabled = false;
+      this.innerHTML =
+        '<i class="fas fa-trash-can"></i> Révoquer tous les appareils';
+    }
+  });
+
   // ===== DÉCONNEXION =====
   document
     .querySelector(".btn-setting.logout")

@@ -472,6 +472,24 @@ class Router
                 $userController = new UserController();
                 $userController->changePasswordStart();
                 break;
+
+            case 'profile/trusted-devices':
+                session_start();
+                $userController = new UserController();
+                $userController->trustedDevices();
+                break;
+
+            case 'profile/revoke-device':
+                session_start();
+                $userController = new UserController();
+                $userController->revokeTrustedDevice();
+                break;
+
+            case 'profile/revoke-all-devices':
+                session_start();
+                $userController = new UserController();
+                $userController->revokeAllTrustedDevices();
+                break;
         }
     }
 }

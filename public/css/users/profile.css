@@ -3327,3 +3327,204 @@
   color: var(--text-muted, #6b7a99);
   line-height: 1.5;
 }
+
+/* ===== SETTING ITEM BLOCK ===== */
+.setting-item--block {
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.btn-setting-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--sky, #e8f2fc);
+  border: 1.5px solid rgba(26, 111, 181, 0.2);
+  border-radius: 8px;
+  padding: 7px 14px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--blue, #1a6fb5);
+  cursor: pointer;
+  font-family: "Montserrat", sans-serif;
+  transition: all var(--transition);
+  flex-shrink: 0;
+}
+
+.btn-setting-inline:hover {
+  background: rgba(26, 111, 181, 0.15);
+  transform: translateY(-1px);
+}
+
+/* ===== APPAREILS DE CONFIANCE ===== */
+.trusted-devices {
+  margin-top: 12px;
+  padding: 16px;
+  background: var(--bg, #f4f7fb);
+  border-radius: 14px;
+  border: 1px solid var(--border, #e8eef7);
+  animation: slideDown 0.3s ease both;
+}
+
+.trusted-devices__loader {
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--text-muted, #6b7a99);
+  padding: 12px 0;
+}
+
+.trusted-devices__items {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.trusted-device-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border, #e8eef7);
+  transition: all var(--transition);
+}
+
+.trusted-device-item:last-child {
+  border-bottom: none;
+}
+
+.trusted-device-item__icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: var(--white, #fff);
+  border: 1px solid var(--border, #e8eef7);
+  color: var(--blue, #1a6fb5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.trusted-device-item__icon--current {
+  background: rgba(26, 111, 181, 0.1);
+  border-color: rgba(26, 111, 181, 0.2);
+}
+
+.trusted-device-item__info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+
+.trusted-device-item__name {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--text-primary, #1a1a2e);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.trusted-device-item__badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 20px;
+  background: rgba(26, 111, 181, 0.1);
+  color: var(--blue, #1a6fb5);
+  border: 1px solid rgba(26, 111, 181, 0.2);
+}
+
+.trusted-device-item__meta {
+  font-size: 0.76rem;
+  color: var(--text-muted, #6b7a99);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.trusted-device-item__days {
+  font-size: 0.72rem;
+  color: var(--text-muted, #6b7a99);
+  white-space: nowrap;
+}
+
+.trusted-device-item__days--expiring {
+  color: #f7b731;
+  font-weight: 600;
+}
+
+.trusted-device-item__revoke {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-muted, #6b7a99);
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: all var(--transition);
+}
+
+.trusted-device-item:hover .trusted-device-item__revoke {
+  opacity: 1;
+}
+
+.trusted-device-item__revoke:hover {
+  background: rgba(245, 54, 92, 0.08);
+  border-color: rgba(245, 54, 92, 0.2);
+  color: var(--danger, #f5365c);
+}
+
+.trusted-devices__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 20px 0;
+  color: var(--text-muted, #6b7a99);
+}
+
+.trusted-devices__empty i {
+  font-size: 26px;
+  opacity: 0.4;
+}
+.trusted-devices__empty p {
+  font-size: 0.84rem;
+}
+
+.btn-revoke-all {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 14px;
+  padding: 8px 14px;
+  background: rgba(245, 54, 92, 0.06);
+  border: 1.5px solid rgba(245, 54, 92, 0.2);
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--danger, #f5365c);
+  cursor: pointer;
+  font-family: "Montserrat", sans-serif;
+  transition: all var(--transition);
+}
+
+.btn-revoke-all:hover {
+  background: rgba(245, 54, 92, 0.12);
+  border-color: var(--danger, #f5365c);
+  transform: translateY(-1px);
+}

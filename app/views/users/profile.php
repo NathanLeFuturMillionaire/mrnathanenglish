@@ -586,6 +586,37 @@ if ($_SESSION['user']['is_confirmed'] != 1) {
                         </label>
                     </div>
 
+                    <!-- ===== APPAREILS DE CONFIANCE ===== -->
+                    <div class="setting-item setting-item--block">
+                        <div class="setting-item__info">
+                            <span class="setting-item__title">
+                                <i class="fas fa-shield-check"></i>
+                                Appareils de confiance
+                            </span>
+                            <span class="setting-item__desc">
+                                Navigateurs enregistrés qui ne demandent pas de code 2FA à chaque connexion.
+                            </span>
+                        </div>
+                        <button type="button" class="btn-setting-inline" id="btn-show-devices">
+                            <i class="fas fa-eye"></i> Gérer
+                        </button>
+                    </div>
+
+                    <div id="trusted-devices-list" class="trusted-devices" style="display:none;">
+                        <div class="trusted-devices__loader" id="devices-loader">
+                            <i class="fas fa-spinner fa-spin"></i> Chargement...
+                        </div>
+                        <ul class="trusted-devices__items" id="devices-items" style="display:none;"></ul>
+                        <div class="trusted-devices__empty" id="devices-empty" style="display:none;">
+                            <i class="fas fa-shield-slash"></i>
+                            <p>Aucun appareil de confiance enregistré.</p>
+                        </div>
+                        <button type="button" class="btn-revoke-all" id="btn-revoke-all" style="display:none;">
+                            <i class="fas fa-trash-can"></i>
+                            Révoquer tous les appareils
+                        </button>
+                    </div>
+
                     <div id="totp-feedback" class="setting-item__feedback" style="display:none;"></div>
 
                     <button class="btn-setting" style="margin-top:16px;">

@@ -1000,4 +1000,144 @@ class UserController
         ]);
         exit;
     }
+
+    /**
+     * Retourne la liste des appareils de confiance de l'utilisateur.
+     * Formate les dates et parse le user agent pour un affichage lisible.
+     *
+     * @return void
+     */
+    public function trustedDevices(): void
+    {
+        header('Content-Type: application/json');
+
+        if (empty($_SESSION['user']['id'])) {
+            http_response_code(401);
+            echo json_encode(['success' => false]);
+            exit;
+        }
+
+        $userId  = (int) $_SESSION['user']['id'];
+        $devices = $this->userRepository->getTrustedDevices($userId);
+
+        // Formate les données pour l'affichage
+        $formatted = array_map(function (array $device) {
+            $date     = new \DateTime($device['created_at']);
+            $monthsFr = ['January' => 'Jan', 'February' => 'Fév', 'March' => 'Mar', 'April' => 'Avr', 'May' => 'Mai', 'June' => 'Jun', 'July' => 'Jul', 'August' => 'Aoû', 'September' => 'Sep', 'October' => 'Oct', 'November' => 'Nov', 'December' => 'Déc'];
+            $day      = $date->format('j');
+            $monthFr  = $monthsFr[$date->format('F')] ?? $date->format('F');
+            $formatted = ($day == 1 ? '1er' : $day) . ' ' . $monthFr . ' ' . $date->format('Y');
+
+            $expires     = new \DateTime($device['expires_at']);
+            $now         = new \DateTime();
+            $daysLeft    = (int) $now->diff($expires)->days;
+            $isExpired   = $now > $expires;
+
+            return [
+                'id'         => $device['id'],
+                'name'       => $device['name']       ?? 'Appareil inconnu',
+                'ip_address' => $device['ip_address'] ?? '—',
+                'created_at' => $formatted,
+                'days_left'  => $isExpired ? 0 : $daysLeft,
+                'is_expired' => $isExpired,
+                'is_current' => $this->isCurrentDevice($device),
+            ];
+        }, $devices);
+
+        echo json_encode(['success' => true, 'devices' => $formatted]);
+        exit;
+    }
+
+    /**
+     * Vérifie si l'appareil correspond à la session actuelle.
+     *
+     * @param  array $device Données de l'appareil
+     * @return bool
+     */
+    private function isCurrentDevice(array $device): bool
+    {
+        $currentUa = $_SERVER['HTTP_USER_AGENT'] ?? '';
+        $currentIp = $_SERVER['REMOTE_ADDR']     ?? '';
+        return $device['ip_address'] === $currentIp
+            && str_contains($device['user_agent'] ?? '', substr($currentUa, 0, 30));
+    }
+
+    /**
+     * Révoque un appareil de confiance spécifique.
+     *
+     * @return void
+     */
+    public function revokeTrustedDevice(): void
+    {
+        header('Content-Type: application/json');
+
+        if (
+            $_SERVER['REQUEST_METHOD'] !== 'POST' ||
+            empty($_SERVER['HTTP_X_REQUESTED_WITH']) ||
+            empty($_SESSION['user']['id'])
+        ) {
+            http_response_code(403);
+            echo json_encode(['success' => false]);
+            exit;
+        }
+
+        $userId   = (int) $_SESSION['user']['id'];
+        $deviceId = (int) ($_POST['device_id'] ?? 0);
+
+        if ($deviceId <= 0) {
+            echo json_encode(['success' => false, 'message' => 'ID invalide.']);
+            exit;
+        }
+
+        $stmt = $this->db->prepare("
+        DELETE FROM user_trusted_devices
+        WHERE id = :id AND user_id = :user_id
+    ");
+        $stmt->bindValue(':id',      $deviceId, \PDO::PARAM_INT);
+        $stmt->bindValue(':user_id', $userId,   \PDO::PARAM_INT);
+        $stmt->execute();
+
+        echo json_encode(['success' => true]);
+        exit;
+    }
+
+    /**
+     * Révoque tous les appareils de confiance de l'utilisateur.
+     *
+     * @return void
+     */
+    public function revokeAllTrustedDevices(): void
+    {
+        header('Content-Type: application/json');
+
+        if (
+            $_SERVER['REQUEST_METHOD'] !== 'POST' ||
+            empty($_SERVER['HTTP_X_REQUESTED_WITH']) ||
+            empty($_SESSION['user']['id'])
+        ) {
+            http_response_code(403);
+            echo json_encode(['success' => false]);
+            exit;
+        }
+
+        $userId = (int) $_SESSION['user']['id'];
+
+        $stmt = $this->db->prepare("DELETE FROM user_trusted_devices WHERE user_id = ?");
+        $stmt->execute([$userId]);
+
+        // Supprime les cookies trusted_device côté client
+        foreach ($_COOKIE as $name => $value) {
+            if (str_starts_with($name, 'trusted_device_')) {
+                setcookie($name, '', [
+                    'expires'  => time() - 3600,
+                    'path'     => '/',
+                    'httponly' => true,
+                    'samesite' => 'Lax',
+                ]);
+            }
+        }
+
+        echo json_encode(['success' => true]);
+        exit;
+    }
 }
