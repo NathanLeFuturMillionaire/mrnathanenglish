@@ -56,6 +56,8 @@ class UserController
         $loginHistory  = $this->buildLoginHistory($loginHistory);
         $completion = $this->buildProfileCompletion($user);
 
+        $notifSettings = $this->userRepository->getNotificationSettings($userId);
+
         require __DIR__ . '/../views/users/profile.php';
     }
 
@@ -1138,6 +1140,65 @@ class UserController
         }
 
         echo json_encode(['success' => true]);
+        exit;
+    }
+
+    /**
+     * Récupère les préférences de notifications de l'utilisateur connecté.
+     *
+     * @return void
+     */
+    public function getNotifications(): void
+    {
+        header('Content-Type: application/json');
+
+        if (empty($_SESSION['user']['id'])) {
+            http_response_code(401);
+            echo json_encode(['success' => false]);
+            exit;
+        }
+
+        $settings = $this->userRepository->getNotificationSettings((int) $_SESSION['user']['id']);
+
+        echo json_encode(['success' => true, 'settings' => $settings]);
+        exit;
+    }
+
+    /**
+     * Met à jour une préférence de notification.
+     * Reçoit le nom du paramètre et sa valeur booléenne.
+     *
+     * @return void
+     */
+    public function updateNotification(): void
+    {
+        header('Content-Type: application/json');
+
+        if (
+            $_SERVER['REQUEST_METHOD'] !== 'POST' ||
+            empty($_SERVER['HTTP_X_REQUESTED_WITH']) ||
+            empty($_SESSION['user']['id'])
+        ) {
+            http_response_code(403);
+            echo json_encode(['success' => false]);
+            exit;
+        }
+
+        $userId  = (int) $_SESSION['user']['id'];
+        $setting = trim($_POST['setting'] ?? '');
+        $value   = filter_var($_POST['value'] ?? false, FILTER_VALIDATE_BOOLEAN);
+
+        if (empty($setting)) {
+            echo json_encode(['success' => false, 'message' => 'Paramètre manquant.']);
+            exit;
+        }
+
+        $updated = $this->userRepository->updateNotificationSetting($userId, $setting, $value);
+
+        echo json_encode([
+            'success' => $updated,
+            'message' => $updated ? 'Préférence mise à jour.' : 'Paramètre invalide.',
+        ]);
         exit;
     }
 }

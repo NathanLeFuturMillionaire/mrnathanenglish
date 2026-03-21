@@ -3528,3 +3528,24 @@
   border-color: var(--danger, #f5365c);
   transform: translateY(-1px);
 }
+
+/* ===== GROUPES NOTIFICATIONS ===== */
+.notif-group {
+  margin-bottom: 8px;
+}
+
+.notif-group:last-child {
+  margin-bottom: 0;
+}
+
+.notif-group__label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted, #6b7a99);
+  padding: 12px 0 4px;
+  border-bottom: 1px solid var(--border, #e8eef7);
+  margin-bottom: 4px;
+}

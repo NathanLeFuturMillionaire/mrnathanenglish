@@ -1513,6 +1513,48 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  // ===== NOTIFICATIONS =====
+  document.querySelectorAll(".notif-toggle").forEach((toggle) => {
+    toggle.addEventListener("change", async function () {
+      const setting = this.dataset.setting;
+      const value = this.checked;
+      const feedback = document.getElementById("notif-feedback");
+      const original = !value;
+
+      try {
+        const res = await fetch("./profile/update-notification", {
+          method: "POST",
+          body: new URLSearchParams({
+            setting,
+            value: value ? "1" : "0",
+          }),
+          headers: {
+            "X-Requested-With": "XMLHttpRequest",
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          if (feedback) {
+            feedback.textContent = value
+              ? "Notification activée."
+              : "Notification désactivée.";
+            feedback.className = "setting-item__feedback success";
+            feedback.style.display = "block";
+            setTimeout(() => {
+              feedback.style.display = "none";
+            }, 2500);
+          }
+        } else {
+          this.checked = original;
+        }
+      } catch {
+        this.checked = original;
+      }
+    });
+  });
+
   // ===== DÉCONNEXION =====
   document
     .querySelector(".btn-setting.logout")

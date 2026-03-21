@@ -609,4 +609,71 @@ class UserRepository
         $row = $stmt->fetch(\PDO::FETCH_ASSOC);
         return $row['totp_secret'] ?? null;
     }
+
+    /**
+     * Récupère les préférences de notifications de l'utilisateur.
+     * Crée une entrée par défaut si elle n'existe pas encore.
+     *
+     * @param  int   $userId
+     * @return array
+     */
+    public function getNotificationSettings(int $userId): array
+    {
+        $stmt = $this->db->prepare("
+        SELECT * FROM user_notification_settings WHERE user_id = :user_id
+    ");
+        $stmt->bindValue(':user_id', $userId, \PDO::PARAM_INT);
+        $stmt->execute();
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        // Crée les paramètres par défaut si inexistants
+        if (!$row) {
+            $this->db->prepare("
+            INSERT INTO user_notification_settings (user_id)
+            VALUES (:user_id)
+        ")->execute([':user_id' => $userId]);
+
+            return [
+                'course_reminders' => 1,
+                'new_lessons'      => 1,
+                'weekly_progress'  => 1,
+                'promotions'       => 0,
+                'security_alerts'  => 1,
+                'newsletter'       => 0,
+            ];
+        }
+
+        return $row;
+    }
+
+    /**
+     * Met à jour une préférence de notification spécifique.
+     *
+     * @param  int    $userId
+     * @param  string $setting Nom de la colonne à mettre à jour
+     * @param  bool   $value
+     * @return bool
+     */
+    public function updateNotificationSetting(int $userId, string $setting, bool $value): bool
+    {
+        $allowed = ['course_reminders', 'new_lessons', 'weekly_progress', 'promotions', 'security_alerts', 'newsletter'];
+
+        if (!in_array($setting, $allowed, true)) {
+            return false;
+        }
+
+        $intValue = $value ? 1 : 0;
+
+        $stmt = $this->db->prepare("
+        INSERT INTO user_notification_settings (user_id, {$setting})
+        VALUES (:user_id, :value1)
+        ON DUPLICATE KEY UPDATE {$setting} = :value2
+    ");
+
+        $stmt->bindValue(':user_id', $userId,   \PDO::PARAM_INT);
+        $stmt->bindValue(':value1',  $intValue, \PDO::PARAM_INT);
+        $stmt->bindValue(':value2',  $intValue, \PDO::PARAM_INT);
+
+        return $stmt->execute();
+    }
 }

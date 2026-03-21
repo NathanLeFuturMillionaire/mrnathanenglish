@@ -490,6 +490,18 @@ class Router
                 $userController = new UserController();
                 $userController->revokeAllTrustedDevices();
                 break;
+
+            case 'profile/get-notifications':
+                session_start();
+                $userController = new UserController();
+                $userController->getNotifications();
+                break;
+
+            case 'profile/update-notification':
+                session_start();
+                $userController = new UserController();
+                $userController->updateNotification();
+                break;
         }
     }
 }

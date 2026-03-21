@@ -626,6 +626,137 @@ if ($_SESSION['user']['is_confirmed'] != 1) {
                         <i class="fas fa-right-from-bracket"></i> Déconnexion
                     </button>
                 </div>
+                <!-- ===== NOTIFICATIONS ===== -->
+                <div class="card" style="margin-top: 16px;">
+                    <div class="card-header">
+                        <h2 class="card-title">
+                            <i class="fas fa-bell"></i>
+                            Notifications par e-mail
+                        </h2>
+                        <p class="card-subtitle">
+                            Choisissez les e-mails que vous souhaitez recevoir de la part d'OpenDoorsClass.
+                        </p>
+                    </div>
+
+                    <!-- Formation -->
+                    <div class="notif-group">
+                        <span class="notif-group__label">Formation</span>
+
+                        <div class="setting-item">
+                            <div class="setting-item__info">
+                                <span class="setting-item__title">
+                                    <i class="fas fa-book-open"></i>
+                                    Rappels de cours
+                                </span>
+                                <span class="setting-item__desc">
+                                    Recevez des rappels pour ne pas oublier vos leçons en cours.
+                                </span>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" class="notif-toggle" data-setting="course_reminders"
+                                    <?= !empty($notifSettings['course_reminders']) ? 'checked' : '' ?>>
+                                <span class="toggle-switch__slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="setting-item">
+                            <div class="setting-item__info">
+                                <span class="setting-item__title">
+                                    <i class="fas fa-sparkles"></i>
+                                    Nouvelles leçons
+                                </span>
+                                <span class="setting-item__desc">
+                                    Soyez informé dès qu'une nouvelle leçon est disponible dans votre formation.
+                                </span>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" class="notif-toggle" data-setting="new_lessons"
+                                    <?= !empty($notifSettings['new_lessons']) ? 'checked' : '' ?>>
+                                <span class="toggle-switch__slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="setting-item">
+                            <div class="setting-item__info">
+                                <span class="setting-item__title">
+                                    <i class="fas fa-chart-line"></i>
+                                    Résumé hebdomadaire
+                                </span>
+                                <span class="setting-item__desc">
+                                    Un bilan de votre progression chaque semaine pour rester motivé.
+                                </span>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" class="notif-toggle" data-setting="weekly_progress"
+                                    <?= !empty($notifSettings['weekly_progress']) ? 'checked' : '' ?>>
+                                <span class="toggle-switch__slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Sécurité -->
+                    <div class="notif-group">
+                        <span class="notif-group__label">Sécurité</span>
+
+                        <div class="setting-item">
+                            <div class="setting-item__info">
+                                <span class="setting-item__title">
+                                    <i class="fas fa-shield-halved"></i>
+                                    Alertes de sécurité
+                                </span>
+                                <span class="setting-item__desc">
+                                    Soyez notifié lors de chaque nouvelle connexion à votre compte.
+                                </span>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" class="notif-toggle" data-setting="security_alerts"
+                                    <?= !empty($notifSettings['security_alerts']) ? 'checked' : '' ?>>
+                                <span class="toggle-switch__slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- OpenDoorsClass -->
+                    <div class="notif-group">
+                        <span class="notif-group__label">OpenDoorsClass</span>
+
+                        <div class="setting-item">
+                            <div class="setting-item__info">
+                                <span class="setting-item__title">
+                                    <i class="fas fa-tag"></i>
+                                    Offres et promotions
+                                </span>
+                                <span class="setting-item__desc">
+                                    Recevez nos meilleures offres et réductions sur les abonnements.
+                                </span>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" class="notif-toggle" data-setting="promotions"
+                                    <?= !empty($notifSettings['promotions']) ? 'checked' : '' ?>>
+                                <span class="toggle-switch__slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="setting-item">
+                            <div class="setting-item__info">
+                                <span class="setting-item__title">
+                                    <i class="fas fa-newspaper"></i>
+                                    Newsletter
+                                </span>
+                                <span class="setting-item__desc">
+                                    Actualités, conseils pour apprendre l'anglais et nouveautés de la plateforme.
+                                </span>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" class="notif-toggle" data-setting="newsletter"
+                                    <?= !empty($notifSettings['newsletter']) ? 'checked' : '' ?>>
+                                <span class="toggle-switch__slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div id="notif-feedback" class="setting-item__feedback" style="display:none;"></div>
+                </div>
             </section>
 
             <!-- ===== ABONNEMENT ===== -->
