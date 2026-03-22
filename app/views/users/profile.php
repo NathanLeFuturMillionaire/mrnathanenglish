@@ -757,6 +757,31 @@ if ($_SESSION['user']['is_confirmed'] != 1) {
 
                     <div id="notif-feedback" class="setting-item__feedback" style="display:none;"></div>
                 </div>
+                <!-- ===== ZONE DANGER ===== -->
+                <div class="card card--danger" style="margin-top: 16px;">
+                    <div class="card-header">
+                        <h2 class="card-title card-title--danger">
+                            <i class="fas fa-triangle-exclamation"></i>
+                            Zone dangereuse
+                        </h2>
+                        <p class="card-subtitle">
+                            Les actions ci-dessous sont irréversibles. Procédez avec précaution.
+                        </p>
+                    </div>
+
+                    <div class="danger-item">
+                        <div class="danger-item__info">
+                            <span class="danger-item__title">Supprimer mon compte</span>
+                            <span class="danger-item__desc">
+                                Supprime définitivement votre compte, vos cours, votre progression et toutes vos données personnelles. Cette action est irréversible.
+                            </span>
+                        </div>
+                        <button type="button" class="btn-danger" id="btn-delete-account">
+                            <i class="fas fa-trash-can"></i>
+                            Supprimer mon compte
+                        </button>
+                    </div>
+                </div>
             </section>
 
             <!-- ===== ABONNEMENT ===== -->
@@ -1117,6 +1142,153 @@ if ($_SESSION['user']['is_confirmed'] != 1) {
                 </p>
                 <button type="button" class="pwd-modal__btn-primary pwd-modal__btn--full" id="pwd-success-close">
                     <i class="fas fa-check-circle"></i> Parfait
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MODAL SUPPRIMER COMPTE — ÉTAPE TOTP ===== -->
+    <div id="modal-delete-totp" class="pwd-modal-overlay" style="display:none;" aria-modal="true" role="dialog">
+        <div class="pwd-modal pwd-modal--danger">
+            <div class="pwd-modal__header">
+                <div class="pwd-modal__icon pwd-modal__icon--danger">
+                    <i class="fas fa-mobile-screen"></i>
+                </div>
+                <h3 class="pwd-modal__title">Google Authenticator</h3>
+                <button type="button" class="pwd-modal__close" id="delete-totp-close">
+                    <i class="fas fa-xmark"></i>
+                </button>
+            </div>
+            <div class="pwd-modal__body">
+                <p class="pwd-modal__desc">
+                    Saisissez le code à 6 chiffres de votre application
+                    <strong>Google Authenticator</strong> pour confirmer la suppression.
+                </p>
+                <div class="pwd-otp-wrapper">
+                    <input class="delete-totp-input" type="text" inputmode="numeric" maxlength="1" pattern="\d" autocomplete="off" data-index="0">
+                    <input class="delete-totp-input" type="text" inputmode="numeric" maxlength="1" pattern="\d" autocomplete="off" data-index="1">
+                    <input class="delete-totp-input" type="text" inputmode="numeric" maxlength="1" pattern="\d" autocomplete="off" data-index="2">
+                    <span class="pwd-otp-separator">—</span>
+                    <input class="delete-totp-input" type="text" inputmode="numeric" maxlength="1" pattern="\d" autocomplete="off" data-index="3">
+                    <input class="delete-totp-input" type="text" inputmode="numeric" maxlength="1" pattern="\d" autocomplete="off" data-index="4">
+                    <input class="delete-totp-input" type="text" inputmode="numeric" maxlength="1" pattern="\d" autocomplete="off" data-index="5">
+                </div>
+                <input type="hidden" id="delete-totp-code">
+                <small id="delete-totp-error" class="pwd-modal__error"></small>
+            </div>
+            <div class="pwd-modal__footer">
+                <button type="button" class="pwd-modal__btn-cancel" id="delete-totp-cancel">
+                    <i class="fas fa-xmark"></i> Annuler
+                </button>
+                <button type="button" class="pwd-modal__btn-danger" id="delete-totp-submit" disabled>
+                    <span class="btn-text"><i class="fas fa-arrow-right"></i> Continuer</span>
+                    <span class="btn-spinner" style="display:none;"><i class="fas fa-spinner fa-spin"></i></span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MODAL SUPPRIMER COMPTE — ÉTAPE 2FA EMAIL ===== -->
+    <div id="modal-delete-2fa" class="pwd-modal-overlay" style="display:none;" aria-modal="true" role="dialog">
+        <div class="pwd-modal pwd-modal--danger">
+            <div class="pwd-modal__header">
+                <div class="pwd-modal__icon pwd-modal__icon--danger">
+                    <i class="fas fa-envelope-shield"></i>
+                </div>
+                <h3 class="pwd-modal__title">Vérification par e-mail</h3>
+                <button type="button" class="pwd-modal__close" id="delete-2fa-close">
+                    <i class="fas fa-xmark"></i>
+                </button>
+            </div>
+            <div class="pwd-modal__body">
+                <p class="pwd-modal__desc">
+                    Un code de vérification a été envoyé à votre adresse e-mail.
+                    Saisissez-le pour continuer.
+                </p>
+                <div class="pwd-otp-wrapper">
+                    <input class="delete-2fa-input" type="text" inputmode="numeric" maxlength="1" pattern="\d" autocomplete="off" data-index="0">
+                    <input class="delete-2fa-input" type="text" inputmode="numeric" maxlength="1" pattern="\d" autocomplete="off" data-index="1">
+                    <input class="delete-2fa-input" type="text" inputmode="numeric" maxlength="1" pattern="\d" autocomplete="off" data-index="2">
+                    <span class="pwd-otp-separator">—</span>
+                    <input class="delete-2fa-input" type="text" inputmode="numeric" maxlength="1" pattern="\d" autocomplete="off" data-index="3">
+                    <input class="delete-2fa-input" type="text" inputmode="numeric" maxlength="1" pattern="\d" autocomplete="off" data-index="4">
+                    <input class="delete-2fa-input" type="text" inputmode="numeric" maxlength="1" pattern="\d" autocomplete="off" data-index="5">
+                </div>
+                <input type="hidden" id="delete-2fa-code">
+                <small id="delete-2fa-error" class="pwd-modal__error"></small>
+            </div>
+            <div class="pwd-modal__footer">
+                <button type="button" class="pwd-modal__btn-cancel" id="delete-2fa-cancel">
+                    <i class="fas fa-xmark"></i> Annuler
+                </button>
+                <button type="button" class="pwd-modal__btn-danger" id="delete-2fa-submit" disabled>
+                    <span class="btn-text"><i class="fas fa-arrow-right"></i> Continuer</span>
+                    <span class="btn-spinner" style="display:none;"><i class="fas fa-spinner fa-spin"></i></span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MODAL SUPPRIMER COMPTE — CONFIRMATION FINALE ===== -->
+    <div id="modal-delete-confirm" class="pwd-modal-overlay" style="display:none;" aria-modal="true" role="dialog">
+        <div class="pwd-modal pwd-modal--danger">
+            <div class="pwd-modal__header">
+                <div class="pwd-modal__icon pwd-modal__icon--danger">
+                    <i class="fas fa-trash-can"></i>
+                </div>
+                <h3 class="pwd-modal__title">Supprimer mon compte</h3>
+                <button type="button" class="pwd-modal__close" id="delete-confirm-close">
+                    <i class="fas fa-xmark"></i>
+                </button>
+            </div>
+            <div class="pwd-modal__body">
+
+                <div class="delete-warning">
+                    <i class="fas fa-triangle-exclamation"></i>
+                    <div>
+                        <strong>Cette action est irréversible.</strong>
+                        <p>Toutes vos données seront définitivement supprimées :</p>
+                        <ul>
+                            <li><i class="fas fa-circle-xmark"></i> Votre profil et informations personnelles</li>
+                            <li><i class="fas fa-circle-xmark"></i> Votre progression et historique de cours</li>
+                            <li><i class="fas fa-circle-xmark"></i> Vos badges et récompenses</li>
+                            <li><i class="fas fa-circle-xmark"></i> Votre abonnement actif</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="pwd-field">
+                    <label for="delete-password">Confirmez avec votre mot de passe</label>
+                    <div class="pwd-input-wrapper">
+                        <input type="password" id="delete-password"
+                            placeholder="Votre mot de passe actuel"
+                            autocomplete="current-password">
+                        <button type="button" class="pwd-toggle-eye" data-target="delete-password">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <small class="pwd-field__error" id="err-delete-password"></small>
+                </div>
+
+                <div class="pwd-field">
+                    <label for="delete-confirm-text">
+                        Tapez <strong>SUPPRIMER</strong> pour confirmer
+                    </label>
+                    <input type="text" id="delete-confirm-text"
+                        placeholder="SUPPRIMER"
+                        autocomplete="off">
+                    <small class="pwd-field__error" id="err-delete-confirm"></small>
+                </div>
+
+                <small class="pwd-modal__error" id="delete-form-error"></small>
+            </div>
+            <div class="pwd-modal__footer">
+                <button type="button" class="pwd-modal__btn-cancel" id="delete-confirm-cancel">
+                    <i class="fas fa-xmark"></i> Annuler
+                </button>
+                <button type="button" class="pwd-modal__btn-danger" id="delete-confirm-submit" disabled>
+                    <span class="btn-text"><i class="fas fa-trash-can"></i> Supprimer définitivement</span>
+                    <span class="btn-spinner" style="display:none;"><i class="fas fa-spinner fa-spin"></i></span>
                 </button>
             </div>
         </div>

@@ -502,6 +502,24 @@ class Router
                 $userController = new UserController();
                 $userController->updateNotification();
                 break;
+
+            case 'profile/delete-account-start':
+                session_start();
+                $userController = new UserController();
+                $userController->deleteAccountStart();
+                break;
+
+            case 'profile/delete-account-verify':
+                session_start();
+                $userController = new UserController();
+                $userController->deleteAccountVerify();
+                break;
+
+            case 'profile/delete-account':
+                session_start();
+                $userController = new UserController();
+                $userController->deleteAccount();
+                break;
         }
     }
 }

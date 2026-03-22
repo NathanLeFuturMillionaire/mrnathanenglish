@@ -78,9 +78,9 @@
                         <div class="form-bottom-line">
                             <label class="checkbox-container">
                                 <input type="checkbox" name="terms" <?= isset($_POST['terms']) ? 'checked' : '' ?>>
-                                <span>J’accepte les <a href="/terms" target="_blank">conditions d’utilisation du site.</a></span>
+                                <span>J'accepte les <a href="/terms" target="_blank">conditions d'utilisation du site.</a></span>
                             </label>
-                            <small class="error"><?= $errors['terms'] ?? '' ?></small>
+                            <small class="error" id="error-terms"><?= $errors['terms'] ?? '' ?></small>
 
                             <a href="./login" class="login-link">J'ai déjà un compte</a>
                         </div>

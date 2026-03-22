@@ -98,7 +98,6 @@ document.addEventListener("DOMContentLoaded", () => {
     .getElementById("profile-edit-form")
     ?.addEventListener("submit", async (e) => {
       e.preventDefault();
-
       const btn = document.getElementById("btn-save");
       const msgBox = document.getElementById("edit-message");
       const btnText = btn.querySelector(".btn-text");
@@ -109,7 +108,6 @@ document.addEventListener("DOMContentLoaded", () => {
         .forEach((el) => (el.textContent = ""));
       msgBox.style.display = "none";
       msgBox.className = "edit-message";
-
       btn.disabled = true;
       btnText.style.display = "none";
       spinner.style.display = "flex";
@@ -144,7 +142,6 @@ document.addEventListener("DOMContentLoaded", () => {
               if (el && data.user[key] !== undefined)
                 el.textContent = data.user[key] || "Non renseigné";
             });
-
             if (data.user.profile_picture) {
               const newSrc =
                 "../public/uploads/profiles/" +
@@ -157,7 +154,6 @@ document.addEventListener("DOMContentLoaded", () => {
                   img.src = newSrc;
                 });
             }
-
             if (data.user.english_level) {
               const levelLabels = {
                 beginner: "Débutant",
@@ -168,7 +164,6 @@ document.addEventListener("DOMContentLoaded", () => {
               if (levelBadge)
                 levelBadge.innerHTML = `<i class="fas fa-graduation-cap"></i> ${levelLabels[data.user.english_level] ?? data.user.english_level}`;
             }
-
             const sidebarUsername = document.querySelector(".menu-header h2");
             if (sidebarUsername && data.user.username)
               sidebarUsername.textContent = data.user.username;
@@ -178,7 +173,6 @@ document.addEventListener("DOMContentLoaded", () => {
             const fill = document.getElementById("completion-fill");
             const percent = document.getElementById("completion-percent");
             const completion = document.querySelector(".profile-completion");
-
             if (fill) {
               fill.style.width = data.completion.percentage + "%";
               fill.className =
@@ -186,7 +180,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 data.completion.color;
             }
             if (percent) percent.textContent = data.completion.percentage + "%";
-
             if (data.completion.percentage === 100 && completion) {
               setTimeout(() => {
                 completion.classList.add("is-complete");
@@ -244,7 +237,6 @@ document.addEventListener("DOMContentLoaded", () => {
         resetSearch();
       }
     });
-
     document.addEventListener("click", (e) => {
       if (!langDropdown.contains(e.target)) {
         langDropdown.classList.remove("is-open");
@@ -252,7 +244,6 @@ document.addEventListener("DOMContentLoaded", () => {
         resetSearch();
       }
     });
-
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape" && langDropdown.classList.contains("is-open")) {
         langDropdown.classList.remove("is-open");
@@ -260,20 +251,17 @@ document.addEventListener("DOMContentLoaded", () => {
         resetSearch();
       }
     });
-
     langSearchInput.addEventListener("input", () => {
       const query = langSearchInput.value.trim().toLowerCase();
       langSearchClear.style.display = query ? "flex" : "none";
       filterLanguages(query);
     });
-
     langSearchClear.addEventListener("click", () => {
       langSearchInput.value = "";
       langSearchClear.style.display = "none";
       resetSearch();
       langSearchInput.focus();
     });
-
     langResults.addEventListener("click", (e) => {
       const option = e.target.closest(".lang-option");
       if (!option) return;
@@ -392,7 +380,6 @@ document.addEventListener("DOMContentLoaded", () => {
     ?.addEventListener("click", async function () {
       const list = document.getElementById("login-history-list");
       const isOpen = this.classList.contains("is-open");
-
       if (isOpen) {
         list.querySelectorAll(".login-history__item").forEach((item, i) => {
           if (i >= 4) {
@@ -406,10 +393,8 @@ document.addEventListener("DOMContentLoaded", () => {
         this.innerHTML = `<i class="fas fa-clock-rotate-left"></i> Voir toutes les connexions <i class="fas fa-chevron-down login-history__more-arrow"></i>`;
         return;
       }
-
       this.disabled = true;
       this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Chargement...';
-
       try {
         const res = await fetch("./profile/login-history", {
           headers: { "X-Requested-With": "XMLHttpRequest" },
@@ -422,14 +407,7 @@ document.addEventListener("DOMContentLoaded", () => {
             li.style.opacity = "0";
             li.style.transform = "translateY(8px)";
             li.style.transition = `opacity 0.25s ease ${i * 0.04}s, transform 0.25s ease ${i * 0.04}s`;
-            li.innerHTML = `
-                      <div class="login-history__icon"><i class="fas fa-${login.device === "mobile" ? "mobile-screen" : login.device === "tablette" ? "tablet-screen-button" : "display"}"></i></div>
-                      <div class="login-history__info">
-                          <span class="login-history__device">${login.browser} sur ${login.os}</span>
-                          <span class="login-history__meta"><i class="fas fa-location-dot"></i> ${login.ip_address} <span class="sep">·</span> <i class="fas fa-clock"></i> ${login.created_at}</span>
-                      </div>
-                      <button class="login-history__delete" data-id="${login.id}" title="Supprimer"><i class="fas fa-trash-can"></i></button>
-                  `;
+            li.innerHTML = `<div class="login-history__icon"><i class="fas fa-${login.device === "mobile" ? "mobile-screen" : login.device === "tablette" ? "tablet-screen-button" : "display"}"></i></div><div class="login-history__info"><span class="login-history__device">${login.browser} sur ${login.os}</span><span class="login-history__meta"><i class="fas fa-location-dot"></i> ${login.ip_address} <span class="sep">·</span> <i class="fas fa-clock"></i> ${login.created_at}</span></div><button class="login-history__delete" data-id="${login.id}" title="Supprimer"><i class="fas fa-trash-can"></i></button>`;
             list.appendChild(li);
             requestAnimationFrame(() => {
               li.style.opacity = "1";
@@ -481,36 +459,23 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
 
-  // ===== TOTP =====
-  const totpFeedback = document.getElementById("totp-feedback");
-  const toggleTotp = document.getElementById("toggle-totp");
-  const modalSetup = document.getElementById("modal-totp-setup");
-  const modalDisable = document.getElementById("modal-totp-disable");
-  let totpActionInProgress = false;
-
+  // ===== MODAL HELPERS =====
   function openModal(modal) {
+    if (!modal) return;
     modal.style.display = "flex";
     modal.classList.remove("is-closing");
     document.body.style.overflow = "hidden";
   }
 
-  function closeModal(modal) {
+  function closeModal(modal, callback) {
+    if (!modal) return;
     modal.classList.add("is-closing");
     setTimeout(() => {
       modal.style.display = "none";
       modal.classList.remove("is-closing");
       document.body.style.overflow = "";
+      if (callback) callback();
     }, 250);
-  }
-
-  function showTotpFeedback(message, type = "success") {
-    if (!totpFeedback) return;
-    totpFeedback.textContent = message;
-    totpFeedback.className = `setting-item__feedback ${type}`;
-    totpFeedback.style.display = "block";
-    setTimeout(() => {
-      totpFeedback.style.display = "none";
-    }, 3500);
   }
 
   // ===== OTP CASES HELPER =====
@@ -524,14 +489,12 @@ document.addEventListener("DOMContentLoaded", () => {
         ? getBtnFn()
         : document.getElementById(getBtnFn);
     }
-
     function enable(i) {
       inputs[i].removeAttribute("disabled");
       inputs[i].style.opacity = "1";
       inputs[i].style.cursor = "text";
       inputs[i].focus();
     }
-
     function disable(i) {
       inputs[i].setAttribute("disabled", true);
       inputs[i].value = "";
@@ -539,15 +502,12 @@ document.addEventListener("DOMContentLoaded", () => {
       inputs[i].style.cursor = "not-allowed";
       inputs[i].classList.remove("is-filled", "is-error");
     }
-
     function sync() {
       if (hidden) hidden.value = [...inputs].map((i) => i.value).join("");
     }
-
     function complete() {
       return [...inputs].every((i) => i.value !== "");
     }
-
     function updateBtn() {
       const btn = getBtn();
       if (!btn) return;
@@ -555,12 +515,10 @@ document.addEventListener("DOMContentLoaded", () => {
       btn.style.opacity = complete() ? "1" : "0.45";
       btn.style.cursor = complete() ? "pointer" : "not-allowed";
     }
-
     function clearErr() {
       if (error) error.textContent = "";
       inputs.forEach((i) => i.classList.remove("is-error"));
     }
-
     function reset() {
       inputs.forEach((inp, i) => {
         inp.value = "";
@@ -577,12 +535,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     inputs.forEach((input, index) => {
-      if (index !== 0) {
-        input.setAttribute("disabled", true);
-        input.style.opacity = "0.4";
-        input.style.cursor = "not-allowed";
-      }
-
+      // Les cases > 0 sont déjà disabled dans le HTML — on ne re-disable pas
       input.addEventListener("input", (e) => {
         const val = e.target.value.replace(/\D/g, "");
         input.value = val ? val[val.length - 1] : "";
@@ -596,7 +549,6 @@ document.addEventListener("DOMContentLoaded", () => {
         updateBtn();
         clearErr();
       });
-
       input.addEventListener("keydown", (e) => {
         if (e.key === "Backspace") {
           if (input.value) {
@@ -614,7 +566,6 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         }
       });
-
       input.addEventListener("paste", (e) => {
         e.preventDefault();
         const pasted = e.clipboardData
@@ -640,7 +591,6 @@ document.addEventListener("DOMContentLoaded", () => {
         updateBtn();
         clearErr();
       });
-
       input.addEventListener("focus", () => {
         if (!input.disabled) input.select();
       });
@@ -664,7 +614,24 @@ document.addEventListener("DOMContentLoaded", () => {
     };
   }
 
-  // ===== CLONE LES BOUTONS AVANT INIT OTP =====
+  // ===== TOTP =====
+  const totpFeedback = document.getElementById("totp-feedback");
+  const toggleTotp = document.getElementById("toggle-totp");
+  const modalSetup = document.getElementById("modal-totp-setup");
+  const modalDisable = document.getElementById("modal-totp-disable");
+  let totpActionInProgress = false;
+
+  function showTotpFeedback(message, type = "success") {
+    if (!totpFeedback) return;
+    totpFeedback.textContent = message;
+    totpFeedback.className = `setting-item__feedback ${type}`;
+    totpFeedback.style.display = "block";
+    setTimeout(() => {
+      totpFeedback.style.display = "none";
+    }, 3500);
+  }
+
+  // Clone boutons pour éviter double exécution
   const btnActivateOld = document.getElementById("btn-totp-activate");
   let btnActivate = btnActivateOld;
   if (btnActivateOld) {
@@ -679,7 +646,6 @@ document.addEventListener("DOMContentLoaded", () => {
     btnDisableOld.parentNode.replaceChild(btnDisable, btnDisableOld);
   }
 
-  // ===== INIT OTP après cloneNode =====
   const totpOtp = initOtpInputs(
     ".totp-otp-input",
     "totp-code-hidden",
@@ -693,30 +659,23 @@ document.addEventListener("DOMContentLoaded", () => {
     "totp-disable-error",
   );
 
-  // ===== TOGGLE TOTP =====
   toggleTotp?.addEventListener("change", async function () {
     if (totpActionInProgress) return;
     const enabled = this.checked;
-
     if (enabled) {
       openModal(modalSetup);
-
       const qrImg = document.getElementById("totp-qr-img");
       const qrLoader = document.getElementById("totp-qr-loader");
-
       qrImg.style.display = "none";
       qrImg.src = "";
       qrLoader.style.display = "flex";
       totpOtp.reset();
-
       try {
         const res = await fetch("./profile/generate-totp", {
           headers: { "X-Requested-With": "XMLHttpRequest" },
         });
         const data = await res.json();
-
         if (data.success) {
-          // Stocke le secret
           let secretInput = document.getElementById("totp-secret-input");
           if (!secretInput) {
             secretInput = document.createElement("input");
@@ -725,13 +684,9 @@ document.addEventListener("DOMContentLoaded", () => {
             modalSetup.appendChild(secretInput);
           }
           secretInput.value = data.secret;
-
-          // data:image/svg+xml;base64 — affichage direct sans préchargement
           qrImg.src = data.qr_url;
           qrLoader.style.display = "none";
           qrImg.style.display = "block";
-
-          // Affiche le secret formaté
           const secretEl = document.getElementById("totp-secret-text");
           if (secretEl) {
             secretEl.textContent = data.secret.match(/.{1,4}/g).join(" ");
@@ -739,10 +694,7 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         } else {
           qrLoader.style.display = "none";
-          showTotpFeedback(
-            data.message ?? "Erreur lors de la génération.",
-            "error",
-          );
+          showTotpFeedback(data.message ?? "Erreur.", "error");
           closeModal(modalSetup);
           totpActionInProgress = true;
           this.checked = false;
@@ -752,7 +704,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       } catch {
         qrLoader.style.display = "none";
-        showTotpFeedback("Erreur réseau. Veuillez réessayer.", "error");
+        showTotpFeedback("Erreur réseau.", "error");
         closeModal(modalSetup);
         totpActionInProgress = true;
         this.checked = false;
@@ -763,10 +715,12 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       openModal(modalDisable);
       disableOtp.reset();
+      setTimeout(() => {
+        document.querySelector(".totp-disable-input")?.focus();
+      }, 300);
     }
   });
 
-  // ===== FERMETURE MODALS =====
   function cancelSetup() {
     closeModal(modalSetup);
     totpOtp.reset();
@@ -776,7 +730,6 @@ document.addEventListener("DOMContentLoaded", () => {
       totpActionInProgress = false;
     }, 300);
   }
-
   function cancelDisable() {
     closeModal(modalDisable);
     disableOtp.reset();
@@ -806,20 +759,16 @@ document.addEventListener("DOMContentLoaded", () => {
     if (e.target === modalDisable) cancelDisable();
   });
 
-  // ===== ACTIVATION TOTP =====
   btnActivate?.addEventListener("click", async function () {
     if (this.disabled) return;
-
-    const btnText = this.querySelector(".btn-text");
-    const spinner = this.querySelector(".btn-spinner");
-    const code = totpOtp.getCode();
-    const secret = document.getElementById("totp-secret-input")?.value ?? "";
-
+    const btnText = this.querySelector(".btn-text"),
+      spinner = this.querySelector(".btn-spinner");
+    const code = totpOtp.getCode(),
+      secret = document.getElementById("totp-secret-input")?.value ?? "";
     this.disabled = true;
     btnText.style.display = "none";
     spinner.style.display = "flex";
     totpOtp.clearErr();
-
     try {
       const res = await fetch("./profile/activate-totp", {
         method: "POST",
@@ -830,7 +779,6 @@ document.addEventListener("DOMContentLoaded", () => {
         },
       });
       const data = await res.json();
-
       if (data.success) {
         totpActionInProgress = true;
         closeModal(modalSetup);
@@ -848,34 +796,27 @@ document.addEventListener("DOMContentLoaded", () => {
         spinner.style.display = "none";
       }
     } catch {
-      totpOtp.showError("Erreur réseau. Veuillez réessayer.");
+      totpOtp.showError("Erreur réseau.");
       this.disabled = false;
       btnText.style.display = "inline-flex";
       spinner.style.display = "none";
     }
   });
 
-  // ===== DÉSACTIVATION TOTP =====
   btnDisable?.addEventListener("click", async function () {
     if (this.disabled) return;
-
-    const btnText = this.querySelector(".btn-text");
-    const spinner = this.querySelector(".btn-spinner");
-
-    // Récupère le code depuis l'input caché
+    const btnText = this.querySelector(".btn-text"),
+      spinner = this.querySelector(".btn-spinner");
     const hidden = document.getElementById("totp-disable-hidden");
     const code = hidden ? hidden.value : disableOtp.getCode();
-
     if (!code || code.length !== 6) {
       disableOtp.showError("Veuillez saisir le code à 6 chiffres.");
       return;
     }
-
     this.disabled = true;
     btnText.style.display = "none";
     spinner.style.display = "flex";
     disableOtp.clearErr();
-
     try {
       const res = await fetch("./profile/disable-totp", {
         method: "POST",
@@ -886,7 +827,6 @@ document.addEventListener("DOMContentLoaded", () => {
         },
       });
       const data = await res.json();
-
       if (data.success) {
         totpActionInProgress = true;
         closeModal(modalDisable);
@@ -912,7 +852,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }, 300);
       }
     } catch {
-      disableOtp.showError("Erreur réseau. Veuillez réessayer.");
+      disableOtp.showError("Erreur réseau.");
       this.disabled = false;
       btnText.style.display = "inline-flex";
       spinner.style.display = "none";
@@ -924,7 +864,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // ===== COPIER LE SECRET =====
   document
     .getElementById("totp-copy-secret")
     ?.addEventListener("click", function () {
@@ -941,401 +880,6 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
 
-  // ===== CHANGER MOT DE PASSE =====
-
-  const modalPwd2fa = document.getElementById("modal-pwd-2fa");
-  const modalPwdTotp = document.getElementById("modal-pwd-totp");
-  const modalPwdForm = document.getElementById("modal-pwd-form");
-  const modalPwdSuccess = document.getElementById("modal-pwd-success");
-
-  let pwdHas2fa = false;
-  let pwdHasTotp = false;
-
-  function openPwdModal(modal) {
-    modal.style.display = "flex";
-    modal.classList.remove("is-closing");
-    document.body.style.overflow = "hidden";
-  }
-
-  function closePwdModal(modal, callback) {
-    modal.classList.add("is-closing");
-    setTimeout(() => {
-      modal.style.display = "none";
-      modal.classList.remove("is-closing");
-      document.body.style.overflow = "";
-      if (callback) callback();
-    }, 250);
-  }
-
-  function closeAllPwdModals() {
-    [modalPwd2fa, modalPwdTotp, modalPwdForm, modalPwdSuccess].forEach((m) => {
-      if (m) {
-        m.style.display = "none";
-        m.classList.remove("is-closing");
-      }
-    });
-    document.body.style.overflow = "";
-  }
-
-  // ===== OTP CASES POUR MOT DE PASSE =====
-  const pwd2faOtp = initOtpInputs(
-    ".pwd-otp-input",
-    "pwd-2fa-code",
-    () => document.getElementById("pwd-2fa-submit"),
-    "pwd-2fa-error",
-  );
-  const pwdTotpOtp = initOtpInputs(
-    ".pwd-totp-input",
-    "pwd-totp-code",
-    () => document.getElementById("pwd-totp-submit"),
-    "pwd-totp-error",
-  );
-
-  // ===== OUVRE LE FLOW =====
-  document
-    .querySelector(".btn-setting:not(.logout)")
-    ?.addEventListener("click", async function () {
-      // Lance le processus
-      try {
-        const res = await fetch("./profile/change-password-start", {
-          method: "POST",
-          headers: { "X-Requested-With": "XMLHttpRequest" },
-        });
-        const data = await res.json();
-
-        if (!data.success) return;
-
-        pwdHas2fa = data.has_2fa;
-        pwdHasTotp = data.has_totp;
-
-        if (pwdHas2fa) {
-          // Réinitialise les cases
-          pwd2faOtp.reset();
-          openPwdModal(modalPwd2fa);
-        } else if (pwdHasTotp) {
-          pwdTotpOtp.reset();
-          openPwdModal(modalPwdTotp);
-        } else {
-          openPwdModal(modalPwdForm);
-        }
-      } catch {
-        // Si erreur réseau, ouvre directement le form
-        openPwdModal(modalPwdForm);
-      }
-    });
-
-  // ===== VÉRIFICATION 2FA =====
-  document
-    .getElementById("pwd-2fa-submit")
-    ?.addEventListener("click", async function () {
-      const btnText = this.querySelector(".btn-text");
-      const spinner = this.querySelector(".btn-spinner");
-      const code = pwd2faOtp.getCode();
-
-      this.disabled = true;
-      btnText.style.display = "none";
-      spinner.style.display = "flex";
-      pwd2faOtp.clearErr();
-
-      try {
-        const res = await fetch("./profile/change-password-verify", {
-          method: "POST",
-          body: new URLSearchParams({ step: "2fa", code }),
-          headers: {
-            "X-Requested-With": "XMLHttpRequest",
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-        });
-        const data = await res.json();
-
-        if (data.success) {
-          closePwdModal(modalPwd2fa, () => {
-            if (data.next === "totp") {
-              pwdTotpOtp.reset();
-              openPwdModal(modalPwdTotp);
-            } else {
-              openPwdModal(modalPwdForm);
-            }
-          });
-        } else {
-          pwd2faOtp.showError(data.message ?? "Code incorrect.");
-          pwd2faOtp.reset();
-          this.disabled = false;
-          btnText.style.display = "flex";
-          spinner.style.display = "none";
-        }
-      } catch {
-        pwd2faOtp.showError("Erreur réseau. Veuillez réessayer.");
-        this.disabled = false;
-        btnText.style.display = "flex";
-        spinner.style.display = "none";
-      }
-    });
-
-  // ===== RENVOI CODE 2FA =====
-  document
-    .getElementById("pwd-resend-2fa")
-    ?.addEventListener("click", async (e) => {
-      e.preventDefault();
-      const link = e.currentTarget;
-      link.style.opacity = "0.5";
-      link.style.pointerEvents = "none";
-      link.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Envoi...';
-
-      try {
-        await fetch("./profile/change-password-start", {
-          method: "POST",
-          headers: { "X-Requested-With": "XMLHttpRequest" },
-        });
-        link.innerHTML = '<i class="fas fa-check"></i> Code envoyé !';
-        link.style.color = "#00c48c";
-        pwd2faOtp.reset();
-        setTimeout(() => {
-          link.innerHTML =
-            '<i class="fas fa-rotate-right"></i> Renvoyer le code';
-          link.style.color = "";
-          link.style.opacity = "1";
-          link.style.pointerEvents = "auto";
-        }, 3000);
-      } catch {
-        link.innerHTML = '<i class="fas fa-rotate-right"></i> Renvoyer le code';
-        link.style.opacity = "1";
-        link.style.pointerEvents = "auto";
-      }
-    });
-
-  // ===== VÉRIFICATION TOTP =====
-  document
-    .getElementById("pwd-totp-submit")
-    ?.addEventListener("click", async function () {
-      const btnText = this.querySelector(".btn-text");
-      const spinner = this.querySelector(".btn-spinner");
-      const code = pwdTotpOtp.getCode();
-
-      this.disabled = true;
-      btnText.style.display = "none";
-      spinner.style.display = "flex";
-      pwdTotpOtp.clearErr();
-
-      try {
-        const res = await fetch("./profile/change-password-verify", {
-          method: "POST",
-          body: new URLSearchParams({ step: "totp", code }),
-          headers: {
-            "X-Requested-With": "XMLHttpRequest",
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-        });
-        const data = await res.json();
-
-        if (data.success) {
-          closePwdModal(modalPwdTotp, () => {
-            openPwdModal(modalPwdForm);
-          });
-        } else {
-          pwdTotpOtp.showError(data.message ?? "Code incorrect.");
-          pwdTotpOtp.reset();
-          this.disabled = false;
-          btnText.style.display = "flex";
-          spinner.style.display = "none";
-        }
-      } catch {
-        pwdTotpOtp.showError("Erreur réseau. Veuillez réessayer.");
-        this.disabled = false;
-        btnText.style.display = "flex";
-        spinner.style.display = "none";
-      }
-    });
-
-  // ===== INDICATEUR DE FORCE MOT DE PASSE =====
-  document.getElementById("pwd-new")?.addEventListener("input", function () {
-    const val = this.value;
-    const fill = document.getElementById("pwd-strength-fill");
-    const label = document.getElementById("pwd-strength-label");
-
-    if (!val) {
-      fill.className = "pwd-strength__fill";
-      fill.style.width = "0";
-      label.textContent = "";
-      return;
-    }
-
-    let score = 0;
-    if (val.length >= 8) score++;
-    if (/[A-Z]/.test(val)) score++;
-    if (/[0-9]/.test(val)) score++;
-    if (/[^A-Za-z0-9]/.test(val)) score++;
-
-    const levels = [
-      { cls: "weak", label: "Faible", color: "#f5365c" },
-      { cls: "fair", label: "Moyen", color: "#f7b731" },
-      { cls: "good", label: "Bon", color: "#1a6fb5" },
-      { cls: "strong", label: "Fort", color: "#00c48c" },
-    ];
-
-    const level = levels[score - 1] ?? levels[0];
-    fill.className = `pwd-strength__fill pwd-strength__fill--${level.cls}`;
-    label.textContent = level.label;
-    label.style.color = level.color;
-  });
-
-  // ===== TOGGLE AFFICHAGE MOT DE PASSE =====
-  document.querySelectorAll(".pwd-toggle-eye").forEach((btn) => {
-    btn.addEventListener("click", function () {
-      const target = document.getElementById(this.dataset.target);
-      if (!target) return;
-      const isPassword = target.type === "password";
-      target.type = isPassword ? "text" : "password";
-      this.innerHTML = `<i class="fas fa-${isPassword ? "eye-slash" : "eye"}"></i>`;
-    });
-  });
-
-  // ===== SOUMISSION FORMULAIRE MOT DE PASSE =====
-  document
-    .getElementById("pwd-form-submit")
-    ?.addEventListener("click", async function () {
-      const btnText = this.querySelector(".btn-text");
-      const spinner = this.querySelector(".btn-spinner");
-
-      const current = document.getElementById("pwd-current")?.value ?? "";
-      const newPwd = document.getElementById("pwd-new")?.value ?? "";
-      const confirm = document.getElementById("pwd-confirm")?.value ?? "";
-
-      // Reset erreurs
-      [
-        "err-pwd-current",
-        "err-pwd-new",
-        "err-pwd-confirm",
-        "pwd-form-error",
-      ].forEach((id) => {
-        const el = document.getElementById(id);
-        if (el) el.textContent = "";
-      });
-      ["pwd-current", "pwd-new", "pwd-confirm"].forEach((id) => {
-        document.getElementById(id)?.classList.remove("is-error");
-      });
-
-      // Validations JS
-      let valid = true;
-
-      if (!current) {
-        document.getElementById("err-pwd-current").textContent =
-          "Ce champ est obligatoire.";
-        document.getElementById("pwd-current").classList.add("is-error");
-        valid = false;
-      }
-      if (newPwd.length < 8) {
-        document.getElementById("err-pwd-new").textContent =
-          "Au moins 8 caractères.";
-        document.getElementById("pwd-new").classList.add("is-error");
-        valid = false;
-      }
-      if (newPwd !== confirm) {
-        document.getElementById("err-pwd-confirm").textContent =
-          "Les mots de passe ne correspondent pas.";
-        document.getElementById("pwd-confirm").classList.add("is-error");
-        valid = false;
-      }
-
-      if (!valid) return;
-
-      this.disabled = true;
-      btnText.style.display = "none";
-      spinner.style.display = "flex";
-
-      try {
-        const logoutAll =
-          document.getElementById("pwd-logout-all-checkbox")?.checked ?? false;
-
-        const res = await fetch("./profile/change-password", {
-          method: "POST",
-          body: new URLSearchParams({
-            current_password: current,
-            new_password: newPwd,
-            confirm_password: confirm,
-            logout_all: logoutAll ? "1" : "0",
-          }),
-          headers: {
-            "X-Requested-With": "XMLHttpRequest",
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-        });
-        const data = await res.json();
-
-        if (data.success) {
-          // Met à jour le texte du modal succès si logout_all
-          if (data.logout_all) {
-            const desc = document.querySelector(
-              "#modal-pwd-success .pwd-modal__desc",
-            );
-            if (desc)
-              desc.textContent =
-                "Votre mot de passe a été mis à jour. Vous avez été déconnecté de tous les autres appareils.";
-          }
-          closePwdModal(modalPwdForm, () => {
-            openPwdModal(modalPwdSuccess);
-          });
-        } else {
-          if (data.field === "current") {
-            document.getElementById("err-pwd-current").textContent =
-              data.message;
-            document.getElementById("pwd-current").classList.add("is-error");
-          } else if (data.field === "new") {
-            document.getElementById("err-pwd-new").textContent = data.message;
-            document.getElementById("pwd-new").classList.add("is-error");
-          } else if (data.field === "confirm") {
-            document.getElementById("err-pwd-confirm").textContent =
-              data.message;
-            document.getElementById("pwd-confirm").classList.add("is-error");
-          } else {
-            document.getElementById("pwd-form-error").textContent =
-              data.message ?? "Une erreur est survenue.";
-          }
-          this.disabled = false;
-          btnText.style.display = "flex";
-          spinner.style.display = "none";
-        }
-      } catch {
-        document.getElementById("pwd-form-error").textContent =
-          "Erreur réseau. Veuillez réessayer.";
-        this.disabled = false;
-        btnText.style.display = "flex";
-        spinner.style.display = "none";
-      }
-    });
-
-  // ===== FERMETURES =====
-  document
-    .getElementById("pwd-2fa-close")
-    ?.addEventListener("click", closeAllPwdModals);
-  document
-    .getElementById("pwd-2fa-cancel")
-    ?.addEventListener("click", closeAllPwdModals);
-  document
-    .getElementById("pwd-totp-close")
-    ?.addEventListener("click", closeAllPwdModals);
-  document
-    .getElementById("pwd-totp-cancel")
-    ?.addEventListener("click", closeAllPwdModals);
-  document
-    .getElementById("pwd-form-close")
-    ?.addEventListener("click", closeAllPwdModals);
-  document
-    .getElementById("pwd-form-cancel")
-    ?.addEventListener("click", closeAllPwdModals);
-  document
-    .getElementById("pwd-success-close")
-    ?.addEventListener("click", closeAllPwdModals);
-
-  // Ferme en cliquant sur l'overlay
-  [modalPwd2fa, modalPwdTotp, modalPwdForm, modalPwdSuccess].forEach(
-    (modal) => {
-      modal?.addEventListener("click", (e) => {
-        if (e.target === modal) closeAllPwdModals();
-      });
-    },
-  );
-
   // ===== APPAREILS DE CONFIANCE =====
   const btnShowDevices = document.getElementById("btn-show-devices");
   const devicesList = document.getElementById("trusted-devices-list");
@@ -1343,7 +887,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const devicesItems = document.getElementById("devices-items");
   const devicesEmpty = document.getElementById("devices-empty");
   const btnRevokeAll = document.getElementById("btn-revoke-all");
-
   let devicesVisible = false;
 
   function getBrowserIcon(name) {
@@ -1361,55 +904,33 @@ document.addEventListener("DOMContentLoaded", () => {
     devicesItems.style.display = "none";
     devicesEmpty.style.display = "none";
     btnRevokeAll.style.display = "none";
-
     try {
       const res = await fetch("./profile/trusted-devices", {
         headers: { "X-Requested-With": "XMLHttpRequest" },
       });
       const data = await res.json();
-
       devicesLoader.style.display = "none";
-
       if (!data.success || !data.devices.length) {
         devicesEmpty.style.display = "flex";
         return;
       }
-
       devicesItems.innerHTML = "";
-
       data.devices.forEach((device) => {
         const li = document.createElement("li");
         li.className = "trusted-device-item";
         li.dataset.id = device.id;
-
         const isExpiring = device.days_left <= 7 && !device.is_expired;
-
         li.innerHTML = `
-                <div class="trusted-device-item__icon ${device.is_current ? "trusted-device-item__icon--current" : ""}">
-                    <i class="${getBrowserIcon(device.name)}"></i>
-                </div>
-                <div class="trusted-device-item__info">
-                    <span class="trusted-device-item__name">
-                        ${device.name}
-                        ${device.is_current ? '<span class="trusted-device-item__badge">Cet appareil</span>' : ""}
-                    </span>
-                    <span class="trusted-device-item__meta">
-                        <i class="fas fa-location-dot"></i> ${device.ip_address}
-                        <span class="sep">·</span>
-                        <i class="fas fa-calendar"></i> ${device.created_at}
-                    </span>
-                </div>
-                <span class="trusted-device-item__days ${isExpiring ? "trusted-device-item__days--expiring" : ""}">
-                    ${device.is_expired ? "Expiré" : isExpiring ? `⚠ ${device.days_left}j` : `${device.days_left}j`}
-                </span>
-                <button type="button" class="trusted-device-item__revoke" data-id="${device.id}" title="Révoquer">
-                    <i class="fas fa-trash-can"></i>
-                </button>
-            `;
-
+                  <div class="trusted-device-item__icon ${device.is_current ? "trusted-device-item__icon--current" : ""}"><i class="${getBrowserIcon(device.name)}"></i></div>
+                  <div class="trusted-device-item__info">
+                      <span class="trusted-device-item__name">${device.name} ${device.is_current ? '<span class="trusted-device-item__badge">Cet appareil</span>' : ""}</span>
+                      <span class="trusted-device-item__meta"><i class="fas fa-location-dot"></i> ${device.ip_address} <span class="sep">·</span> <i class="fas fa-calendar"></i> ${device.created_at}</span>
+                  </div>
+                  <span class="trusted-device-item__days ${isExpiring ? "trusted-device-item__days--expiring" : ""}">${device.is_expired ? "Expiré" : isExpiring ? `⚠ ${device.days_left}j` : `${device.days_left}j`}</span>
+                  <button type="button" class="trusted-device-item__revoke" data-id="${device.id}" title="Révoquer"><i class="fas fa-trash-can"></i></button>
+              `;
         devicesItems.appendChild(li);
       });
-
       devicesItems.style.display = "flex";
       btnRevokeAll.style.display = "flex";
     } catch {
@@ -1420,7 +941,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   btnShowDevices?.addEventListener("click", async function () {
     devicesVisible = !devicesVisible;
-
     if (devicesVisible) {
       devicesList.style.display = "block";
       this.innerHTML = '<i class="fas fa-eye-slash"></i> Masquer';
@@ -1431,18 +951,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // ===== RÉVOQUER UN APPAREIL =====
   devicesItems?.addEventListener("click", async (e) => {
     const btn = e.target.closest(".trusted-device-item__revoke");
     if (!btn) return;
-
-    const deviceId = btn.dataset.id;
-    const item = btn.closest(".trusted-device-item");
-
+    const deviceId = btn.dataset.id,
+      item = btn.closest(".trusted-device-item");
     btn.disabled = true;
     item.style.opacity = "0.5";
     item.style.transition = "opacity 0.25s ease";
-
     try {
       const res = await fetch("./profile/revoke-device", {
         method: "POST",
@@ -1453,13 +969,11 @@ document.addEventListener("DOMContentLoaded", () => {
         },
       });
       const data = await res.json();
-
       if (data.success) {
         item.style.opacity = "0";
         item.style.transform = "translateX(20px)";
         setTimeout(() => {
           item.remove();
-          // Si plus d'appareils → affiche vide
           if (!devicesItems.children.length) {
             devicesItems.style.display = "none";
             btnRevokeAll.style.display = "none";
@@ -1476,20 +990,16 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // ===== RÉVOQUER TOUS =====
   btnRevokeAll?.addEventListener("click", async function () {
     this.disabled = true;
     this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Révocation...';
-
     try {
       const res = await fetch("./profile/revoke-all-devices", {
         method: "POST",
         headers: { "X-Requested-With": "XMLHttpRequest" },
       });
       const data = await res.json();
-
       if (data.success) {
-        // Anime la sortie de tous les items
         [...devicesItems.children].forEach((item, i) => {
           item.style.transition = `opacity 0.2s ease ${i * 0.05}s, transform 0.2s ease ${i * 0.05}s`;
           item.style.opacity = "0";
@@ -1520,21 +1030,16 @@ document.addEventListener("DOMContentLoaded", () => {
       const value = this.checked;
       const feedback = document.getElementById("notif-feedback");
       const original = !value;
-
       try {
         const res = await fetch("./profile/update-notification", {
           method: "POST",
-          body: new URLSearchParams({
-            setting,
-            value: value ? "1" : "0",
-          }),
+          body: new URLSearchParams({ setting, value: value ? "1" : "0" }),
           headers: {
             "X-Requested-With": "XMLHttpRequest",
             "Content-Type": "application/x-www-form-urlencoded",
           },
         });
         const data = await res.json();
-
         if (data.success) {
           if (feedback) {
             feedback.textContent = value
@@ -1552,6 +1057,613 @@ document.addEventListener("DOMContentLoaded", () => {
       } catch {
         this.checked = original;
       }
+    });
+  });
+
+  // ===== CHANGER MOT DE PASSE =====
+  const modalPwd2fa = document.getElementById("modal-pwd-2fa");
+  const modalPwdTotp = document.getElementById("modal-pwd-totp");
+  const modalPwdForm = document.getElementById("modal-pwd-form");
+  const modalPwdSuccess = document.getElementById("modal-pwd-success");
+  let pwdHas2fa = false,
+    pwdHasTotp = false;
+
+  function closeAllPwdModals() {
+    [modalPwd2fa, modalPwdTotp, modalPwdForm, modalPwdSuccess].forEach((m) => {
+      if (m) {
+        m.style.display = "none";
+        m.classList.remove("is-closing");
+      }
+    });
+    document.body.style.overflow = "";
+  }
+
+  const pwd2faOtp = initOtpInputs(
+    ".pwd-otp-input",
+    "pwd-2fa-code",
+    () => document.getElementById("pwd-2fa-submit"),
+    "pwd-2fa-error",
+  );
+  const pwdTotpOtp = initOtpInputs(
+    ".pwd-totp-input",
+    "pwd-totp-code",
+    () => document.getElementById("pwd-totp-submit"),
+    "pwd-totp-error",
+  );
+
+  document
+    .querySelector(".btn-setting:not(.logout)")
+    ?.addEventListener("click", async function () {
+      try {
+        const res = await fetch("./profile/change-password-start", {
+          method: "POST",
+          headers: { "X-Requested-With": "XMLHttpRequest" },
+        });
+        const data = await res.json();
+        if (!data.success) return;
+        pwdHas2fa = data.has_2fa;
+        pwdHasTotp = data.has_totp;
+        if (pwdHas2fa) {
+          pwd2faOtp.reset();
+          openModal(modalPwd2fa);
+          setTimeout(() => {
+            document.querySelector(".pwd-otp-input")?.focus();
+          }, 300);
+        } else if (pwdHasTotp) {
+          pwdTotpOtp.reset();
+          openModal(modalPwdTotp);
+          setTimeout(() => {
+            document.querySelector(".pwd-totp-input")?.focus();
+          }, 300);
+        } else {
+          openModal(modalPwdForm);
+        }
+      } catch {
+        openModal(modalPwdForm);
+      }
+    });
+
+  document
+    .getElementById("pwd-2fa-submit")
+    ?.addEventListener("click", async function () {
+      const btnText = this.querySelector(".btn-text"),
+        spinner = this.querySelector(".btn-spinner"),
+        code = pwd2faOtp.getCode();
+      this.disabled = true;
+      btnText.style.display = "none";
+      spinner.style.display = "flex";
+      pwd2faOtp.clearErr();
+      try {
+        const res = await fetch("./profile/change-password-verify", {
+          method: "POST",
+          body: new URLSearchParams({ step: "2fa", code }),
+          headers: {
+            "X-Requested-With": "XMLHttpRequest",
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+        });
+        const data = await res.json();
+        if (data.success) {
+          closeModal(modalPwd2fa, () => {
+            if (data.next === "totp") {
+              pwdTotpOtp.reset();
+              openModal(modalPwdTotp);
+              setTimeout(() => {
+                document.querySelector(".pwd-totp-input")?.focus();
+              }, 300);
+            } else {
+              openModal(modalPwdForm);
+            }
+          });
+        } else {
+          pwd2faOtp.showError(data.message ?? "Code incorrect.");
+          pwd2faOtp.reset();
+          this.disabled = false;
+          btnText.style.display = "flex";
+          spinner.style.display = "none";
+        }
+      } catch {
+        pwd2faOtp.showError("Erreur réseau.");
+        this.disabled = false;
+        btnText.style.display = "flex";
+        spinner.style.display = "none";
+      }
+    });
+
+  document
+    .getElementById("pwd-resend-2fa")
+    ?.addEventListener("click", async (e) => {
+      e.preventDefault();
+      const link = e.currentTarget;
+      link.style.opacity = "0.5";
+      link.style.pointerEvents = "none";
+      link.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Envoi...';
+      try {
+        await fetch("./profile/change-password-start", {
+          method: "POST",
+          headers: { "X-Requested-With": "XMLHttpRequest" },
+        });
+        link.innerHTML = '<i class="fas fa-check"></i> Code envoyé !';
+        link.style.color = "#00c48c";
+        pwd2faOtp.reset();
+        setTimeout(() => {
+          link.innerHTML =
+            '<i class="fas fa-rotate-right"></i> Renvoyer le code';
+          link.style.color = "";
+          link.style.opacity = "1";
+          link.style.pointerEvents = "auto";
+        }, 3000);
+      } catch {
+        link.innerHTML = '<i class="fas fa-rotate-right"></i> Renvoyer le code';
+        link.style.opacity = "1";
+        link.style.pointerEvents = "auto";
+      }
+    });
+
+  document
+    .getElementById("pwd-totp-submit")
+    ?.addEventListener("click", async function () {
+      const btnText = this.querySelector(".btn-text"),
+        spinner = this.querySelector(".btn-spinner"),
+        code = pwdTotpOtp.getCode();
+      this.disabled = true;
+      btnText.style.display = "none";
+      spinner.style.display = "flex";
+      pwdTotpOtp.clearErr();
+      try {
+        const res = await fetch("./profile/change-password-verify", {
+          method: "POST",
+          body: new URLSearchParams({ step: "totp", code }),
+          headers: {
+            "X-Requested-With": "XMLHttpRequest",
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+        });
+        const data = await res.json();
+        if (data.success) {
+          closeModal(modalPwdTotp, () => {
+            openModal(modalPwdForm);
+          });
+        } else {
+          pwdTotpOtp.showError(data.message ?? "Code incorrect.");
+          pwdTotpOtp.reset();
+          this.disabled = false;
+          btnText.style.display = "flex";
+          spinner.style.display = "none";
+        }
+      } catch {
+        pwdTotpOtp.showError("Erreur réseau.");
+        this.disabled = false;
+        btnText.style.display = "flex";
+        spinner.style.display = "none";
+      }
+    });
+
+  document.getElementById("pwd-new")?.addEventListener("input", function () {
+    const val = this.value,
+      fill = document.getElementById("pwd-strength-fill"),
+      label = document.getElementById("pwd-strength-label");
+    if (!val) {
+      fill.className = "pwd-strength__fill";
+      fill.style.width = "0";
+      label.textContent = "";
+      return;
+    }
+    let score = 0;
+    if (val.length >= 8) score++;
+    if (/[A-Z]/.test(val)) score++;
+    if (/[0-9]/.test(val)) score++;
+    if (/[^A-Za-z0-9]/.test(val)) score++;
+    const levels = [
+      { cls: "weak", label: "Faible", color: "#f5365c" },
+      { cls: "fair", label: "Moyen", color: "#f7b731" },
+      { cls: "good", label: "Bon", color: "#1a6fb5" },
+      { cls: "strong", label: "Fort", color: "#00c48c" },
+    ];
+    const level = levels[score - 1] ?? levels[0];
+    fill.className = `pwd-strength__fill pwd-strength__fill--${level.cls}`;
+    label.textContent = level.label;
+    label.style.color = level.color;
+  });
+
+  document.querySelectorAll(".pwd-toggle-eye").forEach((btn) => {
+    btn.addEventListener("click", function () {
+      const target = document.getElementById(this.dataset.target);
+      if (!target) return;
+      const isPassword = target.type === "password";
+      target.type = isPassword ? "text" : "password";
+      this.innerHTML = `<i class="fas fa-${isPassword ? "eye-slash" : "eye"}"></i>`;
+    });
+  });
+
+  document
+    .getElementById("pwd-form-submit")
+    ?.addEventListener("click", async function () {
+      const btnText = this.querySelector(".btn-text"),
+        spinner = this.querySelector(".btn-spinner");
+      const current = document.getElementById("pwd-current")?.value ?? "",
+        newPwd = document.getElementById("pwd-new")?.value ?? "",
+        confirm = document.getElementById("pwd-confirm")?.value ?? "";
+      [
+        "err-pwd-current",
+        "err-pwd-new",
+        "err-pwd-confirm",
+        "pwd-form-error",
+      ].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = "";
+      });
+      ["pwd-current", "pwd-new", "pwd-confirm"].forEach((id) => {
+        document.getElementById(id)?.classList.remove("is-error");
+      });
+      let valid = true;
+      if (!current) {
+        document.getElementById("err-pwd-current").textContent =
+          "Ce champ est obligatoire.";
+        document.getElementById("pwd-current").classList.add("is-error");
+        valid = false;
+      }
+      if (newPwd.length < 8) {
+        document.getElementById("err-pwd-new").textContent =
+          "Au moins 8 caractères.";
+        document.getElementById("pwd-new").classList.add("is-error");
+        valid = false;
+      }
+      if (newPwd !== confirm) {
+        document.getElementById("err-pwd-confirm").textContent =
+          "Les mots de passe ne correspondent pas.";
+        document.getElementById("pwd-confirm").classList.add("is-error");
+        valid = false;
+      }
+      if (!valid) return;
+      this.disabled = true;
+      btnText.style.display = "none";
+      spinner.style.display = "flex";
+      try {
+        const logoutAll =
+          document.getElementById("pwd-logout-all-checkbox")?.checked ?? false;
+        const res = await fetch("./profile/change-password", {
+          method: "POST",
+          body: new URLSearchParams({
+            current_password: current,
+            new_password: newPwd,
+            confirm_password: confirm,
+            logout_all: logoutAll ? "1" : "0",
+          }),
+          headers: {
+            "X-Requested-With": "XMLHttpRequest",
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+        });
+        const data = await res.json();
+        if (data.success) {
+          if (data.logout_all) {
+            const desc = document.querySelector(
+              "#modal-pwd-success .pwd-modal__desc",
+            );
+            if (desc)
+              desc.textContent =
+                "Votre mot de passe a été mis à jour. Vous avez été déconnecté de tous les autres appareils.";
+          }
+          closeModal(modalPwdForm, () => {
+            openModal(modalPwdSuccess);
+          });
+        } else {
+          if (data.field === "current") {
+            document.getElementById("err-pwd-current").textContent =
+              data.message;
+            document.getElementById("pwd-current").classList.add("is-error");
+          } else if (data.field === "new") {
+            document.getElementById("err-pwd-new").textContent = data.message;
+            document.getElementById("pwd-new").classList.add("is-error");
+          } else if (data.field === "confirm") {
+            document.getElementById("err-pwd-confirm").textContent =
+              data.message;
+            document.getElementById("pwd-confirm").classList.add("is-error");
+          } else {
+            document.getElementById("pwd-form-error").textContent =
+              data.message ?? "Une erreur est survenue.";
+          }
+          this.disabled = false;
+          btnText.style.display = "flex";
+          spinner.style.display = "none";
+        }
+      } catch {
+        document.getElementById("pwd-form-error").textContent =
+          "Erreur réseau.";
+        this.disabled = false;
+        btnText.style.display = "flex";
+        spinner.style.display = "none";
+      }
+    });
+
+  [
+    "pwd-2fa-close",
+    "pwd-2fa-cancel",
+    "pwd-totp-close",
+    "pwd-totp-cancel",
+    "pwd-form-close",
+    "pwd-form-cancel",
+    "pwd-success-close",
+  ].forEach((id) => {
+    document.getElementById(id)?.addEventListener("click", closeAllPwdModals);
+  });
+  [modalPwd2fa, modalPwdTotp, modalPwdForm, modalPwdSuccess].forEach(
+    (modal) => {
+      modal?.addEventListener("click", (e) => {
+        if (e.target === modal) closeAllPwdModals();
+      });
+    },
+  );
+
+  // ===== SUPPRESSION DE COMPTE =====
+  const modalDelete2fa = document.getElementById("modal-delete-2fa");
+  const modalDeleteTotp = document.getElementById("modal-delete-totp");
+  const modalDeleteConfirm = document.getElementById("modal-delete-confirm");
+  let deleteHas2fa = false,
+    deleteHasTotp = false;
+
+  // Init OTP suppression — une seule fois ici
+  const delete2faOtp = initOtpInputs(
+    ".delete-2fa-input",
+    "delete-2fa-code",
+    () => document.getElementById("delete-2fa-submit"),
+    "delete-2fa-error",
+  );
+  const deleteTotpOtp = initOtpInputs(
+    ".delete-totp-input",
+    "delete-totp-code",
+    () => document.getElementById("delete-totp-submit"),
+    "delete-totp-error",
+  );
+
+  function closeAllDeleteModals() {
+    [modalDelete2fa, modalDeleteTotp, modalDeleteConfirm].forEach((m) => {
+      if (m) {
+        m.style.display = "none";
+        m.classList.remove("is-closing");
+      }
+    });
+    document.body.style.overflow = "";
+  }
+
+  document
+    .getElementById("btn-delete-account")
+    ?.addEventListener("click", async function () {
+      try {
+        const res = await fetch("./profile/delete-account-start", {
+          method: "POST",
+          headers: { "X-Requested-With": "XMLHttpRequest" },
+        });
+        const data = await res.json();
+        if (!data.success) return;
+        deleteHas2fa = data.has_2fa;
+        deleteHasTotp = data.has_totp;
+
+        if (deleteHas2fa) {
+          delete2faOtp.reset();
+          openModal(modalDelete2fa);
+          setTimeout(() => {
+            document
+              .querySelector(".delete-2fa-input:not([disabled])")
+              ?.focus();
+          }, 300);
+        } else if (deleteHasTotp) {
+          deleteTotpOtp.reset();
+          openModal(modalDeleteTotp);
+          setTimeout(() => {
+            document
+              .querySelector(".delete-totp-input:not([disabled])")
+              ?.focus();
+          }, 300);
+        } else {
+          openModal(modalDeleteConfirm);
+        }
+      } catch {
+        openModal(modalDeleteConfirm);
+      }
+    });
+
+  document
+    .getElementById("delete-2fa-submit")
+    ?.addEventListener("click", async function () {
+      const btnText = this.querySelector(".btn-text"),
+        spinner = this.querySelector(".btn-spinner"),
+        code = delete2faOtp.getCode();
+      this.disabled = true;
+      btnText.style.display = "none";
+      spinner.style.display = "flex";
+      delete2faOtp.clearErr();
+      try {
+        const res = await fetch("./profile/delete-account-verify", {
+          method: "POST",
+          body: new URLSearchParams({ step: "2fa", code }),
+          headers: {
+            "X-Requested-With": "XMLHttpRequest",
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+        });
+        const data = await res.json();
+        if (data.success) {
+          closeModal(modalDelete2fa, () => {
+            if (data.next === "totp") {
+              deleteTotpOtp.reset();
+              openModal(modalDeleteTotp);
+              setTimeout(() => {
+                document
+                  .querySelector(".delete-totp-input:not([disabled])")
+                  ?.focus();
+              }, 300);
+            } else {
+              openModal(modalDeleteConfirm);
+            }
+          });
+        } else {
+          delete2faOtp.showError(data.message ?? "Code incorrect.");
+          delete2faOtp.reset();
+          this.disabled = false;
+          btnText.style.display = "flex";
+          spinner.style.display = "none";
+        }
+      } catch {
+        delete2faOtp.showError("Erreur réseau.");
+        this.disabled = false;
+        btnText.style.display = "flex";
+        spinner.style.display = "none";
+      }
+    });
+
+  document
+    .getElementById("delete-totp-submit")
+    ?.addEventListener("click", async function () {
+      const btnText = this.querySelector(".btn-text"),
+        spinner = this.querySelector(".btn-spinner"),
+        code = deleteTotpOtp.getCode();
+      this.disabled = true;
+      btnText.style.display = "none";
+      spinner.style.display = "flex";
+      deleteTotpOtp.clearErr();
+      try {
+        const res = await fetch("./profile/delete-account-verify", {
+          method: "POST",
+          body: new URLSearchParams({ step: "totp", code }),
+          headers: {
+            "X-Requested-With": "XMLHttpRequest",
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+        });
+        const data = await res.json();
+        if (data.success) {
+          closeModal(modalDeleteTotp, () => {
+            openModal(modalDeleteConfirm);
+          });
+        } else {
+          deleteTotpOtp.showError(data.message ?? "Code incorrect.");
+          deleteTotpOtp.reset();
+          this.disabled = false;
+          btnText.style.display = "flex";
+          spinner.style.display = "none";
+        }
+      } catch {
+        deleteTotpOtp.showError("Erreur réseau.");
+        this.disabled = false;
+        btnText.style.display = "flex";
+        spinner.style.display = "none";
+      }
+    });
+
+  function checkDeleteBtn() {
+    const btn = document.getElementById("delete-confirm-submit");
+    const confirmText = document.getElementById("delete-confirm-text");
+    const password = document.getElementById("delete-password");
+    if (!btn || !confirmText || !password) return;
+
+    const isConfirmed = confirmText.value === "SUPPRIMER";
+    const hasPassword = password.value.length > 0;
+    const ready = isConfirmed && hasPassword;
+
+    btn.disabled = !ready;
+
+    // Feedback visuel sur le champ
+    if (confirmText.value.length > 0) {
+      confirmText.classList.toggle("is-valid", isConfirmed);
+      confirmText.classList.toggle(
+        "is-error",
+        !isConfirmed && confirmText.value.length >= 8,
+      );
+    } else {
+      confirmText.classList.remove("is-valid", "is-error");
+    }
+  }
+
+  document
+    .getElementById("delete-confirm-text")
+    ?.addEventListener("input", checkDeleteBtn);
+  document
+    .getElementById("delete-password")
+    ?.addEventListener("input", checkDeleteBtn);
+
+  document
+    .getElementById("delete-confirm-submit")
+    ?.addEventListener("click", async function () {
+      const btnText = this.querySelector(".btn-text"),
+        spinner = this.querySelector(".btn-spinner");
+      const password = document.getElementById("delete-password")?.value ?? "";
+      const confirm =
+        document.getElementById("delete-confirm-text")?.value ?? "";
+      [
+        "err-delete-password",
+        "err-delete-confirm",
+        "delete-form-error",
+      ].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = "";
+      });
+      this.disabled = true;
+      btnText.style.display = "none";
+      spinner.style.display = "flex";
+      try {
+        const res = await fetch("./profile/delete-account", {
+          method: "POST",
+          body: new URLSearchParams({ password, confirm }),
+          headers: {
+            "X-Requested-With": "XMLHttpRequest",
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+        });
+        const data = await res.json();
+        if (data.success) {
+          closeModal(modalDeleteConfirm, () => {
+            document.body.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100vh;flex-direction:column;gap:16px;font-family:'Montserrat',sans-serif;background:#0d2b5e;color:#fff;"><i class="fas fa-check-circle" style="font-size:48px;color:#00c48c;"></i><h2 style="margin:0;">Compte supprimé</h2><p style="color:rgba(255,255,255,0.6);margin:0;">Redirection en cours...</p></div>`;
+            setTimeout(() => {
+              window.location.href = "./";
+            }, 2000);
+          });
+        } else {
+          if (data.field === "password") {
+            document.getElementById("err-delete-password").textContent =
+              data.message;
+            document
+              .getElementById("delete-password")
+              ?.classList.add("is-error");
+          } else if (data.field === "confirm") {
+            document.getElementById("err-delete-confirm").textContent =
+              data.message;
+            document
+              .getElementById("delete-confirm-text")
+              ?.classList.add("is-error");
+          } else {
+            document.getElementById("delete-form-error").textContent =
+              data.message ?? "Une erreur est survenue.";
+          }
+          this.disabled = false;
+          btnText.style.display = "flex";
+          spinner.style.display = "none";
+        }
+      } catch {
+        document.getElementById("delete-form-error").textContent =
+          "Erreur réseau.";
+        this.disabled = false;
+        btnText.style.display = "flex";
+        spinner.style.display = "none";
+      }
+    });
+
+  [
+    "delete-2fa-close",
+    "delete-2fa-cancel",
+    "delete-totp-close",
+    "delete-totp-cancel",
+    "delete-confirm-close",
+    "delete-confirm-cancel",
+  ].forEach((id) => {
+    document
+      .getElementById(id)
+      ?.addEventListener("click", closeAllDeleteModals);
+  });
+  [modalDelete2fa, modalDeleteTotp, modalDeleteConfirm].forEach((modal) => {
+    modal?.addEventListener("click", (e) => {
+      if (e.target === modal) closeAllDeleteModals();
     });
   });
 

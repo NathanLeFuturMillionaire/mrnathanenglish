@@ -208,23 +208,28 @@ class AuthController extends Controller
     // Traite la soumission du formulaire
     public function register()
     {
+        // ===== GET — affiche le formulaire =====
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $errors = [];
+            $old    = [];
+            require_once __DIR__ . '/../views/auth/register.php';
+            return;
+        }
+
+        // ===== POST — traitement AJAX =====
+        header('Content-Type: application/json');
+
+        $fullname         = trim($_POST['fullname']         ?? '');
+        $email            = trim($_POST['email']            ?? '');
+        $username         = trim($_POST['username']         ?? '');
+        $password         = $_POST['password']              ?? '';
+        $confirm_password = $_POST['confirm_password']      ?? '';
+        $terms            = $_POST['terms']                 ?? '';
+
         $errors = [];
-        $old = [];
 
-        $fullname = trim($_POST['fullname'] ?? '');
-        $email = trim($_POST['email'] ?? '');
-        $username = trim($_POST['username'] ?? '');
-        $password = $_POST['password'] ?? '';
-        $confirm_password = $_POST['confirm_password'] ?? '';
-        $terms = $_POST['terms'] ?? '';
-
-        // Garder valeurs pour réaffichage
-        $old['fullname'] = $fullname;
-        $old['email'] = $email;
-        $old['username'] = $username;
-
-        if (empty($fullname)) {
-            $errors['fullname'] = "Le nom complet est requis.";
+        if (empty($fullname) || strlen($fullname) < 3) {
+            $errors['fullname'] = "Le nom complet doit contenir au moins 3 caractères.";
         }
 
         if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -232,18 +237,18 @@ class AuthController extends Controller
         } else {
             $stmt = $this->db->prepare("SELECT id FROM users WHERE email = ?");
             $stmt->execute([$email]);
-            if ($stmt->fetch(PDO::FETCH_ASSOC)) {
+            if ($stmt->fetch(\PDO::FETCH_ASSOC)) {
                 $errors['email'] = "Cet e-mail est déjà utilisé.";
             }
         }
 
         if (empty($username) || strlen($username) < 3) {
-            $errors['username'] = "Nom d’utilisateur invalide (min 3 caractères).";
+            $errors['username'] = "Nom d'utilisateur invalide (min 3 caractères).";
         } else {
             $stmt = $this->db->prepare("SELECT id FROM users WHERE username = ?");
             $stmt->execute([$username]);
-            if ($stmt->fetch(PDO::FETCH_ASSOC)) {
-                $errors['username'] = "Ce nom d’utilisateur est déjà pris.";
+            if ($stmt->fetch(\PDO::FETCH_ASSOC)) {
+                $errors['username'] = "Ce nom d'utilisateur est déjà pris.";
             }
         }
 
@@ -260,34 +265,39 @@ class AuthController extends Controller
         }
 
         if (!empty($errors)) {
-            require_once __DIR__ . '/../views/auth/register.php';
+            echo json_encode(['success' => false, 'errors' => $errors]);
             return;
         }
 
-        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-        $confirmation_code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        try {
+            $hashed_password   = password_hash($password, PASSWORD_DEFAULT);
+            $confirmation_code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
 
-        $stmt = $this->db->prepare("
-            INSERT INTO users (fullname, email, username, password, confirmation_code)
-            VALUES (?, ?, ?, ?, ?)
-        ");
-        $stmt->execute([$fullname, $email, $username, $hashed_password, $confirmation_code]);
+            $stmt = $this->db->prepare("
+                INSERT INTO users (fullname, email, username, password, confirmation_code)
+                VALUES (?, ?, ?, ?, ?)
+            ");
+            $stmt->execute([$fullname, $email, $username, $hashed_password, $confirmation_code]);
 
-        // TODO: Envoi mail avec PHPMailer
+            $mailService = new MailService();
+            $mailSent    = $mailService->sendConfirmationCode($email, $fullname, $confirmation_code);
 
-        $mailService = new MailService();
-        $mailSent = $mailService->sendConfirmationCode($email, $fullname, $confirmation_code);
-
-        if ($mailSent) {
-            $_SESSION['confirmation_email'] = $email; // Pour l’afficher dans la vue
-            header("Location: ./confirm?email=" . urlencode($email));
-            exit;
-        } else {
-            echo "Erreur lors de l'envoi de l'email.";
+            if ($mailSent) {
+                $_SESSION['confirmation_email'] = $email;
+                echo json_encode([
+                    'success'  => true,
+                    'redirect' => './confirm?email=' . urlencode($email),
+                ]);
+            } else {
+                echo json_encode([
+                    'success'  => true,
+                    'redirect' => './confirm?email=' . urlencode($email),
+                ]);
+            }
+        } catch (\Throwable $e) {
+            error_log('[register] ' . $e->getMessage());
+            echo json_encode(['success' => false, 'errors' => ['general' => 'Une erreur est survenue. Veuillez réessayer.']]);
         }
-
-        header("Location: ./confirm");
-        exit;
     }
 
     /**

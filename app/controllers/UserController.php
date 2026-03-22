@@ -1201,4 +1201,203 @@ class UserController
         ]);
         exit;
     }
+    /**
+     * Lance le processus de suppression de compte.
+     * Envoie un code 2FA si activé.
+     *
+     * @return void
+     */
+    public function deleteAccountStart(): void
+    {
+        header('Content-Type: application/json');
+
+        if (empty($_SESSION['user']['id'])) {
+            http_response_code(401);
+            echo json_encode(['success' => false]);
+            exit;
+        }
+
+        $userId  = (int) $_SESSION['user']['id'];
+        $has2fa  = !empty($_SESSION['user']['two_factor_enabled']);
+        $hasTotp = !empty($_SESSION['user']['totp_enabled']);
+
+        if ($has2fa) {
+            $code = $this->userRepository->saveTwoFactorCode($userId);
+
+            $stmt = $this->db->prepare("SELECT email, fullname FROM users WHERE id = ?");
+            $stmt->execute([$userId]);
+            $user = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+            $mailService = new \App\Services\MailService();
+            $mailService->sendTwoFactorCode($user['email'], $user['fullname'], $code);
+        }
+
+        echo json_encode([
+            'success'  => true,
+            'has_2fa'  => $has2fa,
+            'has_totp' => $hasTotp,
+        ]);
+        exit;
+    }
+
+    /**
+     * Vérifie le code 2FA et/ou TOTP pour la suppression de compte.
+     *
+     * @return void
+     */
+    public function deleteAccountVerify(): void
+    {
+        header('Content-Type: application/json');
+
+        if (
+            $_SERVER['REQUEST_METHOD'] !== 'POST' ||
+            empty($_SERVER['HTTP_X_REQUESTED_WITH']) ||
+            empty($_SESSION['user']['id'])
+        ) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Requête non autorisée.']);
+            exit;
+        }
+
+        $userId  = (int) $_SESSION['user']['id'];
+        $step    = trim($_POST['step'] ?? '');
+        $code    = preg_replace('/\D/', '', trim($_POST['code'] ?? ''));
+        $hasTotp = !empty($_SESSION['user']['totp_enabled']);
+
+        if (strlen($code) !== 6) {
+            echo json_encode(['success' => false, 'message' => 'Code invalide.']);
+            exit;
+        }
+
+        if ($step === '2fa') {
+            $result = $this->userRepository->verifyTwoFactorCode($userId, $code);
+
+            if (!$result['success']) {
+                echo json_encode(['success' => false, 'message' => $result['message']]);
+                exit;
+            }
+
+            if ($hasTotp) {
+                echo json_encode(['success' => true, 'next' => 'totp']);
+                exit;
+            }
+
+            $_SESSION['delete_account_verified'] = true;
+            echo json_encode(['success' => true, 'next' => 'form']);
+            exit;
+        }
+
+        if ($step === 'totp') {
+            $stmt = $this->db->prepare("SELECT totp_secret FROM users WHERE id = ?");
+            $stmt->execute([$userId]);
+            $row    = $stmt->fetch(\PDO::FETCH_ASSOC);
+            $secret = $row['totp_secret'] ?? null;
+
+            if (!$secret) {
+                echo json_encode(['success' => false, 'message' => 'TOTP non configuré.']);
+                exit;
+            }
+
+            $google2fa = new \PragmaRX\Google2FA\Google2FA();
+
+            if (!$google2fa->verifyKey($secret, $code, 4)) {
+                echo json_encode(['success' => false, 'message' => 'Code incorrect.']);
+                exit;
+            }
+
+            $_SESSION['delete_account_verified'] = true;
+            echo json_encode(['success' => true, 'next' => 'form']);
+            exit;
+        }
+
+        echo json_encode(['success' => false, 'message' => 'Étape inconnue.']);
+        exit;
+    }
+
+    /**
+     * Supprime définitivement le compte de l'utilisateur.
+     * Vérifie le mot de passe et le texte de confirmation avant suppression.
+     * Supprime toutes les données liées au compte.
+     *
+     * @return void
+     */
+    public function deleteAccount(): void
+    {
+        header('Content-Type: application/json');
+
+        if (
+            $_SERVER['REQUEST_METHOD'] !== 'POST' ||
+            empty($_SERVER['HTTP_X_REQUESTED_WITH']) ||
+            empty($_SESSION['user']['id'])
+        ) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Requête non autorisée.']);
+            exit;
+        }
+
+        if (empty($_SESSION['delete_account_verified'])) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Vérification de sécurité requise.']);
+            exit;
+        }
+
+        $userId      = (int) $_SESSION['user']['id'];
+        $password    = $_POST['password']     ?? '';
+        $confirmText = trim($_POST['confirm'] ?? '');
+
+        if ($confirmText !== 'SUPPRIMER') {
+            echo json_encode(['success' => false, 'field' => 'confirm', 'message' => 'Veuillez taper exactement SUPPRIMER.']);
+            exit;
+        }
+
+        $stmt = $this->db->prepare("SELECT password FROM users WHERE id = ?");
+        $stmt->execute([$userId]);
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        if (!password_verify($password, $row['password'])) {
+            echo json_encode(['success' => false, 'field' => 'password', 'message' => 'Mot de passe incorrect.']);
+            exit;
+        }
+
+        try {
+            $this->db->beginTransaction();
+
+            $tables = [
+                'user_login_history',
+                'user_trusted_devices',
+                'user_remember_tokens',
+                'user_notification_settings',
+                'student_courses',
+                'user_profiles',
+            ];
+
+            foreach ($tables as $table) {
+                // Vérifie que la table existe avant de supprimer
+                try {
+                    $this->db->prepare("DELETE FROM {$table} WHERE user_id = ?")->execute([$userId]);
+                } catch (\Throwable $tableError) {
+                    error_log("[deleteAccount] Erreur table {$table} : " . $tableError->getMessage());
+                    // Continue — la table n'existe peut-être pas
+                }
+            }
+
+            $this->db->prepare("DELETE FROM users WHERE id = ?")->execute([$userId]);
+
+            $this->db->commit();
+
+            foreach ($_COOKIE as $name => $value) {
+                setcookie($name, '', ['expires' => time() - 3600, 'path' => '/', 'httponly' => true, 'samesite' => 'Lax']);
+            }
+
+            session_destroy();
+
+            echo json_encode(['success' => true]);
+        } catch (\Throwable $e) {
+            $this->db->rollBack();
+            error_log('[deleteAccount] ' . $e->getMessage());
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]); // ← message réel
+        }
+
+        exit;
+    }
 }
