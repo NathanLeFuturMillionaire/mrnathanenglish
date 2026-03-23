@@ -15,7 +15,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
     <!-- Styles -->
-    <link rel="stylesheet" href="../public/css/admins/courses/listCourses.css">
+    <link rel="stylesheet" href="../public/css/admins/courses/listCoursesAdmin.css">
 </head>
 
 <body>
@@ -66,7 +66,7 @@
         <header class="page-header">
             <h1>Formations</h1>
             <p class="subtitle">Cours publiés et brouillons en cours</p>
-            <a href="../public/courses/create" class="btn-new-course">
+            <a href="../public/coursesAdmin/create" class="btn-new-course">
                 <i class="fas fa-plus-circle"></i>
                 Créer un cours
             </a>
@@ -75,7 +75,7 @@
         <?php if (empty($allCourses)): ?>
             <section class="empty-state">
                 <i class="fas fa-book-open"></i>
-                <p><a href="../public/courses/create">Commencer à créer votre premier cours</a></p>
+                <p><a href="../public/coursesAdmin/create">Commencer à créer votre premier cours</a></p>
             </section>
         <?php else: ?>
             <section class="courses-grid">
@@ -111,23 +111,23 @@
                             <div class="actions">
                                 <?php if ($isDraft): ?>
                                     <a
-                                        href="../public/courses/create?id=<?= (int) $courseId ?>"
+                                        href="../public/coursesAdmin/create?id=<?= (int) $courseId ?>"
                                         class="btn-primary">
                                         <i class="fas fa-edit"></i> Reprendre
                                     </a>
 
                                     <a
-                                        href="../public/courses/delete-draft?id=<?= (int) $courseId ?>"
+                                        href="../public/coursesAdmin/delete-draft?id=<?= (int) $courseId ?>"
                                         class="btn-danger"
                                         onclick="return confirm('Supprimer définitivement ce brouillon ?');">
                                         <i class="fas fa-trash"></i> Supprimer
                                     </a>
 
                                 <?php else: ?>
-                                    <a href="../public/courses/edit?id=<?= (int) $courseId ?>" class="btn-primary">
+                                    <a href="../public/coursesAdmin/edit?id=<?= (int) $courseId ?>" class="btn-primary">
                                         <i class="fas fa-edit"></i> Modifier
                                     </a>
-                                    <a href="./courses/view/<?= (int) $courseId ?>" class="btn-secondary">
+                                    <a href="./coursesAdmin/view/<?= (int) $courseId ?>" class="btn-secondary">
                                         <i class="fas fa-eye"></i> Voir
                                     </a>
                                 <?php endif; ?>

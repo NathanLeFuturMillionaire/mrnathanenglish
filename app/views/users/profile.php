@@ -123,9 +123,11 @@ if ($_SESSION['user']['is_confirmed'] != 1) {
                     <a href="#infos" class="active" data-section="infos">
                         <i class="fas fa-user"></i> Mon profil
                     </a>
-                    <a href="#courses" data-section="courses">
-                        <i class="fas fa-book-open"></i> Mes cours
-                    </a>
+                    <li>
+                        <a href="#section-courses" data-section="section-courses">
+                            <i class="fas fa-book-open"></i> Mes cours
+                        </a>
+                    </li>
                     <a href="#progression" data-section="progression">
                         <i class="fas fa-chart-line"></i> Progression
                     </a>
@@ -449,16 +451,43 @@ if ($_SESSION['user']['is_confirmed'] != 1) {
             </section>
 
             <!-- ===== MES COURS ===== -->
-            <section id="courses" class="profile-section">
+            <section id="section-courses" class="profile-section">
+
                 <div class="section-header">
                     <div>
                         <h1 class="section-title">Mes cours</h1>
-                        <p class="section-subtitle">Les formations que vous suivez</p>
+                        <p class="section-subtitle">Vos cours d'anglais chez OpenDoorsClass.</p>
                     </div>
+                    <a href="./courses" class="btn-edit-profile">
+                        <i class="fas fa-compass"></i> Explorer nos cours d'anglais
+                    </a>
                 </div>
-                <div class="card">
-                    <p style="color:var(--text-muted);font-size:0.9rem;">Aucun cours en cours pour le moment.</p>
+
+                <!-- Loader -->
+                <div id="courses-loader" style="display: flex; align-items: center;justify-content: center;gap: 12px;padding:48px;color: var(--text-muted); font-size: 0.875rem;">
+                    <i class="fas fa-spinner fa-spin" style="font-size:18px;color:var(--blue,#1a6fb5);"></i>
+                    <span>Chargement de vos cours d'anglais...</span>
                 </div>
+
+                <!-- État vide -->
+                <div id="courses-empty" class="card" style="display:none;text-align:center;padding:48px 24px;">
+                    <div style="width:64px;height:64px;border-radius:16px; background:linear-gradient(135deg,#e8f2fc,#dde8f8);color:var(--blue,#1a6fb5); font-size:24px; display:flex; align-items:center; justify-content: center; margin:0 auto 16px;">
+                        <i class="fas fa-book-open"></i>
+                    </div>
+                    <h3 style="font-family:'Montserrat',sans-serif;font-size:1.05rem;font-weight:800;color:#0f1b35;margin:0 0 8px;">
+                        Aucun cours d'anglais en cours
+                    </h3>
+                    <p style="font-size:0.875rem;color:var(--text-muted);line-height:1.7;margin:0 0 20px;">
+                        Vous n'êtes inscrit à aucun cours d'anglais pour le moment.
+                    </p>
+                    <a href="./courses" class="btn-edit-profile" style="display:inline-flex;">
+                        <i class="fas fa-compass"></i> Découvrir nos cours d'anglais
+                    </a>
+                </div>
+
+                <!-- Grille des cours -->
+                <div id="courses-grid" style="display:none;grid-template-columns: repeat(auto-fill, minmax(268px, 1fr));gap:20px;"></div>
+
             </section>
 
             <!-- ===== PROGRESSION ===== -->
@@ -1294,7 +1323,9 @@ if ($_SESSION['user']['is_confirmed'] != 1) {
         </div>
     </div>
 
-    <script src="./js/header.min.js" defer></script>
+
+
+    <script src="../js/header.min.js" defer></script>
     <script src="./js/users/profile.min.js" defer></script>
 </body>
 

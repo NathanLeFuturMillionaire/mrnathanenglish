@@ -169,11 +169,11 @@ class Router
                 }
                 break;
 
-            case 'courses':
+            case 'coursesAdmin':
 
                 session_start();
                 $adminController = new AdminController();
-                $adminController->listCourses();
+                $adminController->listCoursesAdmin();
                 break;
 
             case 'courses/create':
@@ -350,6 +350,18 @@ class Router
                 $courseController->viewLesson();
                 break;
 
+            case 'courses':
+                session_start();
+
+                if (!isset($_SESSION['user']['id'])) {
+                    header('Location: ./login');
+                    exit;
+                }
+
+                $courseController = new CourseController();
+                $courseController->listCourses();
+                break;
+
             case 'profile/update':
                 session_start();
 
@@ -519,6 +531,19 @@ class Router
                 session_start();
                 $userController = new UserController();
                 $userController->deleteAccount();
+                break;
+
+            case 'profile/my-courses':
+                session_start();
+
+                if (!isset($_SESSION['user']['id'])) {
+                    http_response_code(401);
+                    echo json_encode(['success' => false, 'message' => 'Non authentifié.']);
+                    exit;
+                }
+
+                $userController = new UserController();
+                $userController->myCourses();
                 break;
         }
     }

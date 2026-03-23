@@ -1400,4 +1400,88 @@ class UserController
 
         exit;
     }
+    public function myCourses(): void
+    {
+        header('Content-Type: application/json');
+
+        if (empty($_SESSION['user']['id'])) {
+            echo json_encode(['success' => false, 'message' => 'Non connecté.']);
+            exit;
+        }
+
+        $userId = (int) $_SESSION['user']['id'];
+
+        $stmt = $this->db->prepare("
+        SELECT
+            c.id,
+            c.title_course,
+            c.description_course,
+            c.profile_picture,
+            c.time_course,
+            c.validation_period,
+            c.price_course,
+            c.is_free,
+            c.language_taught,
+            c.learner_level,
+            c.course_rate,
+            c.content_data,
+            sc.follow_date,
+            sc.created_at                                                              AS enrolled_at,
+            DATE_ADD(sc.follow_date, INTERVAL c.validation_period DAY)                AS expires_at,
+            DATEDIFF(DATE_ADD(sc.follow_date, INTERVAL c.validation_period DAY), CURDATE()) AS days_remaining,
+            CASE
+                WHEN CURDATE() > DATE_ADD(sc.follow_date, INTERVAL c.validation_period DAY)
+                THEN 1 ELSE 0
+            END AS is_expired
+        FROM student_courses sc
+        INNER JOIN courses c ON c.id = sc.id_course
+        WHERE sc.id_student = ?
+          AND c.status_course = 'published'
+        ORDER BY sc.created_at DESC
+    ");
+        $stmt->execute([$userId]);
+        $courses = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        foreach ($courses as &$course) {
+            $contentData  = json_decode($course['content_data'], true);
+            $totalModules = 0;
+            $totalLessons = 0;
+
+            if (!empty($contentData['modules'])) {
+                $totalModules = count($contentData['modules']);
+                foreach ($contentData['modules'] as $module) {
+                    $lessons = array_filter(
+                        $module['lessons'] ?? [],
+                        fn($l) => !empty($l['title'])
+                    );
+                    $totalLessons += count($lessons);
+                }
+            }
+
+            $totalMinutes = (int) $course['time_course'];
+            $hours        = floor($totalMinutes / 60);
+            $minutes      = $totalMinutes % 60;
+
+            $course['total_modules']  = $totalModules;
+            $course['total_lessons']  = $totalLessons;
+            $course['duration_label'] = $hours > 0
+                ? $hours . 'h' . ($minutes > 0 ? $minutes . 'min' : '')
+                : $minutes . 'min';
+
+            $course['expires_at_formatted'] = date(
+                'd/m/Y',
+                strtotime($course['expires_at'])
+            );
+
+            unset($course['content_data']);
+        }
+        unset($course);
+
+        echo json_encode([
+            'success' => true,
+            'courses' => $courses,
+            'total'   => count($courses),
+        ]);
+        exit;
+    }
 }

@@ -1666,6 +1666,155 @@ document.addEventListener("DOMContentLoaded", () => {
       if (e.target === modal) closeAllDeleteModals();
     });
   });
+  // ===== MES COURS =====
+  let coursesLoaded = false;
+
+  async function loadMyCourses() {
+    if (coursesLoaded) return;
+
+    const loader = document.getElementById("courses-loader");
+    const empty = document.getElementById("courses-empty");
+    const grid = document.getElementById("courses-grid");
+    if (!loader || !empty || !grid) return;
+
+    try {
+      const res = await fetch("./profile/my-courses", {
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+      });
+      const data = await res.json();
+
+      loader.style.display = "none";
+
+      if (!data.success || data.total === 0) {
+        empty.style.display = "block";
+        return;
+      }
+
+      data.courses.forEach((course, i) => {
+        const card = buildCourseCard(course);
+        card.style.opacity = "0";
+        card.style.transform = "translateY(16px)";
+        card.style.transition = `opacity 0.3s ease ${i * 0.07}s, transform 0.3s ease ${i * 0.07}s`;
+        grid.appendChild(card);
+        requestAnimationFrame(() => {
+          card.style.opacity = "1";
+          card.style.transform = "translateY(0)";
+        });
+      });
+
+      grid.style.display = "grid";
+      coursesLoaded = true;
+    } catch {
+      loader.style.display = "none";
+      empty.style.display = "block";
+    }
+  }
+
+  function buildCourseCard(course) {
+    const isExpired = parseInt(course.is_expired) === 1;
+    const daysLeft = parseInt(course.days_remaining);
+    const isWarning = !isExpired && daysLeft <= 14;
+    const rating = parseFloat(course.course_rate) || 0;
+
+    // Badge accès
+    let accessBadge = "";
+    if (isExpired)
+      accessBadge = `<span class="course-badge course-badge--expired"><i class="fas fa-lock"></i> Expiré</span>`;
+    else if (isWarning)
+      accessBadge = `<span class="course-badge course-badge--warning"><i class="fas fa-clock"></i> Bientôt expiré</span>`;
+    else
+      accessBadge = `<span class="course-badge course-badge--active"><i class="fas fa-circle-check"></i> Actif</span>`;
+
+    // Expiration
+    let expiryHtml = "";
+    let expiryClass = "";
+    if (isExpired) {
+      expiryClass = "course-card__expiry--expired";
+      expiryHtml = `<i class="fas fa-circle-xmark"></i> Accès expiré le ${course.expires_at_formatted}`;
+    } else if (isWarning) {
+      expiryClass = "course-card__expiry--warning";
+      expiryHtml = `<i class="fas fa-triangle-exclamation"></i> Expire dans ${daysLeft}j — ${course.expires_at_formatted}`;
+    } else {
+      expiryHtml = `<i class="fas fa-calendar-check"></i> Accès jusqu'au ${course.expires_at_formatted}`;
+    }
+
+    // Étoiles
+    let starsHtml = "";
+    if (rating > 0) {
+      for (let s = 0; s < Math.floor(rating); s++)
+        starsHtml += '<i class="fas fa-star"></i>';
+      if (rating % 1 >= 0.5)
+        starsHtml += '<i class="fas fa-star-half-stroke"></i>';
+    }
+
+    // Thumbnail
+    const thumbHtml = course.profile_picture
+      ? `<img class="course-card__thumb" src="${course.profile_picture}" alt="" loading="lazy"
+               onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+           <div class="course-card__thumb-placeholder" style="display:none;"><i class="fas fa-book-open"></i></div>`
+      : `<div class="course-card__thumb-placeholder"><i class="fas fa-book-open"></i></div>`;
+
+    // Bouton
+    const btnHtml = isExpired
+      ? `<button class="course-card__btn course-card__btn--expired" disabled>
+               <i class="fas fa-lock"></i> Accès expiré
+           </button>`
+      : `<a href="./courses/view/${course.id}" class="course-card__btn">
+               <i class="fas fa-play"></i> Continuer le cours
+           </a>`;
+
+    const card = document.createElement("div");
+    card.className = "course-card";
+    card.innerHTML = `
+        ${thumbHtml}
+        <div class="course-card__body">
+            <div class="course-card__badges">
+                ${
+                  parseInt(course.is_free) === 1
+                    ? `<span class="course-badge course-badge--free"><i class="fas fa-gift"></i> Gratuit</span>`
+                    : `<span class="course-badge course-badge--paid"><i class="fas fa-crown"></i> Premium</span>`
+                }
+                <span class="course-badge course-badge--level">
+                    <i class="fas fa-graduation-cap"></i> ${course.learner_level}
+                </span>
+                ${accessBadge}
+            </div>
+
+            <h3 class="course-card__title">${course.title_course}</h3>
+            <p class="course-card__desc">${course.description_course}</p>
+
+            ${rating > 0 ? `<div class="course-card__rating">${starsHtml}<span>${rating.toFixed(1)}</span></div>` : ""}
+
+            <div class="course-card__stats">
+                <div class="course-stat">
+                    <span class="course-stat__value">${course.total_modules}</span>
+                    <span class="course-stat__label">Module(s)</span>
+                </div>
+                <div class="course-stat">
+                    <span class="course-stat__value">${course.total_lessons}</span>
+                    <span class="course-stat__label">Leçon(s)</span>
+                </div>
+                <div class="course-stat">
+                    <span class="course-stat__value">${course.duration_label}</span>
+                    <span class="course-stat__label">Durée</span>
+                </div>
+            </div>
+
+            <div class="course-card__expiry ${expiryClass}">${expiryHtml}</div>
+
+            ${btnHtml}
+        </div>
+    `;
+
+    return card;
+  }
+
+  // Déclenche le chargement quand on clique sur l'onglet "Mes cours"
+  menuLinks.forEach((link) => {
+    if (link.getAttribute("data-section") === "section-courses") {
+      link.addEventListener("click", loadMyCourses);
+    }
+  });
 
   // ===== DÉCONNEXION =====
   document

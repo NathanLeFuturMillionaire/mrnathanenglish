@@ -1,9 +1,7 @@
 <?php
-// Détection automatique du chemin de base
 $basePath = '/mrnathanenglish/public';
 ?>
-<!-- Relis le fichier css du header -->
-<link rel="stylesheet" href="../public/css/layouts/header.min.css">
+<link rel="stylesheet" href="<?= $basePath ?>/css/layouts/header.min.css">
 
 <header class="main-header">
     <div class="container">
@@ -19,13 +17,41 @@ $basePath = '/mrnathanenglish/public';
                     <li><a href="<?= $basePath ?>/">Accueil</a></li>
 
                     <li class="dropdown">
-                        <a href="#" class="dropdown-toggle">Examens ▾</a>
+                        <a href="#" class="dropdown-toggle">
+                            Examens
+                            <i class="fas fa-chevron-down" style="font-size:0.65rem;margin-left:4px;transition:transform 0.2s ease;"></i>
+                        </a>
                         <ul class="dropdown-content">
-                            <li><a href="<?= $basePath ?>/toefl">TOEFL <small>- Test of English as a Foreign Language</small></a></li>
-                            <li><a href="<?= $basePath ?>/ielts">IELTS <small>- International English Language Testing System</small></a></li>
-                            <li><a href="<?= $basePath ?>/cambridge">Cambridge English <small>- Certificats Cambridge</small></a></li>
-                            <li><a href="<?= $basePath ?>/toeic">TOEIC <small>- Test of English for International Communication</small></a></li>
-                            <li><a href="<?= $basePath ?>/pte">PTE Academic <small>- Pearson Test of English Academic</small></a></li>
+                            <li>
+                                <a href="<?= $basePath ?>/toefl">
+                                    TOEFL
+                                    <small>Test of English as a Foreign Language</small>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="<?= $basePath ?>/ielts">
+                                    IELTS
+                                    <small>International English Language Testing System</small>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="<?= $basePath ?>/cambridge">
+                                    Cambridge English
+                                    <small>Certificats Cambridge</small>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="<?= $basePath ?>/toeic">
+                                    TOEIC
+                                    <small>Test of English for International Communication</small>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="<?= $basePath ?>/pte">
+                                    PTE Academic
+                                    <small>Pearson Test of English Academic</small>
+                                </a>
+                            </li>
                         </ul>
                     </li>
 
@@ -35,7 +61,6 @@ $basePath = '/mrnathanenglish/public';
                         <li><a href="<?= $basePath ?>/dashboard">Créer un cours</a></li>
                     <?php endif; ?>
 
-                    <!-- Profil -->
                     <?php
                     $profilePicture = $_SESSION['user']['profile_picture']
                         ?? $_SESSION['user']['profile']['profile_picture']
@@ -45,21 +70,21 @@ $basePath = '/mrnathanenglish/public';
                         <img
                             src="<?= $basePath ?>/uploads/profiles/<?= htmlspecialchars($profilePicture) ?>"
                             alt="Photo de profil"
-                            style="width:40px;height:40px;border-radius:50%;vertical-align:middle;object-fit:cover;">
+                            style="width:38px;height:38px;border-radius:50%;vertical-align:middle;object-fit:cover;cursor:pointer;">
 
                         <ul class="dropdown-menu" id="dropdown-menu">
                             <div class="dropdown-content-now">
-
                                 <li>
                                     <a href="<?= $basePath ?>/profile" class="username-on-dropdown">
                                         <img
                                             src="<?= $basePath ?>/uploads/profiles/<?= htmlspecialchars($profilePicture) ?>"
                                             alt="Photo de profil"
-                                            style="width:40px;height:40px;border-radius:50%;vertical-align:middle;object-fit:cover;">
-                                        <div style="line-height:20px;margin-left:10px;" class="username">
-                                            <?= htmlspecialchars($_SESSION['user']['username'] ?? 'Utilisateur') ?>
-                                            <br>
-                                            <small style="display:inline-block;font-size:0.7em;">
+                                            style="width:38px;height:38px;border-radius:50%;object-fit:cover;flex-shrink:0;">
+                                        <div style="line-height:1.4;margin-left:10px;overflow:hidden;">
+                                            <span style="display:block;font-weight:700;font-size:0.875rem;color:#0B1F45;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                                                <?= htmlspecialchars($_SESSION['user']['username'] ?? 'Utilisateur') ?>
+                                            </span>
+                                            <small style="font-size:0.72rem;color:#94a3b8;">
                                                 <?php
                                                 $level = $_SESSION['user']['english_level'] ?? '';
                                                 echo match ($level) {
@@ -72,10 +97,24 @@ $basePath = '/mrnathanenglish/public';
                                         </div>
                                     </a>
                                 </li>
-
-                                <li><a href="<?= $basePath ?>/lessons">Cours</a></li>
-                                <li><a href="<?= $basePath ?>/logout">Déconnexion</a></li>
-
+                                <li>
+                                    <a href="<?= $basePath ?>/courses">
+                                        <i class="fas fa-book-open" style="width:16px;color:#94a3b8;"></i>
+                                        Mes cours
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="<?= $basePath ?>/profile">
+                                        <i class="fas fa-user" style="width:16px;color:#94a3b8;"></i>
+                                        Mon profil
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="<?= $basePath ?>/logout" style="color:#dc2626;">
+                                        <i class="fas fa-right-from-bracket" style="width:16px;color:#dc2626;"></i>
+                                        Déconnexion
+                                    </a>
+                                </li>
                             </div>
                         </ul>
                     </li>
@@ -85,19 +124,56 @@ $basePath = '/mrnathanenglish/public';
                     <li><a href="<?= $basePath ?>/">Accueil</a></li>
 
                     <li class="dropdown">
-                        <a href="#" class="dropdown-toggle">Examens ▾</a>
+                        <a href="#" class="dropdown-toggle">
+                            Examens
+                            <i class="fas fa-chevron-down" style="font-size:0.65rem;margin-left:4px;transition:transform 0.2s ease;"></i>
+                        </a>
                         <ul class="dropdown-content">
-                            <li><a href="<?= $basePath ?>/toefl">TOEFL <small>- Test of English as a Foreign Language</small></a></li>
-                            <li><a href="<?= $basePath ?>/ielts">IELTS <small>- International English Language Testing System</small></a></li>
-                            <li><a href="<?= $basePath ?>/cambridge">Cambridge English <small>- Certificats Cambridge</small></a></li>
-                            <li><a href="<?= $basePath ?>/toeic">TOEIC <small>- Test of English for International Communication</small></a></li>
-                            <li><a href="<?= $basePath ?>/pte">PTE Academic <small>- Pearson Test of English Academic</small></a></li>
+                            <li>
+                                <a href="<?= $basePath ?>/toefl">
+                                    TOEFL
+                                    <small>Test of English as a Foreign Language</small>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="<?= $basePath ?>/ielts">
+                                    IELTS
+                                    <small>International English Language Testing System</small>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="<?= $basePath ?>/cambridge">
+                                    Cambridge English
+                                    <small>Certificats Cambridge</small>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="<?= $basePath ?>/toeic">
+                                    TOEIC
+                                    <small>Test of English for International Communication</small>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="<?= $basePath ?>/pte">
+                                    PTE Academic
+                                    <small>Pearson Test of English Academic</small>
+                                </a>
+                            </li>
                         </ul>
                     </li>
 
                     <li><a href="<?= $basePath ?>/courses">Cours</a></li>
                     <li><a href="<?= $basePath ?>/register">Inscription</a></li>
-                    <li><a href="<?= $basePath ?>/login">Connexion</a></li>
+                    <li>
+                        <a href="<?= $basePath ?>/login" style="
+                            background: #0B1F45;
+                            color: #fff !important;
+                            padding: 8px 18px !important;
+                            border-radius: 8px;
+                        ">
+                            Connexion
+                        </a>
+                    </li>
 
                 <?php endif; ?>
             </ul>
@@ -140,28 +216,33 @@ $basePath = '/mrnathanenglish/public';
                     ?? $_SESSION['user']['profile']['profile_picture']
                     ?? 'default.png';
                 ?>
-                <li style="display:flex;align-items:center;">
-                    <img
-                        src="<?= $basePath ?>/uploads/profiles/<?= htmlspecialchars($profilePicture) ?>"
-                        alt="Photo de profil"
-                        style="width:40px;height:40px;border-radius:50%;object-fit:cover;">
-                    <div style="line-height:20px;margin-left:10px;" class="username">
-                        <?= htmlspecialchars($_SESSION['user']['username'] ?? 'Utilisateur') ?>
-                        <br>
-                        <small style="display:inline-block;font-size:0.7em;">
-                            <?php
-                            $level = $_SESSION['user']['english_level'] ?? '';
-                            echo match ($level) {
-                                'beginner'     => 'Débutant',
-                                'intermediate' => 'Intermédiaire',
-                                default        => 'Niveau avancé',
-                            };
-                            ?>
-                        </small>
-                    </div>
+                <li>
+                    <a href="<?= $basePath ?>/profile" style="display:flex;align-items:center;gap:12px;">
+                        <img
+                            src="<?= $basePath ?>/uploads/profiles/<?= htmlspecialchars($profilePicture) ?>"
+                            alt="Photo de profil"
+                            style="width:38px;height:38px;border-radius:50%;object-fit:cover;flex-shrink:0;">
+                        <div style="line-height:1.4;">
+                            <span style="display:block;font-weight:700;font-size:0.9rem;color:#0B1F45;">
+                                <?= htmlspecialchars($_SESSION['user']['username'] ?? 'Utilisateur') ?>
+                            </span>
+                            <small style="font-size:0.72rem;color:#94a3b8;">
+                                <?php
+                                $level = $_SESSION['user']['english_level'] ?? '';
+                                echo match ($level) {
+                                    'beginner'     => 'Débutant',
+                                    'intermediate' => 'Intermédiaire',
+                                    default        => 'Niveau avancé',
+                                };
+                                ?>
+                            </small>
+                        </div>
+                    </a>
                 </li>
 
-                <li><a href="<?= $basePath ?>/logout">Déconnexion</a></li>
+                <li><a href="<?= $basePath ?>/logout" style="color:#dc2626;">
+                        <i class="fas fa-right-from-bracket"></i> Déconnexion
+                    </a></li>
 
             <?php else: ?>
 
@@ -189,4 +270,6 @@ $basePath = '/mrnathanenglish/public';
     <div class="overlay"></div>
 </header>
 
-<script src="js/header.min.js" defer></script>
+
+<!-- ===== SCRIPT HEADER — chemin absolu ===== -->
+<script src="<?= $basePath ?>/js/header.min.js" defer></script>

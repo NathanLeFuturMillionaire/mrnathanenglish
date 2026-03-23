@@ -281,7 +281,7 @@ class AdminController
      * Page réservée à l'admin / formateur :
      * Liste des cours publiés + brouillons
      */
-    public function listCourses(): void
+    public function listCoursesAdmin(): void
     {
 
         if (session_status() !== PHP_SESSION_ACTIVE) {
