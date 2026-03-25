@@ -29,837 +29,845 @@ if ($_SESSION['user']['is_confirmed'] != 1) {
     <div class="profile-layout">
 
         <!-- ===== SIDEBAR ===== -->
-        <aside class="profile-menu">
+        <aside class="profile-menu" id="profile-sidebar>
 
-            <div class="menu-header">
-                <?php
-                $avatar = '../public/uploads/profiles/default.png';
-                if (!empty($_SESSION["user"]["profile_picture"]))
-                    $avatar = '../public/uploads/profiles/' . $_SESSION["user"]["profile_picture"];
-                elseif (!empty($_SESSION["user"]["profile"]["profile_picture"]))
-                    $avatar = '../public/uploads/profiles/' . $_SESSION["user"]["profile"]["profile_picture"];
+        <!-- Bouton toggle -->
+            <div class=" sidebar-toggle">
+            <button class="sidebar-toggle__btn" id="sidebar-toggle-btn" title="Réduire la sidebar">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+    </div>
 
-                $level = $_SESSION["user"]["english_level"] ?? '';
-                $levelLabels = [
-                    'beginner'     => 'Débutant',
-                    'intermediate' => 'Intermédiaire',
-                    'advanced'     => 'Avancé',
-                ];
-                $levelLabel = $levelLabels[$level] ?? ucfirst($level);
-                ?>
-                <div class="avatar-wrapper">
-                    <img src="<?= $avatar ?>" alt="Avatar" class="avatar" loading="lazy" width="88" height="88">
-                    <span class="avatar-status"></span>
+
+    <div class="menu-header">
+        <?php
+        $avatar = '../public/uploads/profiles/default.png';
+        if (!empty($_SESSION["user"]["profile_picture"]))
+            $avatar = '../public/uploads/profiles/' . $_SESSION["user"]["profile_picture"];
+        elseif (!empty($_SESSION["user"]["profile"]["profile_picture"]))
+            $avatar = '../public/uploads/profiles/' . $_SESSION["user"]["profile"]["profile_picture"];
+
+        $level = $_SESSION["user"]["english_level"] ?? '';
+        $levelLabels = [
+            'beginner'     => 'Débutant',
+            'intermediate' => 'Intermédiaire',
+            'advanced'     => 'Avancé',
+        ];
+        $levelLabel = $levelLabels[$level] ?? ucfirst($level);
+        ?>
+        <div class="avatar-wrapper">
+            <img src="<?= $avatar ?>" alt="Avatar" class="avatar" loading="lazy" width="88" height="88">
+            <span class="avatar-status"></span>
+        </div>
+        <h2><?= htmlspecialchars($_SESSION["user"]["username"]) ?></h2>
+        <span class="level-badge" data-field="level-badge">
+            <i class="fas fa-graduation-cap"></i>
+            <?= htmlspecialchars($user['profile']['english_level_label'] ?? $levelLabel) ?>
+        </span>
+
+        <?php if ($completion['percentage'] < 100): ?>
+            <div class="profile-completion">
+                <div class="profile-completion__header">
+                    <span class="profile-completion__label">Profil complété</span>
+                    <span class="profile-completion__percent" id="completion-percent">
+                        <?= $completion['percentage'] ?>%
+                    </span>
                 </div>
-                <h2><?= htmlspecialchars($_SESSION["user"]["username"]) ?></h2>
-                <span class="level-badge" data-field="level-badge">
-                    <i class="fas fa-graduation-cap"></i>
-                    <?= htmlspecialchars($user['profile']['english_level_label'] ?? $levelLabel) ?>
-                </span>
-
-                <?php if ($completion['percentage'] < 100): ?>
-                    <div class="profile-completion">
-                        <div class="profile-completion__header">
-                            <span class="profile-completion__label">Profil complété</span>
-                            <span class="profile-completion__percent" id="completion-percent">
-                                <?= $completion['percentage'] ?>%
-                            </span>
-                        </div>
-                        <div class="profile-completion__bar">
-                            <div
-                                class="profile-completion__fill profile-completion__fill--<?= $completion['color'] ?>"
-                                id="completion-fill"
-                                style="width: <?= $completion['percentage'] ?>%">
-                            </div>
-                        </div>
-                        <div class="profile-completion__details" id="completion-details">
-                            <span class="profile-completion__hint">
-                                <i class="fas fa-circle-info"></i>
-                                <?= $completion['filled'] ?>/<?= $completion['total'] ?> champs remplis
-                            </span>
-                            <?php if (!empty($completion['missing'])): ?>
-                                <div class="profile-completion__missing">
-                                    <?php foreach (array_slice($completion['missing'], 0, 3) as $missing): ?>
-                                        <span class="profile-completion__tag">
-                                            <i class="fas fa-plus"></i>
-                                            <?= htmlspecialchars($missing) ?>
-                                        </span>
-                                    <?php endforeach; ?>
-                                    <?php if (count($completion['missing']) > 3): ?>
-                                        <span class="profile-completion__tag profile-completion__tag--more">
-                                            +<?= count($completion['missing']) - 3 ?> autre(s)
-                                        </span>
-                                    <?php endif; ?>
-                                </div>
+                <div class="profile-completion__bar">
+                    <div
+                        class="profile-completion__fill profile-completion__fill--<?= $completion['color'] ?>"
+                        id="completion-fill"
+                        style="width: <?= $completion['percentage'] ?>%">
+                    </div>
+                </div>
+                <div class="profile-completion__details" id="completion-details">
+                    <span class="profile-completion__hint">
+                        <i class="fas fa-circle-info"></i>
+                        <?= $completion['filled'] ?>/<?= $completion['total'] ?> champs remplis
+                    </span>
+                    <?php if (!empty($completion['missing'])): ?>
+                        <div class="profile-completion__missing">
+                            <?php foreach (array_slice($completion['missing'], 0, 3) as $missing): ?>
+                                <span class="profile-completion__tag">
+                                    <i class="fas fa-plus"></i>
+                                    <?= htmlspecialchars($missing) ?>
+                                </span>
+                            <?php endforeach; ?>
+                            <?php if (count($completion['missing']) > 3): ?>
+                                <span class="profile-completion__tag profile-completion__tag--more">
+                                    +<?= count($completion['missing']) - 3 ?> autre(s)
+                                </span>
                             <?php endif; ?>
                         </div>
-                    </div>
-                <?php endif; ?>
-
-            </div>
-
-            <div class="menu-stats">
-                <div class="menu-stat">
-                    <span class="menu-stat__value">0</span>
-                    <span class="menu-stat__label">Cours</span>
-                </div>
-                <div class="menu-stat">
-                    <span class="menu-stat__value">0</span>
-                    <span class="menu-stat__label">Leçons</span>
-                </div>
-                <div class="menu-stat">
-                    <span class="menu-stat__value">0</span>
-                    <span class="menu-stat__label">Jours</span>
-                </div>
-                <div class="menu-stat">
-                    <span class="menu-stat__value">0%</span>
-                    <span class="menu-stat__label">Complété</span>
+                    <?php endif; ?>
                 </div>
             </div>
+        <?php endif; ?>
 
-            <nav class="menu-nav">
-                <span class="menu-nav-section">Général</span>
-                <div class="menu-links">
-                    <a href="#infos" class="active" data-section="infos">
-                        <i class="fas fa-user"></i> Mon profil
-                    </a>
-                    <li>
-                        <a href="#section-courses" data-section="section-courses">
-                            <i class="fas fa-book-open"></i> Mes cours
-                        </a>
-                    </li>
-                    <a href="#progression" data-section="progression">
-                        <i class="fas fa-chart-line"></i> Progression
-                    </a>
+    </div>
+
+    <div class="menu-stats">
+        <div class="menu-stat">
+            <span class="menu-stat__value">0</span>
+            <span class="menu-stat__label">Cours</span>
+        </div>
+        <div class="menu-stat">
+            <span class="menu-stat__value">0</span>
+            <span class="menu-stat__label">Leçons</span>
+        </div>
+        <div class="menu-stat">
+            <span class="menu-stat__value">0</span>
+            <span class="menu-stat__label">Jours</span>
+        </div>
+        <div class="menu-stat">
+            <span class="menu-stat__value">0%</span>
+            <span class="menu-stat__label">Complété</span>
+        </div>
+    </div>
+
+    <nav class="menu-nav">
+        <span class="menu-nav-section">Général</span>
+        <div class="menu-links">
+            <a href="#infos" class="active" data-section="infos">
+                <i class="fas fa-user"></i> Mon profil
+            </a>
+            <li>
+                <a href="#section-courses" data-section="section-courses">
+                    <i class="fas fa-book-open"></i> Mes cours
+                </a>
+            </li>
+            <a href="#progression" data-section="progression">
+                <i class="fas fa-chart-line"></i> Progression
+            </a>
+        </div>
+        <span class="menu-nav-section">Récompenses</span>
+        <div class="menu-links">
+            <a href="#badges" data-section="badges">
+                <i class="fas fa-award"></i> Badges
+            </a>
+            <a href="#objectifs" data-section="objectifs">
+                <i class="fas fa-bullseye"></i> Objectifs
+            </a>
+        </div>
+        <span class="menu-nav-section">Compte</span>
+        <div class="menu-links">
+            <a href="#settings" data-section="settings">
+                <i class="fas fa-gear"></i> Paramètres
+            </a>
+            <a href="#subscription" data-section="subscription">
+                <i class="fas fa-credit-card"></i> Abonnement
+            </a>
+        </div>
+    </nav>
+    <div class="profile-menu__footer">
+        &copy; <?= date('Y') ?> OpenDoorsClass
+    </div>
+    </aside>
+
+    <!-- ===== CONTENU ===== -->
+    <main class="profile-content">
+
+        <!-- ===== MON PROFIL ===== -->
+        <section id="infos" class="profile-section active">
+
+            <div class="section-header">
+                <div>
+                    <h1 class="section-title">Mon profil</h1>
+                    <p class="section-subtitle">Vos informations personnelles et votre compte</p>
                 </div>
-                <span class="menu-nav-section">Récompenses</span>
-                <div class="menu-links">
-                    <a href="#badges" data-section="badges">
-                        <i class="fas fa-award"></i> Badges
-                    </a>
-                    <a href="#objectifs" data-section="objectifs">
-                        <i class="fas fa-bullseye"></i> Objectifs
-                    </a>
-                </div>
-                <span class="menu-nav-section">Compte</span>
-                <div class="menu-links">
-                    <a href="#settings" data-section="settings">
-                        <i class="fas fa-gear"></i> Paramètres
-                    </a>
-                    <a href="#subscription" data-section="subscription">
-                        <i class="fas fa-credit-card"></i> Abonnement
-                    </a>
-                </div>
-            </nav>
-            <div class="profile-menu__footer">
-                &copy; <?= date('Y') ?> OpenDoorsClass
+                <button class="btn-edit-profile" id="btn-edit-toggle">
+                    <i class="fas fa-pen"></i> Modifier
+                </button>
             </div>
-        </aside>
 
-        <!-- ===== CONTENU ===== -->
-        <main class="profile-content">
+            <div id="profile-view">
 
-            <!-- ===== MON PROFIL ===== -->
-            <section id="infos" class="profile-section active">
-
-                <div class="section-header">
-                    <div>
-                        <h1 class="section-title">Mon profil</h1>
-                        <p class="section-subtitle">Vos informations personnelles et votre compte</p>
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">
+                            <i class="fas fa-user"></i>
+                            Informations personnelles
+                        </h2>
                     </div>
-                    <button class="btn-edit-profile" id="btn-edit-toggle">
-                        <i class="fas fa-pen"></i> Modifier
-                    </button>
+                    <div class="info-list">
+                        <div class="info-item">
+                            <label>Nom d'utilisateur</label>
+                            <p data-field="username"><?= htmlspecialchars($user['username'] ?? 'Non renseigné') ?></p>
+                        </div>
+                        <div class="info-item">
+                            <label>Nom complet</label>
+                            <p data-field="fullname"><?= htmlspecialchars($user['fullname'] ?? 'Non renseigné') ?></p>
+                        </div>
+                        <div class="info-item">
+                            <label>Adresse e-mail</label>
+                            <p data-field="email"><?= htmlspecialchars($user['email'] ?? 'Non renseigné') ?></p>
+                        </div>
+                        <div class="info-item">
+                            <label>Numéro de téléphone</label>
+                            <p data-field="phone"><?= htmlspecialchars($user['phone_number'] ?? 'Non renseigné') ?></p>
+                        </div>
+                        <div class="info-item">
+                            <label>Pays</label>
+                            <p data-field="country"><?= htmlspecialchars($user['country'] ?? 'Non renseigné') ?></p>
+                        </div>
+                        <div class="info-item">
+                            <label>Date de naissance</label>
+                            <p data-field="birth_date"><?= htmlspecialchars($user['birth_date_formatted']) ?></p>
+                        </div>
+                        <div class="info-item">
+                            <label>Niveau d'anglais</label>
+                            <p data-field="english_level"><?= htmlspecialchars($user['english_level_label']) ?></p>
+                        </div>
+                        <div class="info-item">
+                            <label>Langue maternelle</label>
+                            <p data-field="native_language"><?= htmlspecialchars($user['profile']['native_language_label'] ?? 'Non renseigné') ?></p>
+                        </div>
+                        <div class="info-item">
+                            <label>Biographie</label>
+                            <p data-field="bio"><?= nl2br(htmlspecialchars($user['bio'] ?? 'Aucune biographie.')) ?></p>
+                        </div>
+                        <div class="info-item">
+                            <label>État du compte</label>
+                            <p>
+                                <span class="status <?= !empty($user['is_confirmed']) ? 'success' : 'danger' ?>">
+                                    <?= !empty($user['is_confirmed']) ? 'Confirmé' : 'Non confirmé' ?>
+                                </span>
+                            </p>
+                        </div>
+                        <div class="info-item">
+                            <label>Membre depuis</label>
+                            <p><?= htmlspecialchars($user['created_at_formatted']) ?></p>
+                        </div>
+                    </div>
                 </div>
 
-                <div id="profile-view">
-
-                    <div class="card">
-                        <div class="card-header">
-                            <h2 class="card-title">
-                                <i class="fas fa-user"></i>
-                                Informations personnelles
-                            </h2>
-                        </div>
-                        <div class="info-list">
-                            <div class="info-item">
-                                <label>Nom d'utilisateur</label>
-                                <p data-field="username"><?= htmlspecialchars($user['username'] ?? 'Non renseigné') ?></p>
-                            </div>
-                            <div class="info-item">
-                                <label>Nom complet</label>
-                                <p data-field="fullname"><?= htmlspecialchars($user['fullname'] ?? 'Non renseigné') ?></p>
-                            </div>
-                            <div class="info-item">
-                                <label>Adresse e-mail</label>
-                                <p data-field="email"><?= htmlspecialchars($user['email'] ?? 'Non renseigné') ?></p>
-                            </div>
-                            <div class="info-item">
-                                <label>Numéro de téléphone</label>
-                                <p data-field="phone"><?= htmlspecialchars($user['phone_number'] ?? 'Non renseigné') ?></p>
-                            </div>
-                            <div class="info-item">
-                                <label>Pays</label>
-                                <p data-field="country"><?= htmlspecialchars($user['country'] ?? 'Non renseigné') ?></p>
-                            </div>
-                            <div class="info-item">
-                                <label>Date de naissance</label>
-                                <p data-field="birth_date"><?= htmlspecialchars($user['birth_date_formatted']) ?></p>
-                            </div>
-                            <div class="info-item">
-                                <label>Niveau d'anglais</label>
-                                <p data-field="english_level"><?= htmlspecialchars($user['english_level_label']) ?></p>
-                            </div>
-                            <div class="info-item">
-                                <label>Langue maternelle</label>
-                                <p data-field="native_language"><?= htmlspecialchars($user['profile']['native_language_label'] ?? 'Non renseigné') ?></p>
-                            </div>
-                            <div class="info-item">
-                                <label>Biographie</label>
-                                <p data-field="bio"><?= nl2br(htmlspecialchars($user['bio'] ?? 'Aucune biographie.')) ?></p>
-                            </div>
-                            <div class="info-item">
-                                <label>État du compte</label>
-                                <p>
-                                    <span class="status <?= !empty($user['is_confirmed']) ? 'success' : 'danger' ?>">
-                                        <?= !empty($user['is_confirmed']) ? 'Confirmé' : 'Non confirmé' ?>
-                                    </span>
-                                </p>
-                            </div>
-                            <div class="info-item">
-                                <label>Membre depuis</label>
-                                <p><?= htmlspecialchars($user['created_at_formatted']) ?></p>
-                            </div>
-                        </div>
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">
+                            <i class="fas fa-clock-rotate-left"></i>
+                            Historique des connexions
+                        </h2>
                     </div>
 
-                    <div class="card">
-                        <div class="card-header">
-                            <h2 class="card-title">
-                                <i class="fas fa-clock-rotate-left"></i>
-                                Historique des connexions
-                            </h2>
-                        </div>
-
-                        <?php if (empty($loginHistory)): ?>
-                            <p style="color:var(--text-muted);font-size:0.88rem;">Aucune connexion enregistrée.</p>
-                        <?php else: ?>
-                            <ul class="login-history" id="login-history-list">
-                                <?php foreach ($loginHistory as $index => $login): ?>
-                                    <li class="login-history__item <?= $index === 0 ? 'login-history__item--current' : '' ?>">
-                                        <div class="login-history__icon">
-                                            <?php if ($login['device'] === 'mobile'): ?>
-                                                <i class="fas fa-mobile-screen"></i>
-                                            <?php elseif ($login['device'] === 'tablette'): ?>
-                                                <i class="fas fa-tablet-screen-button"></i>
-                                            <?php else: ?>
-                                                <i class="fas fa-display"></i>
-                                            <?php endif; ?>
-                                        </div>
-                                        <div class="login-history__info">
-                                            <span class="login-history__device">
-                                                <?= htmlspecialchars($login['browser']) ?> sur <?= htmlspecialchars($login['os']) ?>
-                                                <?php if ($index === 0): ?>
-                                                    <span class="login-history__badge">Session actuelle</span>
-                                                <?php endif; ?>
-                                            </span>
-                                            <span class="login-history__meta">
-                                                <i class="fas fa-location-dot"></i>
-                                                <?= htmlspecialchars($login['ip_address']) ?>
-                                                <span class="sep">·</span>
-                                                <i class="fas fa-clock"></i>
-                                                <?= htmlspecialchars($login['created_at']) ?>
-                                            </span>
-                                        </div>
-                                        <?php if ($index !== 0): ?>
-                                            <button
-                                                class="login-history__delete"
-                                                data-id="<?= (int) $login['id'] ?>"
-                                                title="Supprimer cette session">
-                                                <i class="fas fa-trash-can"></i>
-                                            </button>
+                    <?php if (empty($loginHistory)): ?>
+                        <p style="color:var(--text-muted);font-size:0.88rem;">Aucune connexion enregistrée.</p>
+                    <?php else: ?>
+                        <ul class="login-history" id="login-history-list">
+                            <?php foreach ($loginHistory as $index => $login): ?>
+                                <li class="login-history__item <?= $index === 0 ? 'login-history__item--current' : '' ?>">
+                                    <div class="login-history__icon">
+                                        <?php if ($login['device'] === 'mobile'): ?>
+                                            <i class="fas fa-mobile-screen"></i>
+                                        <?php elseif ($login['device'] === 'tablette'): ?>
+                                            <i class="fas fa-tablet-screen-button"></i>
+                                        <?php else: ?>
+                                            <i class="fas fa-display"></i>
                                         <?php endif; ?>
-                                    </li>
-                                <?php endforeach; ?>
-                            </ul>
-                            <?php if ($totalLogins > 4): ?>
-                                <div class="login-history__more">
-                                    <button type="button" id="btn-show-all-logins">
-                                        <i class="fas fa-clock-rotate-left"></i>
-                                        Voir toutes les connexions
-                                        <span class="login-history__more-count"><?= $totalLogins ?> au total</span>
-                                        <i class="fas fa-chevron-down login-history__more-arrow"></i>
-                                    </button>
-                                </div>
-                            <?php endif; ?>
+                                    </div>
+                                    <div class="login-history__info">
+                                        <span class="login-history__device">
+                                            <?= htmlspecialchars($login['browser']) ?> sur <?= htmlspecialchars($login['os']) ?>
+                                            <?php if ($index === 0): ?>
+                                                <span class="login-history__badge">Session actuelle</span>
+                                            <?php endif; ?>
+                                        </span>
+                                        <span class="login-history__meta">
+                                            <i class="fas fa-location-dot"></i>
+                                            <?= htmlspecialchars($login['ip_address']) ?>
+                                            <span class="sep">·</span>
+                                            <i class="fas fa-clock"></i>
+                                            <?= htmlspecialchars($login['created_at']) ?>
+                                        </span>
+                                    </div>
+                                    <?php if ($index !== 0): ?>
+                                        <button
+                                            class="login-history__delete"
+                                            data-id="<?= (int) $login['id'] ?>"
+                                            title="Supprimer cette session">
+                                            <i class="fas fa-trash-can"></i>
+                                        </button>
+                                    <?php endif; ?>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                        <?php if ($totalLogins > 4): ?>
+                            <div class="login-history__more">
+                                <button type="button" id="btn-show-all-logins">
+                                    <i class="fas fa-clock-rotate-left"></i>
+                                    Voir toutes les connexions
+                                    <span class="login-history__more-count"><?= $totalLogins ?> au total</span>
+                                    <i class="fas fa-chevron-down login-history__more-arrow"></i>
+                                </button>
+                            </div>
                         <?php endif; ?>
-                    </div>
-
+                    <?php endif; ?>
                 </div>
 
-                <!-- ===== FORMULAIRE ÉDITION ===== -->
-                <div id="profile-edit" style="display:none;">
-                    <div class="card edit-card">
-                        <div class="card-header">
-                            <h2 class="card-title">
-                                <i class="fas fa-pen"></i>
-                                Modifier mon profil
-                            </h2>
-                            <button class="btn-cancel-edit" id="btn-cancel-edit">
-                                <i class="fas fa-xmark"></i> Annuler
-                            </button>
+            </div>
+
+            <!-- ===== FORMULAIRE ÉDITION ===== -->
+            <div id="profile-edit" style="display:none;">
+                <div class="card edit-card">
+                    <div class="card-header">
+                        <h2 class="card-title">
+                            <i class="fas fa-pen"></i>
+                            Modifier mon profil
+                        </h2>
+                        <button class="btn-cancel-edit" id="btn-cancel-edit">
+                            <i class="fas fa-xmark"></i> Annuler
+                        </button>
+                    </div>
+
+                    <form id="profile-edit-form" enctype="multipart/form-data">
+
+                        <div class="edit-avatar-section">
+                            <div class="edit-avatar-wrapper">
+                                <img src="<?= $avatar ?>" alt="Avatar" id="avatar-preview" class="edit-avatar-preview" width="80" height="80">
+                                <label for="profile_picture" class="edit-avatar-btn" title="Changer la photo">
+                                    <i class="fas fa-camera"></i>
+                                </label>
+                                <input type="file" id="profile_picture" name="profile_picture" accept="image/jpeg,image/png,image/webp" style="display:none;">
+                            </div>
+                            <div class="edit-avatar-hint">
+                                <p>Cliquez sur l'icône pour changer votre photo</p>
+                                <p>JPG, PNG ou WebP | max 5 Mo</p>
+                            </div>
                         </div>
 
-                        <form id="profile-edit-form" enctype="multipart/form-data">
-
-                            <div class="edit-avatar-section">
-                                <div class="edit-avatar-wrapper">
-                                    <img src="<?= $avatar ?>" alt="Avatar" id="avatar-preview" class="edit-avatar-preview" width="80" height="80">
-                                    <label for="profile_picture" class="edit-avatar-btn" title="Changer la photo">
-                                        <i class="fas fa-camera"></i>
-                                    </label>
-                                    <input type="file" id="profile_picture" name="profile_picture" accept="image/jpeg,image/png,image/webp" style="display:none;">
-                                </div>
-                                <div class="edit-avatar-hint">
-                                    <p>Cliquez sur l'icône pour changer votre photo</p>
-                                    <p>JPG, PNG ou WebP | max 5 Mo</p>
-                                </div>
+                        <div class="edit-grid">
+                            <div class="edit-field">
+                                <label for="edit-username">Nom d'utilisateur</label>
+                                <input type="text" id="edit-username" name="username" value="<?= htmlspecialchars($user['username'] ?? '') ?>" placeholder="Votre nom d'utilisateur" autocomplete="username">
+                                <small class="edit-error" id="err-username"></small>
                             </div>
-
-                            <div class="edit-grid">
-                                <div class="edit-field">
-                                    <label for="edit-username">Nom d'utilisateur</label>
-                                    <input type="text" id="edit-username" name="username" value="<?= htmlspecialchars($user['username'] ?? '') ?>" placeholder="Votre nom d'utilisateur" autocomplete="username">
-                                    <small class="edit-error" id="err-username"></small>
-                                </div>
-                                <div class="edit-field">
-                                    <label for="edit-fullname">Nom complet</label>
-                                    <input type="text" id="edit-fullname" name="fullname" value="<?= htmlspecialchars($user['fullname'] ?? '') ?>" placeholder="Votre nom complet" autocomplete="name">
-                                    <small class="edit-error" id="err-fullname"></small>
-                                </div>
-                                <div class="edit-field">
-                                    <label for="edit-email">Adresse e-mail</label>
-                                    <input type="email" id="edit-email" name="email" value="<?= htmlspecialchars($user['email'] ?? '') ?>" placeholder="votre@email.com" autocomplete="email">
-                                    <small class="edit-error" id="err-email"></small>
-                                </div>
-                                <div class="edit-field">
-                                    <label for="edit-phone">Numéro de téléphone</label>
-                                    <input type="tel" id="edit-phone" name="phone_number" value="<?= htmlspecialchars($user['phone_number'] ?? '') ?>" placeholder="+241 00 00 00 00" autocomplete="tel">
-                                    <small class="edit-error" id="err-phone"></small>
-                                </div>
-                                <div class="edit-field">
-                                    <label for="edit-country">Pays</label>
-                                    <input type="text" id="edit-country" name="country" value="<?= htmlspecialchars($user['country'] ?? '') ?>" placeholder="Votre pays" autocomplete="country-name">
-                                    <small class="edit-error" id="err-country"></small>
-                                </div>
-                                <div class="edit-field">
-                                    <label for="edit-birthdate">Date de naissance</label>
-                                    <input type="date" id="edit-birthdate" name="birth_date" value="<?= htmlspecialchars($user['profile']['birth_date'] ?? '') ?>">
-                                    <small class="edit-error" id="err-birth_date"></small>
-                                </div>
-                                <div class="edit-field">
-                                    <label for="edit-level">Niveau d'anglais</label>
-                                    <select id="edit-level" name="english_level">
-                                        <option value="">-- Choisir un niveau --</option>
-                                        <option value="beginner" <?= ($user['profile']['english_level'] ?? '') === 'beginner' ? 'selected' : '' ?>>Débutant</option>
-                                        <option value="intermediate" <?= ($user['profile']['english_level'] ?? '') === 'intermediate' ? 'selected' : '' ?>>Intermédiaire</option>
-                                        <option value="advanced" <?= ($user['profile']['english_level'] ?? '') === 'advanced' ? 'selected' : '' ?>>Avancé</option>
-                                    </select>
-                                    <small class="edit-error" id="err-english_level"></small>
-                                </div>
-                                <div class="edit-field edit-field--full">
-                                    <label>Langue maternelle</label>
-                                    <div class="lang-dropdown" id="lang-dropdown">
-                                        <div class="lang-trigger" id="lang-trigger">
-                                            <span class="lang-trigger__flag" id="lang-selected-flag">🌐</span>
-                                            <span class="lang-trigger__text" id="lang-selected-text">
-                                                <?php
-                                                $nativeLang = $user['profile']['native_language'] ?? '';
-                                                if ($nativeLang) {
-                                                    $flat = [];
-                                                    foreach ($languages as $langs) {
-                                                        foreach ($langs as $k => $v) $flat[$k] = $v;
-                                                    }
-                                                    echo htmlspecialchars($flat[$nativeLang] ?? '-- Choisir une langue --');
-                                                } else {
-                                                    echo '-- Choisir une langue --';
+                            <div class="edit-field">
+                                <label for="edit-fullname">Nom complet</label>
+                                <input type="text" id="edit-fullname" name="fullname" value="<?= htmlspecialchars($user['fullname'] ?? '') ?>" placeholder="Votre nom complet" autocomplete="name">
+                                <small class="edit-error" id="err-fullname"></small>
+                            </div>
+                            <div class="edit-field">
+                                <label for="edit-email">Adresse e-mail</label>
+                                <input type="email" id="edit-email" name="email" value="<?= htmlspecialchars($user['email'] ?? '') ?>" placeholder="votre@email.com" autocomplete="email">
+                                <small class="edit-error" id="err-email"></small>
+                            </div>
+                            <div class="edit-field">
+                                <label for="edit-phone">Numéro de téléphone</label>
+                                <input type="tel" id="edit-phone" name="phone_number" value="<?= htmlspecialchars($user['phone_number'] ?? '') ?>" placeholder="+241 00 00 00 00" autocomplete="tel">
+                                <small class="edit-error" id="err-phone"></small>
+                            </div>
+                            <div class="edit-field">
+                                <label for="edit-country">Pays</label>
+                                <input type="text" id="edit-country" name="country" value="<?= htmlspecialchars($user['country'] ?? '') ?>" placeholder="Votre pays" autocomplete="country-name">
+                                <small class="edit-error" id="err-country"></small>
+                            </div>
+                            <div class="edit-field">
+                                <label for="edit-birthdate">Date de naissance</label>
+                                <input type="date" id="edit-birthdate" name="birth_date" value="<?= htmlspecialchars($user['profile']['birth_date'] ?? '') ?>">
+                                <small class="edit-error" id="err-birth_date"></small>
+                            </div>
+                            <div class="edit-field">
+                                <label for="edit-level">Niveau d'anglais</label>
+                                <select id="edit-level" name="english_level">
+                                    <option value="">-- Choisir un niveau --</option>
+                                    <option value="beginner" <?= ($user['profile']['english_level'] ?? '') === 'beginner' ? 'selected' : '' ?>>Débutant</option>
+                                    <option value="intermediate" <?= ($user['profile']['english_level'] ?? '') === 'intermediate' ? 'selected' : '' ?>>Intermédiaire</option>
+                                    <option value="advanced" <?= ($user['profile']['english_level'] ?? '') === 'advanced' ? 'selected' : '' ?>>Avancé</option>
+                                </select>
+                                <small class="edit-error" id="err-english_level"></small>
+                            </div>
+                            <div class="edit-field edit-field--full">
+                                <label>Langue maternelle</label>
+                                <div class="lang-dropdown" id="lang-dropdown">
+                                    <div class="lang-trigger" id="lang-trigger">
+                                        <span class="lang-trigger__flag" id="lang-selected-flag">🌐</span>
+                                        <span class="lang-trigger__text" id="lang-selected-text">
+                                            <?php
+                                            $nativeLang = $user['profile']['native_language'] ?? '';
+                                            if ($nativeLang) {
+                                                $flat = [];
+                                                foreach ($languages as $langs) {
+                                                    foreach ($langs as $k => $v) $flat[$k] = $v;
                                                 }
-                                                ?>
-                                            </span>
-                                            <i class="fas fa-chevron-down lang-trigger__arrow"></i>
+                                                echo htmlspecialchars($flat[$nativeLang] ?? '-- Choisir une langue --');
+                                            } else {
+                                                echo '-- Choisir une langue --';
+                                            }
+                                            ?>
+                                        </span>
+                                        <i class="fas fa-chevron-down lang-trigger__arrow"></i>
+                                    </div>
+                                    <input type="hidden" name="native_language" id="native_language_input" value="<?= htmlspecialchars($user['profile']['native_language'] ?? '') ?>">
+                                    <div class="lang-panel" id="lang-panel">
+                                        <div class="lang-search">
+                                            <i class="fas fa-magnifying-glass"></i>
+                                            <input type="text" id="lang-search-input" placeholder="Rechercher une langue..." autocomplete="off">
+                                            <button type="button" class="lang-search__clear" id="lang-search-clear" style="display:none;">
+                                                <i class="fas fa-xmark"></i>
+                                            </button>
                                         </div>
-                                        <input type="hidden" name="native_language" id="native_language_input" value="<?= htmlspecialchars($user['profile']['native_language'] ?? '') ?>">
-                                        <div class="lang-panel" id="lang-panel">
-                                            <div class="lang-search">
-                                                <i class="fas fa-magnifying-glass"></i>
-                                                <input type="text" id="lang-search-input" placeholder="Rechercher une langue..." autocomplete="off">
-                                                <button type="button" class="lang-search__clear" id="lang-search-clear" style="display:none;">
-                                                    <i class="fas fa-xmark"></i>
-                                                </button>
-                                            </div>
-                                            <div class="lang-results" id="lang-results">
-                                                <?php foreach ($languages as $region => $langs): ?>
-                                                    <div class="lang-group" data-region="<?= htmlspecialchars($region) ?>">
-                                                        <div class="lang-group__title"><?= htmlspecialchars($region) ?></div>
-                                                        <?php foreach ($langs as $key => $label): ?>
-                                                            <div class="lang-option <?= ($user['profile']['native_language'] ?? '') === $key ? 'is-selected' : '' ?>"
-                                                                data-value="<?= htmlspecialchars($key) ?>"
-                                                                data-label="<?= htmlspecialchars($label) ?>">
-                                                                <span class="lang-option__dot"></span>
-                                                                <span class="lang-option__label"><?= htmlspecialchars($label) ?></span>
-                                                                <?php if (($user['profile']['native_language'] ?? '') === $key): ?>
-                                                                    <i class="fas fa-check lang-option__check"></i>
-                                                                <?php endif; ?>
-                                                            </div>
-                                                        <?php endforeach; ?>
-                                                    </div>
-                                                <?php endforeach; ?>
-                                                <div class="lang-no-results" id="lang-no-results" style="display:none;">
-                                                    <i class="fas fa-face-frown-open"></i>
-                                                    <p>OpenDoorsClass n'a trouvé aucune langue.</p>
+                                        <div class="lang-results" id="lang-results">
+                                            <?php foreach ($languages as $region => $langs): ?>
+                                                <div class="lang-group" data-region="<?= htmlspecialchars($region) ?>">
+                                                    <div class="lang-group__title"><?= htmlspecialchars($region) ?></div>
+                                                    <?php foreach ($langs as $key => $label): ?>
+                                                        <div class="lang-option <?= ($user['profile']['native_language'] ?? '') === $key ? 'is-selected' : '' ?>"
+                                                            data-value="<?= htmlspecialchars($key) ?>"
+                                                            data-label="<?= htmlspecialchars($label) ?>">
+                                                            <span class="lang-option__dot"></span>
+                                                            <span class="lang-option__label"><?= htmlspecialchars($label) ?></span>
+                                                            <?php if (($user['profile']['native_language'] ?? '') === $key): ?>
+                                                                <i class="fas fa-check lang-option__check"></i>
+                                                            <?php endif; ?>
+                                                        </div>
+                                                    <?php endforeach; ?>
                                                 </div>
+                                            <?php endforeach; ?>
+                                            <div class="lang-no-results" id="lang-no-results" style="display:none;">
+                                                <i class="fas fa-face-frown-open"></i>
+                                                <p>OpenDoorsClass n'a trouvé aucune langue.</p>
                                             </div>
                                         </div>
                                     </div>
-                                    <small class="edit-error" id="err-native_language"></small>
                                 </div>
-                                <div class="edit-field edit-field--full">
-                                    <label for="edit-bio">Biographie</label>
-                                    <textarea id="edit-bio" name="bio" rows="4" placeholder="Parlez-nous de vous..."><?= htmlspecialchars($user['bio'] ?? '') ?></textarea>
-                                    <small class="edit-error" id="err-bio"></small>
-                                </div>
+                                <small class="edit-error" id="err-native_language"></small>
                             </div>
-
-                            <div id="edit-message" class="edit-message" style="display:none;"></div>
-
-                            <div class="edit-actions">
-                                <button type="button" class="btn-cancel-edit" id="btn-cancel-edit-2">
-                                    <i class="fas fa-xmark"></i> Annuler
-                                </button>
-                                <button type="submit" class="btn-save" id="btn-save">
-                                    <span class="btn-text"><i class="fas fa-check"></i> Enregistrer</span>
-                                    <span class="btn-spinner" style="display:none;">
-                                        <i class="fas fa-spinner fa-spin"></i>
-                                    </span>
-                                </button>
+                            <div class="edit-field edit-field--full">
+                                <label for="edit-bio">Biographie</label>
+                                <textarea id="edit-bio" name="bio" rows="4" placeholder="Parlez-nous de vous..."><?= htmlspecialchars($user['bio'] ?? '') ?></textarea>
+                                <small class="edit-error" id="err-bio"></small>
                             </div>
+                        </div>
 
-                        </form>
+                        <div id="edit-message" class="edit-message" style="display:none;"></div>
+
+                        <div class="edit-actions">
+                            <button type="button" class="btn-cancel-edit" id="btn-cancel-edit-2">
+                                <i class="fas fa-xmark"></i> Annuler
+                            </button>
+                            <button type="submit" class="btn-save" id="btn-save">
+                                <span class="btn-text"><i class="fas fa-check"></i> Enregistrer</span>
+                                <span class="btn-spinner" style="display:none;">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                </span>
+                            </button>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- ===== MES COURS ===== -->
+        <section id="section-courses" class="profile-section">
+
+            <div class="section-header">
+                <div>
+                    <h1 class="section-title">Mes cours</h1>
+                    <p class="section-subtitle">Vos cours d'anglais chez OpenDoorsClass.</p>
+                </div>
+                <a href="./courses" class="btn-edit-profile">
+                    <i class="fas fa-compass"></i> Explorer nos cours d'anglais
+                </a>
+            </div>
+
+            <!-- Loader -->
+            <div id="courses-loader" style="display: flex; align-items: center;justify-content: center;gap: 12px;padding:48px;color: var(--text-muted); font-size: 0.875rem;">
+                <i class="fas fa-spinner fa-spin" style="font-size:18px;color:var(--blue,#1a6fb5);"></i>
+                <span>Chargement de vos cours d'anglais...</span>
+            </div>
+
+            <!-- État vide -->
+            <div id="courses-empty" class="card" style="display:none;text-align:center;padding:48px 24px;">
+                <div style="width:64px;height:64px;border-radius:16px; background:linear-gradient(135deg,#e8f2fc,#dde8f8);color:var(--blue,#1a6fb5); font-size:24px; display:flex; align-items:center; justify-content: center; margin:0 auto 16px;">
+                    <i class="fas fa-book-open"></i>
+                </div>
+                <h3 style="font-family:'Montserrat',sans-serif;font-size:1.05rem;font-weight:800;color:#0f1b35;margin:0 0 8px;">
+                    Aucun cours d'anglais en cours
+                </h3>
+                <p style="font-size:0.875rem;color:var(--text-muted);line-height:1.7;margin:0 0 20px;">
+                    Vous n'êtes inscrit à aucun cours d'anglais pour le moment.
+                </p>
+                <a href="./courses" class="btn-edit-profile" style="display:inline-flex;">
+                    <i class="fas fa-compass"></i> Découvrir nos cours d'anglais
+                </a>
+            </div>
+
+            <!-- Grille des cours -->
+            <div id="courses-grid" style="display:none;grid-template-columns: repeat(auto-fill, minmax(268px, 1fr));gap:20px;"></div>
+
+        </section>
+
+        <!-- ===== PROGRESSION ===== -->
+        <section id="progression" class="profile-section">
+            <div class="section-header">
+                <div>
+                    <h1 class="section-title">Progression</h1>
+                    <p class="section-subtitle">Votre avancement dans chaque formation</p>
+                </div>
+            </div>
+            <div class="card">
+                <div class="progress-item">
+                    <div class="progress-item__header">
+                        <p>Anglais Niveau 1</p><small>45%</small>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress" style="width:45%"></div>
                     </div>
                 </div>
-
-            </section>
-
-            <!-- ===== MES COURS ===== -->
-            <section id="section-courses" class="profile-section">
-
-                <div class="section-header">
-                    <div>
-                        <h1 class="section-title">Mes cours</h1>
-                        <p class="section-subtitle">Vos cours d'anglais chez OpenDoorsClass.</p>
+                <div class="progress-item">
+                    <div class="progress-item__header">
+                        <p>Anglais des affaires</p><small>70%</small>
                     </div>
-                    <a href="./courses" class="btn-edit-profile">
-                        <i class="fas fa-compass"></i> Explorer nos cours d'anglais
-                    </a>
-                </div>
-
-                <!-- Loader -->
-                <div id="courses-loader" style="display: flex; align-items: center;justify-content: center;gap: 12px;padding:48px;color: var(--text-muted); font-size: 0.875rem;">
-                    <i class="fas fa-spinner fa-spin" style="font-size:18px;color:var(--blue,#1a6fb5);"></i>
-                    <span>Chargement de vos cours d'anglais...</span>
-                </div>
-
-                <!-- État vide -->
-                <div id="courses-empty" class="card" style="display:none;text-align:center;padding:48px 24px;">
-                    <div style="width:64px;height:64px;border-radius:16px; background:linear-gradient(135deg,#e8f2fc,#dde8f8);color:var(--blue,#1a6fb5); font-size:24px; display:flex; align-items:center; justify-content: center; margin:0 auto 16px;">
-                        <i class="fas fa-book-open"></i>
+                    <div class="progress-bar">
+                        <div class="progress" style="width:70%"></div>
                     </div>
-                    <h3 style="font-family:'Montserrat',sans-serif;font-size:1.05rem;font-weight:800;color:#0f1b35;margin:0 0 8px;">
-                        Aucun cours d'anglais en cours
-                    </h3>
-                    <p style="font-size:0.875rem;color:var(--text-muted);line-height:1.7;margin:0 0 20px;">
-                        Vous n'êtes inscrit à aucun cours d'anglais pour le moment.
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== BADGES ===== -->
+        <section id="badges" class="profile-section">
+            <div class="section-header">
+                <div>
+                    <h1 class="section-title">Badges & Récompenses</h1>
+                    <p class="section-subtitle">Vos accomplissements</p>
+                </div>
+            </div>
+            <div class="card">
+                <div class="badge-grid">
+                    <span class="badge"><i class="fas fa-star"></i> Débutant</span>
+                    <span class="badge"><i class="fas fa-trophy"></i> Top Student</span>
+                    <span class="badge"><i class="fas fa-fire"></i> Streak 7 jours</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== OBJECTIFS ===== -->
+        <section id="objectifs" class="profile-section">
+            <div class="section-header">
+                <div>
+                    <h1 class="section-title">Objectifs</h1>
+                    <p class="section-subtitle">Vos objectifs d'apprentissage de la semaine</p>
+                </div>
+            </div>
+            <div class="card">
+                <div class="progress-item">
+                    <div class="progress-item__header">
+                        <p>Objectif semaine — 3 chapitres</p><small>60%</small>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress" style="width:60%"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== PARAMÈTRES ===== -->
+        <section id="settings" class="profile-section">
+            <div class="section-header">
+                <div>
+                    <h1 class="section-title">Paramètres</h1>
+                    <p class="section-subtitle">Gérez la sécurité de votre compte</p>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="fas fa-shield-halved"></i>
+                        Sécurité
+                    </h2>
+                    <p class="card-subtitle">
+                        Protégez votre compte et votre progression en anglais. Activez la double authentification pour qu'aucun accès non autorisé ne compromette votre formation.
                     </p>
-                    <a href="./courses" class="btn-edit-profile" style="display:inline-flex;">
-                        <i class="fas fa-compass"></i> Découvrir nos cours d'anglais
-                    </a>
                 </div>
 
-                <!-- Grille des cours -->
-                <div id="courses-grid" style="display:none;grid-template-columns: repeat(auto-fill, minmax(268px, 1fr));gap:20px;"></div>
+                <div class="setting-item">
+                    <div class="setting-item__info">
+                        <span class="setting-item__title">
+                            <i class="fas fa-shield"></i>
+                            Authentification à deux facteurs
+                        </span>
+                        <span class="setting-item__desc">
+                            À chaque connexion, un code à 6 chiffres vous sera envoyé par e-mail. Saisissez-le pour confirmer votre identité et sécuriser l'accès à votre formation.
+                        </span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input
+                            type="checkbox"
+                            id="toggle-2fa"
+                            <?= !empty($user['two_factor_enabled']) ? 'checked' : '' ?>>
+                        <span class="toggle-switch__slider"></span>
+                    </label>
+                </div>
 
-            </section>
+                <div id="2fa-feedback" class="setting-item__feedback" style="display:none;"></div>
 
-            <!-- ===== PROGRESSION ===== -->
-            <section id="progression" class="profile-section">
-                <div class="section-header">
-                    <div>
-                        <h1 class="section-title">Progression</h1>
-                        <p class="section-subtitle">Votre avancement dans chaque formation</p>
+                <div class="setting-item">
+                    <div class="setting-item__info">
+                        <span class="setting-item__title">
+                            <i class="fas fa-mobile-screen"></i>
+                            Google Authenticator
+                        </span>
+                        <span class="setting-item__desc">
+                            Utilisez une application d'authentification (Google Authenticator, Authy)
+                            pour générer des codes à usage unique toutes les 30 secondes.
+                        </span>
                     </div>
+                    <label class="toggle-switch">
+                        <input
+                            type="checkbox"
+                            id="toggle-totp"
+                            <?= !empty($user['totp_enabled']) ? 'checked' : '' ?>>
+                        <span class="toggle-switch__slider"></span>
+                    </label>
                 </div>
-                <div class="card">
-                    <div class="progress-item">
-                        <div class="progress-item__header">
-                            <p>Anglais Niveau 1</p><small>45%</small>
-                        </div>
-                        <div class="progress-bar">
-                            <div class="progress" style="width:45%"></div>
-                        </div>
-                    </div>
-                    <div class="progress-item">
-                        <div class="progress-item__header">
-                            <p>Anglais des affaires</p><small>70%</small>
-                        </div>
-                        <div class="progress-bar">
-                            <div class="progress" style="width:70%"></div>
-                        </div>
-                    </div>
-                </div>
-            </section>
 
-            <!-- ===== BADGES ===== -->
-            <section id="badges" class="profile-section">
-                <div class="section-header">
-                    <div>
-                        <h1 class="section-title">Badges & Récompenses</h1>
-                        <p class="section-subtitle">Vos accomplissements</p>
+                <!-- ===== APPAREILS DE CONFIANCE ===== -->
+                <div class="setting-item setting-item--block">
+                    <div class="setting-item__info">
+                        <span class="setting-item__title">
+                            <i class="fas fa-shield-check"></i>
+                            Appareils de confiance
+                        </span>
+                        <span class="setting-item__desc">
+                            Navigateurs enregistrés qui ne demandent pas de code 2FA à chaque connexion.
+                        </span>
                     </div>
+                    <button type="button" class="btn-setting-inline" id="btn-show-devices">
+                        <i class="fas fa-eye"></i> Gérer
+                    </button>
                 </div>
-                <div class="card">
-                    <div class="badge-grid">
-                        <span class="badge"><i class="fas fa-star"></i> Débutant</span>
-                        <span class="badge"><i class="fas fa-trophy"></i> Top Student</span>
-                        <span class="badge"><i class="fas fa-fire"></i> Streak 7 jours</span>
-                    </div>
-                </div>
-            </section>
 
-            <!-- ===== OBJECTIFS ===== -->
-            <section id="objectifs" class="profile-section">
-                <div class="section-header">
-                    <div>
-                        <h1 class="section-title">Objectifs</h1>
-                        <p class="section-subtitle">Vos objectifs d'apprentissage de la semaine</p>
+                <div id="trusted-devices-list" class="trusted-devices" style="display:none;">
+                    <div class="trusted-devices__loader" id="devices-loader">
+                        <i class="fas fa-spinner fa-spin"></i> Chargement...
                     </div>
-                </div>
-                <div class="card">
-                    <div class="progress-item">
-                        <div class="progress-item__header">
-                            <p>Objectif semaine — 3 chapitres</p><small>60%</small>
-                        </div>
-                        <div class="progress-bar">
-                            <div class="progress" style="width:60%"></div>
-                        </div>
+                    <ul class="trusted-devices__items" id="devices-items" style="display:none;"></ul>
+                    <div class="trusted-devices__empty" id="devices-empty" style="display:none;">
+                        <i class="fas fa-shield-slash"></i>
+                        <p>Aucun appareil de confiance enregistré.</p>
                     </div>
+                    <button type="button" class="btn-revoke-all" id="btn-revoke-all" style="display:none;">
+                        <i class="fas fa-trash-can"></i>
+                        Révoquer tous les appareils
+                    </button>
                 </div>
-            </section>
 
-            <!-- ===== PARAMÈTRES ===== -->
-            <section id="settings" class="profile-section">
-                <div class="section-header">
-                    <div>
-                        <h1 class="section-title">Paramètres</h1>
-                        <p class="section-subtitle">Gérez la sécurité de votre compte</p>
-                    </div>
+                <div id="totp-feedback" class="setting-item__feedback" style="display:none;"></div>
+
+                <button class="btn-setting" style="margin-top:16px;">
+                    <i class="fas fa-lock"></i> Changer le mot de passe
+                </button>
+                <button class="btn-setting logout">
+                    <i class="fas fa-right-from-bracket"></i> Déconnexion
+                </button>
+            </div>
+            <!-- ===== NOTIFICATIONS ===== -->
+            <div class="card" style="margin-top: 16px;">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="fas fa-bell"></i>
+                        Notifications par e-mail
+                    </h2>
+                    <p class="card-subtitle">
+                        Choisissez les e-mails que vous souhaitez recevoir de la part d'OpenDoorsClass.
+                    </p>
                 </div>
-                <div class="card">
-                    <div class="card-header">
-                        <h2 class="card-title">
-                            <i class="fas fa-shield-halved"></i>
-                            Sécurité
-                        </h2>
-                        <p class="card-subtitle">
-                            Protégez votre compte et votre progression en anglais. Activez la double authentification pour qu'aucun accès non autorisé ne compromette votre formation.
-                        </p>
+
+                <!-- Formation -->
+                <div class="notif-group">
+                    <span class="notif-group__label">Formation</span>
+
+                    <div class="setting-item">
+                        <div class="setting-item__info">
+                            <span class="setting-item__title">
+                                <i class="fas fa-book-open"></i>
+                                Rappels de cours
+                            </span>
+                            <span class="setting-item__desc">
+                                Recevez des rappels pour ne pas oublier vos leçons en cours.
+                            </span>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" class="notif-toggle" data-setting="course_reminders"
+                                <?= !empty($notifSettings['course_reminders']) ? 'checked' : '' ?>>
+                            <span class="toggle-switch__slider"></span>
+                        </label>
                     </div>
 
                     <div class="setting-item">
                         <div class="setting-item__info">
                             <span class="setting-item__title">
-                                <i class="fas fa-shield"></i>
-                                Authentification à deux facteurs
+                                <i class="fas fa-sparkles"></i>
+                                Nouvelles leçons
                             </span>
                             <span class="setting-item__desc">
-                                À chaque connexion, un code à 6 chiffres vous sera envoyé par e-mail. Saisissez-le pour confirmer votre identité et sécuriser l'accès à votre formation.
+                                Soyez informé dès qu'une nouvelle leçon est disponible dans votre formation.
                             </span>
                         </div>
                         <label class="toggle-switch">
-                            <input
-                                type="checkbox"
-                                id="toggle-2fa"
-                                <?= !empty($user['two_factor_enabled']) ? 'checked' : '' ?>>
+                            <input type="checkbox" class="notif-toggle" data-setting="new_lessons"
+                                <?= !empty($notifSettings['new_lessons']) ? 'checked' : '' ?>>
                             <span class="toggle-switch__slider"></span>
                         </label>
                     </div>
-
-                    <div id="2fa-feedback" class="setting-item__feedback" style="display:none;"></div>
 
                     <div class="setting-item">
                         <div class="setting-item__info">
                             <span class="setting-item__title">
-                                <i class="fas fa-mobile-screen"></i>
-                                Google Authenticator
+                                <i class="fas fa-chart-line"></i>
+                                Résumé hebdomadaire
                             </span>
                             <span class="setting-item__desc">
-                                Utilisez une application d'authentification (Google Authenticator, Authy)
-                                pour générer des codes à usage unique toutes les 30 secondes.
+                                Un bilan de votre progression chaque semaine pour rester motivé.
                             </span>
                         </div>
                         <label class="toggle-switch">
-                            <input
-                                type="checkbox"
-                                id="toggle-totp"
-                                <?= !empty($user['totp_enabled']) ? 'checked' : '' ?>>
+                            <input type="checkbox" class="notif-toggle" data-setting="weekly_progress"
+                                <?= !empty($notifSettings['weekly_progress']) ? 'checked' : '' ?>>
+                            <span class="toggle-switch__slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Sécurité -->
+                <div class="notif-group">
+                    <span class="notif-group__label">Sécurité</span>
+
+                    <div class="setting-item">
+                        <div class="setting-item__info">
+                            <span class="setting-item__title">
+                                <i class="fas fa-shield-halved"></i>
+                                Alertes de sécurité
+                            </span>
+                            <span class="setting-item__desc">
+                                Soyez notifié lors de chaque nouvelle connexion à votre compte.
+                            </span>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" class="notif-toggle" data-setting="security_alerts"
+                                <?= !empty($notifSettings['security_alerts']) ? 'checked' : '' ?>>
+                            <span class="toggle-switch__slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- OpenDoorsClass -->
+                <div class="notif-group">
+                    <span class="notif-group__label">OpenDoorsClass</span>
+
+                    <div class="setting-item">
+                        <div class="setting-item__info">
+                            <span class="setting-item__title">
+                                <i class="fas fa-tag"></i>
+                                Offres et promotions
+                            </span>
+                            <span class="setting-item__desc">
+                                Recevez nos meilleures offres et réductions sur les abonnements.
+                            </span>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" class="notif-toggle" data-setting="promotions"
+                                <?= !empty($notifSettings['promotions']) ? 'checked' : '' ?>>
                             <span class="toggle-switch__slider"></span>
                         </label>
                     </div>
 
-                    <!-- ===== APPAREILS DE CONFIANCE ===== -->
-                    <div class="setting-item setting-item--block">
+                    <div class="setting-item">
                         <div class="setting-item__info">
                             <span class="setting-item__title">
-                                <i class="fas fa-shield-check"></i>
-                                Appareils de confiance
+                                <i class="fas fa-newspaper"></i>
+                                Newsletter
                             </span>
                             <span class="setting-item__desc">
-                                Navigateurs enregistrés qui ne demandent pas de code 2FA à chaque connexion.
+                                Actualités, conseils pour apprendre l'anglais et nouveautés de la plateforme.
                             </span>
                         </div>
-                        <button type="button" class="btn-setting-inline" id="btn-show-devices">
-                            <i class="fas fa-eye"></i> Gérer
-                        </button>
+                        <label class="toggle-switch">
+                            <input type="checkbox" class="notif-toggle" data-setting="newsletter"
+                                <?= !empty($notifSettings['newsletter']) ? 'checked' : '' ?>>
+                            <span class="toggle-switch__slider"></span>
+                        </label>
                     </div>
+                </div>
 
-                    <div id="trusted-devices-list" class="trusted-devices" style="display:none;">
-                        <div class="trusted-devices__loader" id="devices-loader">
-                            <i class="fas fa-spinner fa-spin"></i> Chargement...
-                        </div>
-                        <ul class="trusted-devices__items" id="devices-items" style="display:none;"></ul>
-                        <div class="trusted-devices__empty" id="devices-empty" style="display:none;">
-                            <i class="fas fa-shield-slash"></i>
-                            <p>Aucun appareil de confiance enregistré.</p>
-                        </div>
-                        <button type="button" class="btn-revoke-all" id="btn-revoke-all" style="display:none;">
-                            <i class="fas fa-trash-can"></i>
-                            Révoquer tous les appareils
-                        </button>
+                <div id="notif-feedback" class="setting-item__feedback" style="display:none;"></div>
+            </div>
+            <!-- ===== ZONE DANGER ===== -->
+            <div class="card card--danger" style="margin-top: 16px;">
+                <div class="card-header">
+                    <h2 class="card-title card-title--danger">
+                        <i class="fas fa-triangle-exclamation"></i>
+                        Zone dangereuse
+                    </h2>
+                    <p class="card-subtitle">
+                        Les actions ci-dessous sont irréversibles. Procédez avec précaution.
+                    </p>
+                </div>
+
+                <div class="danger-item">
+                    <div class="danger-item__info">
+                        <span class="danger-item__title">Supprimer mon compte</span>
+                        <span class="danger-item__desc">
+                            Supprime définitivement votre compte, vos cours, votre progression et toutes vos données personnelles. Cette action est irréversible.
+                        </span>
                     </div>
-
-                    <div id="totp-feedback" class="setting-item__feedback" style="display:none;"></div>
-
-                    <button class="btn-setting" style="margin-top:16px;">
-                        <i class="fas fa-lock"></i> Changer le mot de passe
+                    <button type="button" class="btn-danger" id="btn-delete-account">
+                        <i class="fas fa-trash-can"></i>
+                        Supprimer mon compte
                     </button>
-                    <button class="btn-setting logout">
-                        <i class="fas fa-right-from-bracket"></i> Déconnexion
-                    </button>
                 </div>
-                <!-- ===== NOTIFICATIONS ===== -->
-                <div class="card" style="margin-top: 16px;">
-                    <div class="card-header">
-                        <h2 class="card-title">
-                            <i class="fas fa-bell"></i>
-                            Notifications par e-mail
-                        </h2>
-                        <p class="card-subtitle">
-                            Choisissez les e-mails que vous souhaitez recevoir de la part d'OpenDoorsClass.
-                        </p>
-                    </div>
+            </div>
+        </section>
 
-                    <!-- Formation -->
-                    <div class="notif-group">
-                        <span class="notif-group__label">Formation</span>
-
-                        <div class="setting-item">
-                            <div class="setting-item__info">
-                                <span class="setting-item__title">
-                                    <i class="fas fa-book-open"></i>
-                                    Rappels de cours
-                                </span>
-                                <span class="setting-item__desc">
-                                    Recevez des rappels pour ne pas oublier vos leçons en cours.
-                                </span>
-                            </div>
-                            <label class="toggle-switch">
-                                <input type="checkbox" class="notif-toggle" data-setting="course_reminders"
-                                    <?= !empty($notifSettings['course_reminders']) ? 'checked' : '' ?>>
-                                <span class="toggle-switch__slider"></span>
-                            </label>
-                        </div>
-
-                        <div class="setting-item">
-                            <div class="setting-item__info">
-                                <span class="setting-item__title">
-                                    <i class="fas fa-sparkles"></i>
-                                    Nouvelles leçons
-                                </span>
-                                <span class="setting-item__desc">
-                                    Soyez informé dès qu'une nouvelle leçon est disponible dans votre formation.
-                                </span>
-                            </div>
-                            <label class="toggle-switch">
-                                <input type="checkbox" class="notif-toggle" data-setting="new_lessons"
-                                    <?= !empty($notifSettings['new_lessons']) ? 'checked' : '' ?>>
-                                <span class="toggle-switch__slider"></span>
-                            </label>
-                        </div>
-
-                        <div class="setting-item">
-                            <div class="setting-item__info">
-                                <span class="setting-item__title">
-                                    <i class="fas fa-chart-line"></i>
-                                    Résumé hebdomadaire
-                                </span>
-                                <span class="setting-item__desc">
-                                    Un bilan de votre progression chaque semaine pour rester motivé.
-                                </span>
-                            </div>
-                            <label class="toggle-switch">
-                                <input type="checkbox" class="notif-toggle" data-setting="weekly_progress"
-                                    <?= !empty($notifSettings['weekly_progress']) ? 'checked' : '' ?>>
-                                <span class="toggle-switch__slider"></span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <!-- Sécurité -->
-                    <div class="notif-group">
-                        <span class="notif-group__label">Sécurité</span>
-
-                        <div class="setting-item">
-                            <div class="setting-item__info">
-                                <span class="setting-item__title">
-                                    <i class="fas fa-shield-halved"></i>
-                                    Alertes de sécurité
-                                </span>
-                                <span class="setting-item__desc">
-                                    Soyez notifié lors de chaque nouvelle connexion à votre compte.
-                                </span>
-                            </div>
-                            <label class="toggle-switch">
-                                <input type="checkbox" class="notif-toggle" data-setting="security_alerts"
-                                    <?= !empty($notifSettings['security_alerts']) ? 'checked' : '' ?>>
-                                <span class="toggle-switch__slider"></span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <!-- OpenDoorsClass -->
-                    <div class="notif-group">
-                        <span class="notif-group__label">OpenDoorsClass</span>
-
-                        <div class="setting-item">
-                            <div class="setting-item__info">
-                                <span class="setting-item__title">
-                                    <i class="fas fa-tag"></i>
-                                    Offres et promotions
-                                </span>
-                                <span class="setting-item__desc">
-                                    Recevez nos meilleures offres et réductions sur les abonnements.
-                                </span>
-                            </div>
-                            <label class="toggle-switch">
-                                <input type="checkbox" class="notif-toggle" data-setting="promotions"
-                                    <?= !empty($notifSettings['promotions']) ? 'checked' : '' ?>>
-                                <span class="toggle-switch__slider"></span>
-                            </label>
-                        </div>
-
-                        <div class="setting-item">
-                            <div class="setting-item__info">
-                                <span class="setting-item__title">
-                                    <i class="fas fa-newspaper"></i>
-                                    Newsletter
-                                </span>
-                                <span class="setting-item__desc">
-                                    Actualités, conseils pour apprendre l'anglais et nouveautés de la plateforme.
-                                </span>
-                            </div>
-                            <label class="toggle-switch">
-                                <input type="checkbox" class="notif-toggle" data-setting="newsletter"
-                                    <?= !empty($notifSettings['newsletter']) ? 'checked' : '' ?>>
-                                <span class="toggle-switch__slider"></span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <div id="notif-feedback" class="setting-item__feedback" style="display:none;"></div>
+        <!-- ===== ABONNEMENT ===== -->
+        <section id="subscription" class="profile-section">
+            <div class="section-header">
+                <div>
+                    <h1 class="section-title">Abonnement</h1>
+                    <p class="section-subtitle">Vos paiements et renouvellements</p>
                 </div>
-                <!-- ===== ZONE DANGER ===== -->
-                <div class="card card--danger" style="margin-top: 16px;">
-                    <div class="card-header">
-                        <h2 class="card-title card-title--danger">
-                            <i class="fas fa-triangle-exclamation"></i>
-                            Zone dangereuse
-                        </h2>
-                        <p class="card-subtitle">
-                            Les actions ci-dessous sont irréversibles. Procédez avec précaution.
-                        </p>
-                    </div>
-
-                    <div class="danger-item">
-                        <div class="danger-item__info">
-                            <span class="danger-item__title">Supprimer mon compte</span>
-                            <span class="danger-item__desc">
-                                Supprime définitivement votre compte, vos cours, votre progression et toutes vos données personnelles. Cette action est irréversible.
-                            </span>
-                        </div>
-                        <button type="button" class="btn-danger" id="btn-delete-account">
-                            <i class="fas fa-trash-can"></i>
-                            Supprimer mon compte
-                        </button>
-                    </div>
-                </div>
-            </section>
-
-            <!-- ===== ABONNEMENT ===== -->
-            <section id="subscription" class="profile-section">
-                <div class="section-header">
-                    <div>
-                        <h1 class="section-title">Abonnement</h1>
-                        <p class="section-subtitle">Vos paiements et renouvellements</p>
-                    </div>
-                </div>
-                <div class="card">
-                    <?php if (!empty($subscriptions)): ?>
-                        <?php foreach ($subscriptions as $sub): ?>
-                            <div class="subscription">
-                                <?php
-                                if (!empty($sub['start_date']) && !empty($sub['end_date'])) {
-                                    $endDate = new DateTime($sub['end_date']);
-                                    $today   = new DateTime();
-                                    if ($today > $endDate) {
-                                        $daysMessage = "Expiré";
-                                        $statusClass = "expired";
-                                    } else {
-                                        $d           = $today->diff($endDate)->days;
-                                        $daysMessage = $d === 0 ? "Arrive à terme aujourd'hui" : ($d === 1 ? "1 jour restant" : "$d jours restants");
-                                        $statusClass = $d <= 7 ? "warning" : "active";
-                                    }
+            </div>
+            <div class="card">
+                <?php if (!empty($subscriptions)): ?>
+                    <?php foreach ($subscriptions as $sub): ?>
+                        <div class="subscription">
+                            <?php
+                            if (!empty($sub['start_date']) && !empty($sub['end_date'])) {
+                                $endDate = new DateTime($sub['end_date']);
+                                $today   = new DateTime();
+                                if ($today > $endDate) {
+                                    $daysMessage = "Expiré";
+                                    $statusClass = "expired";
                                 } else {
-                                    $daysMessage = "Aucun abonnement actif";
-                                    $statusClass = "none";
+                                    $d           = $today->diff($endDate)->days;
+                                    $daysMessage = $d === 0 ? "Arrive à terme aujourd'hui" : ($d === 1 ? "1 jour restant" : "$d jours restants");
+                                    $statusClass = $d <= 7 ? "warning" : "active";
                                 }
-                                ?>
-                                <p><strong>Type :</strong> <?= htmlspecialchars($sub['type'] ?? 'Inconnu') ?></p>
-                                <p><strong>Prix :</strong> <?= number_format($sub['amount'] ?? 0, 0, ',', ' ') ?> <?= htmlspecialchars($sub['currency'] ?? 'FCFA') ?></p>
-                                <p><strong>Statut :</strong>
-                                    <span class="<?= $statusClass ?>"><?= htmlspecialchars($sub['status'] ?? '') ?></span>
-                                    (<?= $daysMessage ?>)
-                                </p>
-                            </div>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <p style="color:var(--text-muted);font-size:0.9rem;">Aucun abonnement actif.</p>
-                    <?php endif; ?>
-                    <button class="btn-setting" style="margin-top:16px;">
-                        <i class="fas fa-credit-card"></i> Renouveler mon abonnement
-                    </button>
-                </div>
-            </section>
+                            } else {
+                                $daysMessage = "Aucun abonnement actif";
+                                $statusClass = "none";
+                            }
+                            ?>
+                            <p><strong>Type :</strong> <?= htmlspecialchars($sub['type'] ?? 'Inconnu') ?></p>
+                            <p><strong>Prix :</strong> <?= number_format($sub['amount'] ?? 0, 0, ',', ' ') ?> <?= htmlspecialchars($sub['currency'] ?? 'FCFA') ?></p>
+                            <p><strong>Statut :</strong>
+                                <span class="<?= $statusClass ?>"><?= htmlspecialchars($sub['status'] ?? '') ?></span>
+                                (<?= $daysMessage ?>)
+                            </p>
+                        </div>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <p style="color:var(--text-muted);font-size:0.9rem;">Aucun abonnement actif.</p>
+                <?php endif; ?>
+                <button class="btn-setting" style="margin-top:16px;">
+                    <i class="fas fa-credit-card"></i> Renouveler mon abonnement
+                </button>
+            </div>
+        </section>
 
-        </main>
+    </main>
     </div>
 
     <!-- ===== MODALS TOTP — EN DEHORS DE TOUT CONTENEUR ===== -->

@@ -1816,6 +1816,21 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  // ===== SIDEBAR TOGGLE =====
+  const sidebar = document.getElementById("profile-sidebar");
+  const toggleBtn = document.getElementById("sidebar-toggle-btn");
+  const STORAGE_KEY = "odc_sidebar_collapsed";
+
+  // Restaure l'état sauvegardé
+  if (localStorage.getItem(STORAGE_KEY) === "1") {
+    sidebar?.classList.add("is-collapsed");
+  }
+
+  toggleBtn?.addEventListener("click", function () {
+    const isCollapsed = sidebar.classList.toggle("is-collapsed");
+    localStorage.setItem(STORAGE_KEY, isCollapsed ? "1" : "0");
+  });
+
   // ===== DÉCONNEXION =====
   document
     .querySelector(".btn-setting.logout")
