@@ -78,13 +78,12 @@ $basePath = '/mrnathanenglish/public';
                                     <a href="<?= $basePath ?>/profile" class="username-on-dropdown">
                                         <img
                                             src="<?= $basePath ?>/uploads/profiles/<?= htmlspecialchars($profilePicture) ?>"
-                                            alt="Photo de profil"
-                                            style="width:38px;height:38px;border-radius:50%;object-fit:cover;flex-shrink:0;">
-                                        <div style="line-height:1.4;margin-left:10px;overflow:hidden;">
-                                            <span style="display:block;font-weight:700;font-size:0.875rem;color:#0B1F45;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                                            alt="Photo de profil">
+                                        <div>
+                                            <span>
                                                 <?= htmlspecialchars($_SESSION['user']['username'] ?? 'Utilisateur') ?>
                                             </span>
-                                            <small style="font-size:0.72rem;color:#94a3b8;">
+                                            <small>
                                                 <?php
                                                 $level = $_SESSION['user']['english_level'] ?? '';
                                                 echo match ($level) {

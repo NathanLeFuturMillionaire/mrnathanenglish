@@ -20,7 +20,7 @@
           dropdown.classList.add("open");
 
           // Force le z-index au-dessus de tout
-          const content = dropdown.querySelector(".dropdown-content");
+          const content = dropdown.querySelector(".dropdown-content-now");
           if (content) {
             content.style.zIndex = "99999";
             content.style.position = "absolute";
